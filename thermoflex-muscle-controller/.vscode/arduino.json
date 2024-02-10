@@ -1,0 +1,4 @@
+{
+    "board": "arduino:renesas_uno:minima",
+    "sketch": "thermoflex-muscle-controller\\thermoflex-firmware-v1.0\\thermoflex-firmware-v1.0.ino"
+}
