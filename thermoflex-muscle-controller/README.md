@@ -1,0 +1,1 @@
+This folder contains the development of firmware for the muscle controller.  Currently, this software is deployed to an Arduino Minima.  The microcontroller is configured to utilize our proprietary Muscle Control Arduino Shield.
