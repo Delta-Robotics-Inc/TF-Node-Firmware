@@ -1,3 +1,11 @@
+/*=============================================================================
+*
+* ThermoFlex Muscle Controller Firmware
+* Author: Mark Dannemiller
+*
+*=============================================================================*/
+
+
 
 //=============================================================================
 // ThermoFlex constants
@@ -5,6 +13,9 @@
 
 enum ctrl_modes { VOLTS, CURRENT, TEMP, PULSE_CNT, PULSE_INF };
 #define SIGNAL_TIMEOUT 2.0 //amount of time between receiving master commands before auto-disable
+#define COMMAND_CNT 5 //number of commands
+const enum command_type  { SETMODE, SETSETPOINT, GETDATA, SETENABLE, STOP };
+const String command_type_str[] = { "SETMODE", "SETSETPOINT", "GETDATA", "SETENABLE", "STOP"};
 
 
 //=============================================================================
@@ -64,9 +75,43 @@ void setup() {
     }
 }
 
+String command; //for processing serial command
+String params;
+
 void loop() {
     
-    updateMuscles();
+  updateMuscles();
+
+  if(Serial.available()) {
+    command = Serial.readStringUntil(' ');
+    command.trim();
+    command = command.toUpperCase();
+
+    params = Serial.readStringUntil("/n");
+    params.trim();
+
+    switch (command)
+    {
+    case command_type_str[SETMODE]:
+      /* code */
+      break;
+    case command_type_str[SETSETPOINT]:
+      /* code */
+      break;
+    case command_type_str[GETDATA]:
+      /* code */
+      break;
+    case command_type_str[SETENABLE]:
+      /* code */
+      break;
+    case command_type_str[STOP]:
+      /* code */
+      break;
+
+    default:
+      break;
+    }
+  }
 }
 
 
