@@ -1,0 +1,37 @@
+<mxfile host="app.diagrams.net" modified="2024-01-30T04:47:04.206Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0" etag="3fBJHifj2BXdP9XSo0iN" version="23.0.2" type="dropbox">
+  <diagram name="Page-1" id="2jT1pFFwxPAM29rdPujK">
+    <mxGraphModel dx="1393" dy="1345" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="KdRugcyAtEizaryHGDG_-2" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=none;fontSize=15;fontColor=#0000FF;strokeColor=#FFCC99;strokeWidth=7;" vertex="1" parent="1">
+          <mxGeometry x="140" y="400" width="533.3333333333334" height="533.3333333333334" as="geometry" />
+        </mxCell>
+        <mxCell id="KdRugcyAtEizaryHGDG_-4" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=none;fontSize=15;fontColor=default;strokeColor=#FF8000;strokeWidth=7;" vertex="1" parent="1">
+          <mxGeometry x="317.77777777777777" y="220" width="533.3333333333334" height="533.3333333333334" as="geometry" />
+        </mxCell>
+        <mxCell id="KdRugcyAtEizaryHGDG_-5" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=none;fontSize=15;strokeColor=#FF9933;strokeWidth=7;" vertex="1" parent="1">
+          <mxGeometry x="506.6666666666667" y="400" width="533.3333333333334" height="533.3333333333334" as="geometry" />
+        </mxCell>
+        <mxCell id="KdRugcyAtEizaryHGDG_-6" value="" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=none;fontSize=15;strokeColor=#FFB366;strokeWidth=7;fontColor=#FFFF00;" vertex="1" parent="1">
+          <mxGeometry x="317.77777777777777" y="580" width="533.3333333333334" height="533.3333333333334" as="geometry" />
+        </mxCell>
+        <mxCell id="KdRugcyAtEizaryHGDG_-9" value="Prosthetics" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#FFCC99;fontStyle=1;fontSize=28;" vertex="1" parent="1">
+          <mxGeometry x="184.44444444444446" y="636.25" width="133.33333333333334" height="67.5" as="geometry" />
+        </mxCell>
+        <mxCell id="KdRugcyAtEizaryHGDG_-22" value="Assisted Mobility" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#FF8000;fontStyle=1;fontSize=28;" vertex="1" parent="1">
+          <mxGeometry x="517.7777777777778" y="310" width="133.33333333333334" height="67.5" as="geometry" />
+        </mxCell>
+        <mxCell id="KdRugcyAtEizaryHGDG_-23" value="Humanoid Robotics" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#FF9933;fontStyle=1;fontSize=28;" vertex="1" parent="1">
+          <mxGeometry x="851.1111111111111" y="636.25" width="133.33333333333334" height="67.5" as="geometry" />
+        </mxCell>
+        <mxCell id="KdRugcyAtEizaryHGDG_-24" value="Entertainment" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#FFB366;fontStyle=1;fontSize=28;" vertex="1" parent="1">
+          <mxGeometry x="484.44444444444446" y="962.5" width="200" height="67.5" as="geometry" />
+        </mxCell>
+        <mxCell id="KdRugcyAtEizaryHGDG_-25" value="Core Technology" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1;fontColor=#4D4D4D;fontSize=28;" vertex="1" parent="1">
+          <mxGeometry x="512.22" y="613.75" width="157.78" height="90" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

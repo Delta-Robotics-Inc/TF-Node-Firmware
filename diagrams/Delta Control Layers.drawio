@@ -1,0 +1,136 @@
+<mxfile host="app.diagrams.net" modified="2024-02-10T05:12:59.659Z" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0" etag="DLDIuS9xXsjpirrxPNk3" version="23.0.2" type="dropbox">
+  <diagram id="R2lEEEUBdFMjLlhIrx00" name="Page-1">
+    <mxGraphModel dx="817" dy="788" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0" extFonts="Permanent Marker^https://fonts.googleapis.com/css?family=Permanent+Marker">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;curved=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="OyemslvGFW8bAOI-Q8hS-2" target="OyemslvGFW8bAOI-Q8hS-3">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="280" y="460" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="305" y="430" />
+              <mxPoint x="260" y="430" />
+              <mxPoint x="260" y="475" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-21" value="Serial" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="OyemslvGFW8bAOI-Q8hS-20">
+          <mxGeometry x="-0.0202" y="2" relative="1" as="geometry">
+            <mxPoint x="-12" y="5" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-2" value="ThermoFlex Hardware API" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="300" y="400" width="250" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-3" value="ThermoFlex Firmware Master" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="280" y="450" width="290" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-4" value="ThermoFlex CAN Network" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="260" y="500" width="330" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-5" value="Gateway Application Layer" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="320" y="350" width="210" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-10" value="&lt;font style=&quot;font-size: 12px;&quot;&gt;Range from local network PC Diagnostic/Control Apps to cloud-enabled gateway server applications that backend the mobile application layer.&lt;/font&gt;" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;spacingRight=9;spacingLeft=9;" vertex="1" parent="1">
+          <mxGeometry x="565" y="350" width="335" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-11" value="General-purpose hardware communication libraries&lt;br&gt;to facilitate command/data transfer with a ThermoFlex network over serial." style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;spacingRight=8;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="590" y="400" width="310" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-12" value="ThermoFlex device in master configuration facilitates communication between CAN network and the Gateway Layer via serial." style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;spacingRight=8;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="610" y="450" width="290" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-13" value="Connected ThermoFlex devices &lt;br&gt;receive/report data, process sensors, perform closed-loop control operation of muscles" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;spacingRight=8;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="630" y="500" width="270" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-14" value="" style="endArrow=none;dashed=1;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="OyemslvGFW8bAOI-Q8hS-5" target="OyemslvGFW8bAOI-Q8hS-10">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="520" y="340" as="sourcePoint" />
+            <mxPoint x="570" y="290" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-15" value="" style="endArrow=none;dashed=1;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="OyemslvGFW8bAOI-Q8hS-2" target="OyemslvGFW8bAOI-Q8hS-11">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="543" y="399.65999999999997" as="sourcePoint" />
+            <mxPoint x="588" y="399.65999999999997" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-16" value="" style="endArrow=none;dashed=1;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="OyemslvGFW8bAOI-Q8hS-3" target="OyemslvGFW8bAOI-Q8hS-12">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="560" y="459.65999999999997" as="sourcePoint" />
+            <mxPoint x="605" y="459.65999999999997" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-17" value="" style="endArrow=none;dashed=1;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="OyemslvGFW8bAOI-Q8hS-4" target="OyemslvGFW8bAOI-Q8hS-13">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="580" y="519.66" as="sourcePoint" />
+            <mxPoint x="625" y="519.66" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-28" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;curved=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="OyemslvGFW8bAOI-Q8hS-3" target="OyemslvGFW8bAOI-Q8hS-4">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="265" y="526" as="targetPoint" />
+            <mxPoint x="280" y="480" as="sourcePoint" />
+            <Array as="points">
+              <mxPoint x="285" y="480" />
+              <mxPoint x="240" y="480" />
+              <mxPoint x="240" y="525" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-29" value="CAN" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="OyemslvGFW8bAOI-Q8hS-28">
+          <mxGeometry x="-0.0202" y="2" relative="1" as="geometry">
+            <mxPoint x="-12" y="2" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-30" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;curved=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="OyemslvGFW8bAOI-Q8hS-5" target="OyemslvGFW8bAOI-Q8hS-2">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="310" y="396" as="targetPoint" />
+            <mxPoint x="325" y="350" as="sourcePoint" />
+            <Array as="points">
+              <mxPoint x="325" y="380" />
+              <mxPoint x="280" y="380" />
+              <mxPoint x="280" y="425" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-31" value="&lt;font style=&quot;font-size: 9px;&quot;&gt;Software &lt;br&gt;Libary&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="OyemslvGFW8bAOI-Q8hS-30">
+          <mxGeometry x="-0.0202" y="2" relative="1" as="geometry">
+            <mxPoint x="-22" y="2" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-39" value="Mobile Application Layer" style="shape=trapezoid;perimeter=trapezoidPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#FFEBF1;strokeColor=#A66E7E;" vertex="1" parent="1">
+          <mxGeometry x="340" y="300" width="170" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-40" value="End-user mobile/web applications deliver high-level ThermoFlex information over the cloud and integrate with other services to deliver the final experience." style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;spacingRight=8;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="550" y="300" width="350" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-42" value="" style="endArrow=none;dashed=1;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="OyemslvGFW8bAOI-Q8hS-39" target="OyemslvGFW8bAOI-Q8hS-40">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="500" y="370" as="sourcePoint" />
+            <mxPoint x="550" y="320" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-44" value="&lt;h1&gt;ThermoFlex System Layers&lt;/h1&gt;&lt;p&gt;The ThermoFlex System Architecture consists of multiple layers of hardware and software. These layers facilitate the transfer of hardware commands, sensor data, and system diagnostics between the ThermoFlex muscle controllers, PC diagnostic software, and robotic control software.&amp;nbsp; The goal is to create API software libraries that allow engineers to easily integrate ThermoFlex with an existing robotic/prosthetic system.&lt;/p&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="250" y="170" width="620" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-45" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;curved=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="OyemslvGFW8bAOI-Q8hS-39" target="OyemslvGFW8bAOI-Q8hS-5">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="329.97" y="374.97" as="targetPoint" />
+            <mxPoint x="344.97" y="336.97" as="sourcePoint" />
+            <Array as="points">
+              <mxPoint x="345" y="330" />
+              <mxPoint x="300" y="330" />
+              <mxPoint x="300" y="375" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="OyemslvGFW8bAOI-Q8hS-46" value="&lt;font style=&quot;font-size: 9px;&quot;&gt;Cloud &lt;br&gt;Services&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="OyemslvGFW8bAOI-Q8hS-45">
+          <mxGeometry x="-0.0202" y="2" relative="1" as="geometry">
+            <mxPoint x="-22" y="2" as="offset" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
