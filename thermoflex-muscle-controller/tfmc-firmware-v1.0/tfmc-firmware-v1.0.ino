@@ -19,7 +19,7 @@ const String ctrl_modes_str[CTRL_MODE_CNT] = { "percent", "volts", "amps", "degr
 // TF Node Commands ===========================================================
 #define COMMAND_CNT 6 //number of commands
 #define PARAM_MAX 20 //parameter array will be this size
-const enum command_type  { SETMODE, SETSETPOINT, GETDATA, SETENABLE, STOP };
+enum command_type  { SETMODE, SETSETPOINT, GETDATA, SETENABLE, STOP };
 const String command_type_str[] = { "SETMODE", "SETSETPOINT", "GETDATA", "SETENABLE", "STOP"};
 
 //Command is the primitive object sent from a master device to this Node
@@ -35,23 +35,25 @@ struct Command {
 } c_reset, c_setEnable, c_setMode, c_setSetpoint, c_status, c_stop;
 //make sure to update COMMAND_CNT parameter when adding a new command
 
-c_reset.name = "reset";
-c_reset.code = 0xFF; //all 1 bits
+void initCommands() {
+  c_reset.name = "reset";
+  c_reset.code = 0xFF; //all 1 bits
 
-c_setEnable.name = "enable";
-c_setEnable.code = 0x01;
+  c_setEnable.name = "enable";
+  c_setEnable.code = 0x01;
 
-c_setMode.name = "set-mode";
-c_setMode.code = 0x02;
+  c_setMode.name = "set-mode";
+  c_setMode.code = 0x02;
 
-c_setSetpoint.name = "set-setpoint";
-c_setSetpoint.code = 0x03;
+  c_setSetpoint.name = "set-setpoint";
+  c_setSetpoint.code = 0x03;
 
-c_status.name = "status";
-c_status.code = 0x04;
+  c_status.name = "status";
+  c_status.code = 0x04;
 
-c_stop.name = "stop";
-c_stop.code = 0x05;
+  c_stop.name = "stop";
+  c_stop.code = 0x05;
+}
 
 Command c_commands[COMMAND_CNT] = { c_reset, c_setEnable, c_setMode, c_setSetpoint, c_status, c_stop }; //array of all commands to iterate over
 //NOTE: would be nice to create a "Command Queue" for backlogging commands -> Need to create state machine for Node system
@@ -91,7 +93,7 @@ struct TF_Muscle {
     //CONTROL MODE
     bool enabled = false;
     ctrl_modes mode = PERCENT;
-    floate setpoint_percent;
+    float setpoint_percent;
     float setpoint_volts;
     float setpoint_amps;
     float setpoint_degrees;
@@ -127,13 +129,13 @@ struct TF_Muscle {
         switch (mode)
         {
         case VOLTS:
-            m_setpoint_volts[m] = setpoint;
+            setpoint_volts = setpoint;
             break;
         case CURRENT:
-            m_setpoint_amps[m] = setpoint;
+            setpoint_amps = setpoint;
             break;
         case TEMP:
-            m_setpoint_degrees[m] = setpoint;
+            setpoint_degrees = setpoint;
             break;
         default:
             break;
@@ -142,14 +144,17 @@ struct TF_Muscle {
 //init muscles
 } m_1, m_2, m_3; //update parameter MUSCLE_CNT when new muscle is added
 
-m_1.mosfet_pin = 3;
-m_1.curr_pin = A0;
+void initMuscles() {
 
-m_2.mosfet_pin = 5;
-m_2.curr_pin = A1;
+  m_1.mosfet_pin = 3;
+  m_1.curr_pin = A0;
 
-m_3.mosfet_pin = 6;
-m_3.curr_pin = A2;
+  m_2.mosfet_pin = 5;
+  m_2.curr_pin = A1;
+
+  m_3.mosfet_pin = 6;
+  m_3.curr_pin = A2;
+}
 
 TF_Muscle muscles[MUSCLE_CNT] = { m_1, m_2, m_3 };
 
@@ -161,12 +166,15 @@ TF_Muscle muscles[MUSCLE_CNT] = { m_1, m_2, m_3 };
 //=============================================================================
 
 void setup() {
-    Serial.begin(115200);
-    
-    //init mosfet trigger pins
-    for(int m = 0; m < MUSCLE_CNT; m++) {
-        muscles[m].init();
-    }
+  Serial.begin(115200);
+
+  initCommands();
+  initMuscles();
+
+  //init mosfet trigger pins
+  for(int m = 0; m < MUSCLE_CNT; m++) {
+      muscles[m].init();
+  }
 }
 
 String command; //for processing serial command
