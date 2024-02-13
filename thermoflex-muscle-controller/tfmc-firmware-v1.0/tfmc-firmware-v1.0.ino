@@ -1,6 +1,6 @@
 /*=============================================================================
 *
-* ThermoFlex Muscle Controller Firmware
+* ThermoFlex Node Muscle Controller Firmware
 * Author: Mark Dannemiller
 *
 *=============================================================================*/
@@ -8,32 +8,67 @@
 
 
 //=============================================================================
-// ThermoFlex constants
+// TF Node Defaults
 //=============================================================================
 
-enum ctrl_modes { VOLTS, CURRENT, TEMP, PULSE_CNT, PULSE_INF };
+#define CTRL_MODE_CNT 4
+enum ctrl_modes { PERCENT, VOLTS, AMPS, DEGREES };
+const String ctrl_modes_str[CTRL_MODE_CNT] = { "percent", "volts", "amps", "degrees" };
 #define SIGNAL_TIMEOUT 2.0 //amount of time between receiving master commands before auto-disable
-#define COMMAND_CNT 5 //number of commands
+
+// TF Node Commands ===========================================================
+#define COMMAND_CNT 6 //number of commands
+#define PARAM_MAX 20 //parameter array will be this size
 const enum command_type  { SETMODE, SETSETPOINT, GETDATA, SETENABLE, STOP };
 const String command_type_str[] = { "SETMODE", "SETSETPOINT", "GETDATA", "SETENABLE", "STOP"};
 
+//Command is the primitive object sent from a master device to this Node
+//Note, commands are sent top-down from (Master Device -> Master Node -> Slave Nodes)
+struct Command {
+    String name;                                  //used to identify command being run
+    byte code;                                    //every command will be assigned an 8-bit code.  No code should repeat.
+    byte params[PARAM_MAX];                       //parameters are passed into the referenced execute() function
+    int param_cnt;                                //incremented when a new command is added
+    void (*execute)(byte _params[PARAM_MAX]);     //reference function to execute when command is called
+    void addParameter(byte _param) {
+        params[param_cnt] = _param; param_cnt++; }//adds parameter to command "list"
+} c_reset, c_setEnable, c_setMode, c_setSetpoint, c_status, c_stop;
+//make sure to update COMMAND_CNT parameter when adding a new command
+
+c_reset.name = "reset";
+c_reset.code = 0xFF; //all 1 bits
+
+c_setEnable.name = "enable";
+c_setEnable.code = 0x01;
+
+c_setMode.name = "set-mode";
+c_setMode.code = 0x02;
+
+c_setSetpoint.name = "set-setpoint";
+c_setSetpoint.code = 0x03;
+
+c_status.name = "status";
+c_status.code = 0x04;
+
+c_stop.name = "stop";
+c_stop.code = 0x05;
+
+Command c_commands[COMMAND_CNT] = { c_reset, c_setEnable, c_setMode, c_setSetpoint, c_status, c_stop }; //array of all commands to iterate over
+//NOTE: would be nice to create a "Command Queue" for backlogging commands -> Need to create state machine for Node system
 
 //=============================================================================
-// ThermoFlex configuration
+// TF Node Configuration
 //=============================================================================
 
 #define MUSCLE_CNT 3
 #define SHIELD_VERSION "1.0"
 #define FIRMWARE_VERSION "1.0-dev"
-#define VRD_SCALE_FACTOR 0 //**TODO
+#define VRD_SCALE_FACTOR 1 //TO-DO
 //pinout
 #define VRD_PIN A4
 
-const int MOSFET[MUSCLE_CNT] = { 3, 5, 6 }; //define the pinout of each muscle mosfet trigger
-const int CURR_PIN[MUSCLE_CNT] = { A0, A1, A2 };
-
 //=============================================================================
-// Diagnostic variables
+// Diagnostic Variables
 //=============================================================================
 
 const int ERR_LOW_VOLT = 0; //low battery error
@@ -44,26 +79,85 @@ unsigned long timeout_timer;
 
 
 //=============================================================================
-// Control variables
+// Control Variables
 //=============================================================================
 
-bool m_enabled[MUSCLE_CNT] = { false, false, false }; //eventually wrap into class?
-ctrl_modes m_mode[MUSCLE_CNT] = { VOLTS, VOLTS, VOLTS };
-float m_setpoint_volts[MUSCLE_CNT] = { 0, 0, 0 };
-float m_setpoint_amps[MUSCLE_CNT] = { 0, 0, 0 };
-float m_setpoint_degrees[MUSCLE_CNT] = { 0, 0, 0 };
+//Every muscle is controlled through open-loop (percent) or closed-loop (volt, amp, degree, sensor**) mode
+struct TF_Muscle {
+    //I/O
+    int mosfet_pin;
+    int curr_pin;
 
-bool m_pulse_val[MUSCLE_CNT] = { false, false, false }; //switches from on/off during pulse interval
-float m_pulse_on = 0.0f; //duration of pulse on
-float m_pulse_off = 0.0f; //duration of pulse off
-int m_pulse_cnt; //number of pulses left when in PULSE_CNT mode
-unsigned long m_pulse_timer;
+    //CONTROL MODE
+    bool enabled = false;
+    ctrl_modes mode = PERCENT;
+    floate setpoint_percent;
+    float setpoint_volts;
+    float setpoint_amps;
+    float setpoint_degrees;
+
+    //PULSE SETUP
+    bool pulse_state = false; //on/off state of pulse cycle
+    float pulse_on_time = 1.0f;
+    float pulse_off_time = 1.0f;
+    int pulse_cnt = -2; //-2 for continuous mode, -1 for infinite pulse, >0 for finite pulse
+    unsigned long pulse_timer;
+
+    void init() {
+        pinMode(mosfet_pin, OUTPUT);
+    }
+
+    void update() {
+        
+    }
+
+    void enable() {
+
+    }
+
+    void disable() {
+
+    }
+
+    void setMode(ctrl_modes _mode) {
+        mode = _mode;
+    }
+
+    void setSetpoint() {
+        switch (mode)
+        {
+        case VOLTS:
+            m_setpoint_volts[m] = setpoint;
+            break;
+        case CURRENT:
+            m_setpoint_amps[m] = setpoint;
+            break;
+        case TEMP:
+            m_setpoint_degrees[m] = setpoint;
+            break;
+        default:
+            break;
+        }
+    }
+//init muscles
+} m_1, m_2, m_3; //update parameter MUSCLE_CNT when new muscle is added
+
+m_1.mosfet_pin = 3;
+m_1.curr_pin = A0;
+
+m_2.mosfet_pin = 5;
+m_2.curr_pin = A1;
+
+m_3.mosfet_pin = 6;
+m_3.curr_pin = A2;
+
+TF_Muscle muscles[MUSCLE_CNT] = { m_1, m_2, m_3 };
 
 
 
 
 //=============================================================================
-// Arduino Operation Functions
+// TF Node Arduino Operation Functions
 //=============================================================================
 
 void setup() {
@@ -71,7 +165,7 @@ void setup() {
     
     //init mosfet trigger pins
     for(int m = 0; m < MUSCLE_CNT; m++) {
-        pinMode(m, OUTPUT);
+        muscles[m].init();
     }
 }
 
@@ -114,49 +208,31 @@ void loop() {
   }
 }
 
+void reset() {
+
+}
+
 
 //=============================================================================
 // Muscle Control/Config Functions
 //=============================================================================
 
-//enable muscle at index m
-void enable(int m) {
-  m_enabled[m] = true;
-}
-
-//disable muscle at index m
-void disable(int m) {
-  m_enabled[m] = false;
-}
-
 //disable all muscles
 void disable() {
-  for(int i=0; i<MUSCLE_CNT; i++) { m_enabled[i] = false; };
+  for(int i=0; i<MUSCLE_CNT; i++) { muscles[i].disable(); };
 }
 
 //set mode for muscle m
-void set_mode(int m, ctrl_modes mode) {
-  m_mode[m] = mode;
+void setMode(int m, ctrl_modes mode) {
+  muslces[m].setMode(mode);
 }
 
 //set setpoint, specify mode
-void set_setpoint(int m, ctrl_modes mode, float setpoint) {
-  switch (mode)
-  {
-  case VOLTS:
-    m_setpoint_volts[m] = setpoint;
-    break;
-  case CURRENT:
-    m_setpoint_amps[m] = setpoint;
-    break;
-  case TEMP:
-    m_setpoint_degrees[m] = setpoint;
-    break;
-  default:
-    break;
-  }
+void setSetpoint(int m, ctrl_modes mode, float setpoint) {
+
 }
 
+//********************************************************************************************************************
 void updateMuscles() {
   //loop through updating all muscles
   for(int m=0; m<MUSCLE_CNT; m++) {
@@ -184,6 +260,7 @@ void updateMuscles() {
 // Sensor Read Functions
 //=============================================================================
 
+//********************************************************************************************************************
 //https://www.engineersgarage.com/acs712-current-sensor-with-arduino/
 float getMuscleAmps() {
   float AcsValue=0.0,Samples=0.0,AvgAcs=0.0,raw=0.0;
