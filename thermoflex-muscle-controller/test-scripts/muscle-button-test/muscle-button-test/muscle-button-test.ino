@@ -15,6 +15,7 @@ void setup() {
   pinMode(M1, OUTPUT);
   pinMode(M2, OUTPUT);
   pinMode(M3, OUTPUT);
+  pinMode(button_in, INPUT);
 }
 
 void loop() {
