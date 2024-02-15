@@ -27,17 +27,19 @@ const String command_type_str[] = { "SETMODE", "SETSETPOINT", "GETDATA", "SETENA
 struct Command {
     String name;                                  //used to identify command being run
     byte code;                                    //every command will be assigned an 8-bit code.  No code should repeat.
-    byte params[PARAM_MAX];                       //parameters are passed into the referenced execute() function
+    String params[PARAM_MAX];                       //parameters are passed into the referenced execute() function
     int param_cnt;                                //incremented when a new command is added
-    void (*execute)(byte _params[PARAM_MAX]);     //reference function to execute when command is called
-    void addParameter(byte _param) {
+    void (*exec_func)(String _params[PARAM_MAX]);     //reference function to execute when command is called
+    void addParameter(String _param) {
         params[param_cnt] = _param; param_cnt++; }//adds parameter to command "list"
+    void execute() { exec_func(params) }
 } c_reset, c_setEnable, c_setMode, c_setSetpoint, c_status, c_stop;
 //make sure to update COMMAND_CNT parameter when adding a new command
 
 void initCommands() {
   c_reset.name = "reset";
   c_reset.code = 0xFF; //all 1 bits
+  c_reset.exec_func = reset;
 
   c_setEnable.name = "enable";
   c_setEnable.code = 0x01;
@@ -154,6 +156,11 @@ void initMuscles() {
 
   m_3.mosfet_pin = 6;
   m_3.curr_pin = A2;
+
+  //init mosfet trigger pins
+  for(int m = 0; m < MUSCLE_CNT; m++) {
+      muscles[m].init();
+  }
 }
 
 TF_Muscle muscles[MUSCLE_CNT] = { m_1, m_2, m_3 };
@@ -170,53 +177,54 @@ void setup() {
 
   initCommands();
   initMuscles();
-
-  //init mosfet trigger pins
-  for(int m = 0; m < MUSCLE_CNT; m++) {
-      muscles[m].init();
-  }
 }
 
 String command; //for processing serial command
-String params;
+String params_str;
 
 void loop() {
     
   updateMuscles();
 
   if(Serial.available()) {
+    //implementation of string commands.  Will need to switch to code-based commands
     command = Serial.readStringUntil(' ');
     command.trim();
-    command = command.toUpperCase();
+    command = command.toLowerCase();
 
-    params = Serial.readStringUntil("/n");
-    params.trim();
+    params_str = Serial.readStringUntil("/n");
+    params_str.trim();
 
-    switch (command)
-    {
-    case command_type_str[SETMODE]:
-      /* code */
-      break;
-    case command_type_str[SETSETPOINT]:
-      /* code */
-      break;
-    case command_type_str[GETDATA]:
-      /* code */
-      break;
-    case command_type_str[SETENABLE]:
-      /* code */
-      break;
-    case command_type_str[STOP]:
-      /* code */
-      break;
-
-    default:
-      break;
+    Command selected;
+    bool found = false;
+    
+    //check if command matches
+    for(int c=0; c<COMMAND_CNT; c++) {
+      if(c_commands[c].name == command) {
+        selected = c_commands[c];
+        Serial.println(selected.name);
+        found = true;
+      }
+    }
+    if(found) {
+      String current_param = "";
+      for(int i=0; i<len(params_str); i++) {
+        if(params_str[i] == ' ') {
+          selected.addParameter(current_param); //when space is found, pass buffer as parameter
+          Serial.println(current_param);
+          current_param = "";
+        }
+        else {
+          current_param.concat(params_str[i]); //add character to string buffer
+        }
+      }
+      selected.addParameter(current_param); //add last parameter
+      selected.execute(); //call command's referenced method
     }
   }
 }
 
-void reset() {
+void reset(String params[PARAM_MAX]) {
 
 }
 
