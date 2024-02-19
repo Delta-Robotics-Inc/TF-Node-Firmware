@@ -19,46 +19,143 @@ const String ctrl_modes_str[CTRL_MODE_CNT] = { "percent", "volts", "amps", "degr
 // TF Node Commands ===========================================================
 #define COMMAND_CNT 6 //number of commands
 #define PARAM_MAX 20 //parameter array will be this size
-enum command_type  { SETMODE, SETSETPOINT, GETDATA, SETENABLE, STOP };
-const String command_type_str[] = { "SETMODE", "SETSETPOINT", "GETDATA", "SETENABLE", "STOP"};
 
 //Command is the primitive object sent from a master device to this Node
 //Note, commands are sent top-down from (Master Device -> Master Node -> Slave Nodes)
-struct Command {
-    String name;                                  //used to identify command being run
-    byte code;                                    //every command will be assigned an 8-bit code.  No code should repeat.
-    String params[PARAM_MAX];                       //parameters are passed into the referenced execute() function
-    int param_cnt;                                //incremented when a new command is added
-    void (*exec_func)(String _params[PARAM_MAX]);     //reference function to execute when command is called
+//Inherit from this class to create a new command (see other command classes below)
+class Command {
+  public:
+    String name = "default";  //used to identify command being run
+    byte code = 0x00;       //every command will be assigned an 8-bit code.  No code should repeat.
+    String params[PARAM_MAX]; //parameters are passed into the referenced execute() function
+    int param_cnt;            //incremented when a new command is added
+    
+    Command() {} //empty constructor
+
+    Command(String _name, byte _code) {
+      name = _name;
+      code = _code;
+    }
+    
+    //adds parameter to command's parameter "list"
     void addParameter(String _param) {
-        params[param_cnt] = _param; param_cnt++; }//adds parameter to command "list"
-    void execute() { exec_func(params) }
-} c_reset, c_setEnable, c_setMode, c_setSetpoint, c_status, c_stop;
-//make sure to update COMMAND_CNT parameter when adding a new command
+        params[param_cnt] = _param; 
+        param_cnt++; 
+        Serial.println("Found param: " + _param);
+    }
+    
+    //must be overriden by inherited members of this command
+    void execute() {  }
 
-void initCommands() {
-  c_reset.name = "reset";
-  c_reset.code = 0xFF; //all 1 bits
-  c_reset.exec_func = reset;
+    static Command c_commands[COMMAND_CNT]; //array of all commands to iterate over
+    //make sure to update COMMAND_CNT parameter when adding a new command
+    //NOTE: would be nice to create a "Command Queue" for backlogging commands -> Need to create state machine for Node system
 
-  c_setEnable.name = "enable";
-  c_setEnable.code = 0x01;
+    //attempts to locate command by name from list of commands
+    static bool getCommandByName(String _name, Command* c) {
+      _name.toLowerCase();
+      for(int i=0; i<COMMAND_CNT; i++) {
+        if(c_commands[i].name == _name) {
+          c = &c_commands[i];
+          return true;
+        }
+      }
+      //command not found
+      return false;
+    }
 
-  c_setMode.name = "set-mode";
-  c_setMode.code = 0x02;
+    static bool parseCommandStr(String consoleIn, Command* cmd) {
+        //converts an input string to the corresponding command and parameters
+        //input string should be "name par1 par2 par3 .. parn"
+        int param_index = consoleIn.indexOf(' '); //start of parameters
+        param_index = param_index==-1 ? consoleIn.length() : param_index; //if no spaces were found, parse entire input as name
 
-  c_setSetpoint.name = "set-setpoint";
-  c_setSetpoint.code = 0x03;
+        String _name = consoleIn.substring(0, param_index);
+        bool found = getCommandByName(_name, cmd); //whether command was found
+        cmd->param_cnt = 0; //effectively clears params
 
-  c_status.name = "status";
-  c_status.code = 0x04;
+        //continue if command was found and has parameters to parse
+        if(found && param_index != consoleIn.length()) {
+          String param_str = consoleIn.substring(param_index+1, consoleIn.length());
+          int next_index = param_str.indexOf(' '); //index of next param start
+          
+          //iterate through parameters, splitting at ' ' characters, and add to list of params
+          for(int i = 0; i < PARAM_MAX && param_index != -1; i++) {
+            String param = param_str.substring(param_index+1, next_index);
+            param_str = param_str.substring(next_index, param_str.length());
+            cmd->addParameter(param); //add parameter to array of parameters
+            param_index = next_index;
+            next_index = param_str.indexOf(' '); //index of next param start
+          }
 
-  c_stop.name = "stop";
-  c_stop.code = 0x05;
-}
+          if(cmd->param_cnt < PARAM_MAX)
+            cmd->addParameter(param_str); //add last parameter since another space will not be located
+        }
+        return found;
+    }
+};
 
-Command c_commands[COMMAND_CNT] = { c_reset, c_setEnable, c_setMode, c_setSetpoint, c_status, c_stop }; //array of all commands to iterate over
-//NOTE: would be nice to create a "Command Queue" for backlogging commands -> Need to create state machine for Node system
+class Reset : public Command {
+  public:
+    Reset() : Command("reset", 0xFF) {
+      //additional init
+    }
+    void execute() {
+
+    }
+} c_reset;
+
+class SetEnable : public Command {
+  public:
+    SetEnable() : Command("enable", 0x01) {
+      //additional init
+    }
+    void execute() {
+
+    }
+} c_setEnable;
+
+class SetMode : public Command {
+  public:
+    SetMode() : Command("set-mode", 0x02) {
+      //additional init
+    }
+    void execute() {
+
+    }
+} c_setMode;
+
+class SetSetpoint : public Command {
+  public:
+    SetSetpoint() : Command("set-setpoint", 0x03) {
+      //additional init
+    }
+    void execute() {
+
+    }
+} c_setSetpoint;
+
+class Status : public Command {
+  public:
+    Status() : Command("status", 0x04) {
+      //additional init
+    }
+    void execute() {
+
+    }
+} c_status;
+
+class Stop : public Command {
+  public:
+    Stop() : Command("stop", 0x05) {
+      //additional init
+    }
+    void execute() {
+
+    }
+} c_stop;
+
+Command Command::c_commands[COMMAND_CNT] = { c_reset, c_setEnable, c_setMode, c_setSetpoint, c_status, c_stop };
 
 //=============================================================================
 // TF Node Configuration
@@ -107,6 +204,8 @@ struct TF_Muscle {
     int pulse_cnt = -2; //-2 for continuous mode, -1 for infinite pulse, >0 for finite pulse
     unsigned long pulse_timer;
 
+    static TF_Muscle muscles[MUSCLE_CNT];
+
     void init() {
         pinMode(mosfet_pin, OUTPUT);
     }
@@ -127,16 +226,16 @@ struct TF_Muscle {
         mode = _mode;
     }
 
-    void setSetpoint() {
-        switch (mode)
+    void setSetpoint(ctrl_modes _mode, float setpoint) {
+        switch (_mode)
         {
         case VOLTS:
             setpoint_volts = setpoint;
             break;
-        case CURRENT:
+        case AMPS:
             setpoint_amps = setpoint;
             break;
-        case TEMP:
+        case DEGREES:
             setpoint_degrees = setpoint;
             break;
         default:
@@ -145,6 +244,8 @@ struct TF_Muscle {
     }
 //init muscles
 } m_1, m_2, m_3; //update parameter MUSCLE_CNT when new muscle is added
+
+TF_Muscle TF_Muscle::muscles[MUSCLE_CNT] = { m_1, m_2, m_3 };
 
 void initMuscles() {
 
@@ -159,12 +260,9 @@ void initMuscles() {
 
   //init mosfet trigger pins
   for(int m = 0; m < MUSCLE_CNT; m++) {
-      muscles[m].init();
+      TF_Muscle::muscles[m].init();
   }
 }
-
-TF_Muscle muscles[MUSCLE_CNT] = { m_1, m_2, m_3 };
-
 
 
 
@@ -175,12 +273,10 @@ TF_Muscle muscles[MUSCLE_CNT] = { m_1, m_2, m_3 };
 void setup() {
   Serial.begin(115200);
 
-  initCommands();
   initMuscles();
 }
 
-String command; //for processing serial command
-String params_str;
+String command_str; //for processing serial command
 
 void loop() {
     
@@ -188,37 +284,14 @@ void loop() {
 
   if(Serial.available()) {
     //implementation of string commands.  Will need to switch to code-based commands
-    command = Serial.readStringUntil(' ');
-    command.trim();
-    command = command.toLowerCase();
-
-    params_str = Serial.readStringUntil("/n");
-    params_str.trim();
+    command_str = Serial.readStringUntil('/n');
+    command_str.trim();
+    command_str.toLowerCase();
 
     Command selected;
-    bool found = false;
-    
-    //check if command matches
-    for(int c=0; c<COMMAND_CNT; c++) {
-      if(c_commands[c].name == command) {
-        selected = c_commands[c];
-        Serial.println(selected.name);
-        found = true;
-      }
-    }
+    bool found = Command::parseCommandStr(command_str, &selected);
+
     if(found) {
-      String current_param = "";
-      for(int i=0; i<len(params_str); i++) {
-        if(params_str[i] == ' ') {
-          selected.addParameter(current_param); //when space is found, pass buffer as parameter
-          Serial.println(current_param);
-          current_param = "";
-        }
-        else {
-          current_param.concat(params_str[i]); //add character to string buffer
-        }
-      }
-      selected.addParameter(current_param); //add last parameter
       selected.execute(); //call command's referenced method
     }
   }
