@@ -43,9 +43,21 @@ class Command {
         param_cnt++; 
         Serial.println("Found param: " + _param);
     }
+
+    //displays the given name and parameters passed into command
+    void serialDisplayInput() {
+      Serial.print("Name: ");
+      Serial.print(name);
+      Serial.print(" Params: ");
+      for(int i = 0; i < param_cnt; i++) {
+        Serial.print(params[i] + ' ');
+      }
+    }
     
     //must be overriden by inherited members of this command
-    void execute() {  }
+    void execute() { 
+      serialDisplayInput(); //for now, only execution will be displaying back what was passed in
+    }
 
     static Command c_commands[COMMAND_CNT]; //array of all commands to iterate over
     //make sure to update COMMAND_CNT parameter when adding a new command
@@ -100,8 +112,9 @@ class Reset : public Command {
     Reset() : Command("reset", 0xFF) {
       //additional init
     }
-    void execute() {
-
+    void execute() : execute() {
+       Command::execute();
+       reset();
     }
 } c_reset;
 
@@ -110,8 +123,17 @@ class SetEnable : public Command {
     SetEnable() : Command("enable", 0x01) {
       //additional init
     }
-    void execute() {
-
+    void execute {
+      Command::execute();
+      //additional execute
+      bool state = params[1].toLowerCase() == "true" ? true : false;
+      if(params[0] == "all") {
+         setEnableAll(state);
+      }
+      else {
+         int m = params[0].toInt();
+         TF_Muscle::muscles[m].setEnable(state);
+      }
     }
 } c_setEnable;
 
@@ -121,7 +143,14 @@ class SetMode : public Command {
       //additional init
     }
     void execute() {
-
+      Command::execute();
+      //additional execute
+      int m = params[0].toInt();
+      ctrl_modes mode = params[1].toLowerCase() == ctrl_modes_str[PERCENT] ? PERCENT :
+                        params[1].toLowerCase() == ctrl_modes_str[VOLTS] ? VOLTS :
+                        params[1].toLowerCase() == ctrl_modes_str[AMPS] ? AMPS :
+                        params[1].toLowerCase() == ctrl_modes_str[DEGREES] ? DEGREES : PERCENT; //default is percent
+      TF_Muscle::muscles[m].setMode(mode);
     }
 } c_setMode;
 
@@ -131,7 +160,8 @@ class SetSetpoint : public Command {
       //additional init
     }
     void execute() {
-
+      Command::execute();
+      //additional execute
     }
 } c_setSetpoint;
 
@@ -141,7 +171,8 @@ class Status : public Command {
       //additional init
     }
     void execute() {
-
+      Command::execute();
+      //additional execute
     }
 } c_status;
 
@@ -151,7 +182,8 @@ class Stop : public Command {
       //additional init
     }
     void execute() {
-
+      Command::execute();
+      //additional execute
     }
 } c_stop;
 
@@ -211,19 +243,39 @@ struct TF_Muscle {
     }
 
     void update() {
-        
+      //write to muscle if enabled
+      if(enabled) {
+        if(mode == PERCENT) {
+          analogWrite(mosfet_pin, percentToPWM(setpoint_percent)); //write pwm to mosfet m
+        }
+        else if(mode == PULSE_CNT) {
+          //unimplemented
+        }
+        else if(mode == PULSE_INF) {
+          //unimplemented
+        }
+  
+        //note: CURRENT and TEMP modes are unimplemented
+      }
+      else {
+        analogWrite(MOSFET[m], 0); //disabled means write 0% power
+      }
+    }
+
+    void setEnable(bool state) {
+       enabled = state;
     }
 
     void enable() {
-
+      enabled = true;
     }
 
     void disable() {
-
+       enabled = false;
     }
 
     void setMode(ctrl_modes _mode) {
-        mode = _mode;
+       mode = _mode;
     }
 
     void setSetpoint(ctrl_modes _mode, float setpoint) {
@@ -242,6 +294,22 @@ struct TF_Muscle {
             break;
         }
     }
+
+    //********************************************************************************************************************
+    //https://www.engineersgarage.com/acs712-current-sensor-with-arduino/
+    float getMuscleAmps() {
+      float AcsValue=0.0,Samples=0.0,AvgAcs=0.0,raw=0.0;
+    
+      for (int x = 0; x < 30; x++){ //Get 150 samples
+        AcsValue = analogRead(curr_pin);     //Read current sensor values   
+        Samples = Samples + AcsValue;  //Add samples together
+      }
+      raw=Samples/30.0;//Taking Average of Samples
+    
+      float amps = (2.5 - (raw * (5.0 / 1024.0)))/0.100; //5.0/1024 is conversion ratio of volts/native unit
+      return amps;
+    }
+
 //init muscles
 } m_1, m_2, m_3; //update parameter MUSCLE_CNT when new muscle is added
 
@@ -288,17 +356,19 @@ void loop() {
     command_str.trim();
     command_str.toLowerCase();
 
-    Command selected;
+    Command selected; //initialize default command (will be overriden if user inputted the name or code of a real command)
     bool found = Command::parseCommandStr(command_str, &selected);
+    selected.execute(); //for now, execute whatever command was found for debugging purposes
 
+    //if the command was sucessfully found,
     if(found) {
-      selected.execute(); //call command's referenced method
+      //selected.execute(); //call command's referenced method
     }
   }
 }
 
-void reset(String params[PARAM_MAX]) {
-
+void reset() {
+  disable();
 }
 
 
@@ -306,63 +376,22 @@ void reset(String params[PARAM_MAX]) {
 // Muscle Control/Config Functions
 //=============================================================================
 
-//disable all muscles
-void disable() {
-  for(int i=0; i<MUSCLE_CNT; i++) { muscles[i].disable(); };
-}
-
-//set mode for muscle m
-void setMode(int m, ctrl_modes mode) {
-  muslces[m].setMode(mode);
-}
-
-//set setpoint, specify mode
-void setSetpoint(int m, ctrl_modes mode, float setpoint) {
-
+//enable/disable all muscles
+void setEnableAll(bool state) {
+  for(int m=0; m<MUSCLE_CNT; m++) { TF_Muscle::muscles[m].setEnable(state); };
 }
 
 //********************************************************************************************************************
 void updateMuscles() {
   //loop through updating all muscles
   for(int m=0; m<MUSCLE_CNT; m++) {
-    //write to muscle if enabled
-    if(m_enabled[m]) {
-      if(m_mode[m] == VOLTS) {
-        analogWrite(MOSFET[m], percentToPWM(m_setpoint_volts[m])); //write pwm to mosfet m
-      }
-      else if(m_mode[m] == PULSE_CNT) {
-        //unimplemented
-      }
-      else if(m_mode[m] == PULSE_INF) {
-        //unimplemented
-      }
-
-      //note: CURRENT and TEMP modes are unimplemented
-    }
-    else {
-      analogWrite(MOSFET[m], 0); //disabled means write 0% power
-    }
+    TF_Muscle::muscles[m].update()
   }
 }
 
 //=============================================================================
 // Sensor Read Functions
 //=============================================================================
-
-//********************************************************************************************************************
-//https://www.engineersgarage.com/acs712-current-sensor-with-arduino/
-float getMuscleAmps() {
-  float AcsValue=0.0,Samples=0.0,AvgAcs=0.0,raw=0.0;
-
-  for (int x = 0; x < 30; x++){ //Get 150 samples
-  AcsValue = analogRead(CURR_PIN);     //Read current sensor values   
-  Samples = Samples + AcsValue;  //Add samples together
-  }
-  raw=Samples/30.0;//Taking Average of Samples
-
-  float amps = (2.5 - (raw * (5.0 / 1024.0)))/0.100; //5.0/1024 is conversion ratio of volts/native unit
-  return amps;
-}
 
 float getBatteryVolts() {
   return (analogRead(VRD_PIN) * VRD_SCALE_FACTOR);
