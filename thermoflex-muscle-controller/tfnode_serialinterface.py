@@ -41,7 +41,7 @@ command_codes = {
 
 #define types of parameters and their possible keys.  Example: types of "muscle" parameter would include the "m1" muscle with its corresponding hex code to transmit
 parameter_codes = {
-    "device": {"all": 0xFF, "master": 0x00, "parse": numToHex},
+    "device": {"all": 0xFF, "node": 0x00, "parse": numToHex},
     "muscle": {"all": 0xFF, "m1": 0x10, "m2": 0x11, "m3": 0x12, "parse": convertIntMuscle},
     "bool": {
         "true": 0x01, "false": 0x00, #want boolean to accept any variation of words that mean "true"
@@ -63,3 +63,22 @@ parameter_codes = {
 #COMMAND_KEY PARAM1 PARAM2 ... PARAMN
 def sendCommand(key : str, params : list):
     pass
+
+def parseCommand(usr_input):
+    usr_input = usr_input.split()
+    name = usr_input[0]
+    params = usr_input[1:]
+    try:
+        print("name:", name, "code:", hex(command_codes[name][0]))
+        print("params:", params)
+        #for i in range(0, len(params)):
+            #param = params[i]
+            #print("param: ", param, "code:", hex(parameter_codes[command_codes[name][i+1][param]]))
+    except:
+        print("Invalid command.")
+    
+
+
+while(True):
+    command = input("node@serial > ")
+    parseCommand(command)

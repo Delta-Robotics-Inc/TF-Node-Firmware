@@ -1,0 +1,1 @@
+//place all functions from firmware here
