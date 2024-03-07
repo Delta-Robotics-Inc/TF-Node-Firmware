@@ -11,24 +11,16 @@
 // Control Variables
 //=============================================================================
 
-TF_Muscle TF_Muscle::muscles[MUSCLE_CNT] = { m_1, m_2, m_3 };
-Command Command::c_commands[COMMAND_CNT] = { c_reset, c_setEnable, c_setMode, c_setSetpoint, c_status, c_stop };
+TF_Muscle* TF_Muscle::muscles[MUSCLE_CNT] = { &m_1, &m_2, &m_3 };
+Command* Command::c_commands[COMMAND_CNT] = { &c_default, &c_reset, &c_setEnable, &c_setMode, &c_setSetpoint, &c_status, &c_stop };
 
 void initMuscles() {
-
-  m_1.mosfet_pin = 3;
-  m_1.curr_pin = A0;
-
-  m_2.mosfet_pin = 5;
-  m_2.curr_pin = A1;
-
-  m_3.mosfet_pin = 6;
-  m_3.curr_pin = A2;
-
   //init mosfet trigger pins
-  for(int m = 0; m < MUSCLE_CNT; m++) {
-      TF_Muscle::muscles[m].init();
-  }
+  TF_Muscle::muscles[0]->init("M1", 3, A0);
+  TF_Muscle::muscles[1]->init("M2", 5, A1);
+  TF_Muscle::muscles[2]->init("M3", 6, A2);
+
+  m_1.setEnable(false);
 }
 
 
@@ -39,6 +31,13 @@ void initMuscles() {
 void setup() {
   Serial.begin(115200);
 
+  /*while(!Serial.available()) { }
+  Serial.println("TF-Node Device initializing...");
+  Serial.print("Node shield version: ");
+  Serial.println(SHIELD_VERSION);
+  Serial.print("Node firmware version: ");
+  Serial.println(FIRMWARE_VERSION);*/
+
   initMuscles();
 }
 
@@ -46,46 +45,27 @@ String command_str; //for processing serial command
 
 void loop() {
     
-  updateMuscles();
+  TF_Muscle::updateMuscles();
 
   if(Serial.available()) {
     //implementation of string commands.  Will need to switch to code-based commands
-    command_str = Serial.readStringUntil('/n');
+    command_str = Serial.readStringUntil('\n');
     command_str.trim();
     command_str.toLowerCase();
 
     Command selected; //initialize default command (will be overriden if user inputted the name or code of a real command)
-    bool found = Command::parseCommandStr(command_str, &selected);
-    selected.execute(); //for now, execute whatever command was found for debugging purposes
+    bool found = false;
+    Command* cmd = Command::parseCommandStr(command_str, found);
+    cmd->execute(); //for now, execute whatever command was found for debugging purposes
 
     //if the command was sucessfully found,
     if(found) {
       //selected.execute(); //call command's referenced method
-      Serial.println("Command was valid");
+      Serial.println("Command was valid.");
     }
-  }
-}
-
-
-//=============================================================================
-// Muscle Control/Config Functions
-//=============================================================================
-
-//enable/disable all muscles
-void setEnableAll(bool state) {
-  for(int m=0; m<MUSCLE_CNT; m++) { TF_Muscle::muscles[m].setEnable(state); };
-}
-
-void resetAll() {
-  for(int m=0; m<MUSCLE_CNT; m++) { TF_Muscle::muscles[m].setEnable(false); };
-}
-
-
-//********************************************************************************************************************
-void updateMuscles() {
-  //loop through updating all muscles
-  for(int m=0; m<MUSCLE_CNT; m++) {
-    TF_Muscle::muscles[m].update();
+    else {
+      Serial.println("Error: unrecognized command.");
+    }
   }
 }
 
