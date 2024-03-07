@@ -22,3 +22,19 @@ The below commands that specify `<device> .. (default all)` will work without pa
 | set-setpoint | \<device> = all, m1, m2 .. etc<br>\<mode> = percent, amps, volts, degrees<br>\<setpoint> = `float` | sets the value for one or all devices' setpoints at the specified mode |
 | status       | \<device\> = all, m1, m2 .. etc (default all)                                                      | displays system info of one or all devices (including the Node itself) |
 | stop         | \<device\> = all, m1, m2 .. etc (default all)          
+
+## Input Examplea
+
+Here are some example commands to display the syntax:
+
+```
+
+> set-mode m1 volts
+> set-setpoint all volts 5.0
+> set-enable m2 true
+> status
+> status m1
+> reset all
+> reset m3
+
+```
