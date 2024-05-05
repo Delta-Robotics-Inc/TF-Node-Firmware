@@ -1,0 +1,4 @@
+{
+    "board": "arduino:renesas_uno:minima",
+    "sketch": "tfmc-firmware-v1.0\\tfmc-firmware-v1.0.ino"
+}
