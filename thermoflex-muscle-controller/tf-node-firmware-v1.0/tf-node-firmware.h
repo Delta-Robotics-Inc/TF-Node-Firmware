@@ -190,8 +190,9 @@ class TF_Muscle {
       }
       raw=Samples/30.0;//Taking Average of Samples
     
-      float amps = (2.5 - (raw * (5.0 / 1024.0)))/0.100; //5.0/1024 is conversion ratio of volts/native unit
+      float amps = ((raw * (5.0 / 1024.0)) - 2.5)/0.100; //5.0/1024 is conversion ratio of volts/native unit. 2.5 v is 0 A due to positive and negative ability
       return amps;
+      //return analogRead(curr_pin);
     }
 
     //=============================================================================
@@ -269,13 +270,13 @@ class Command {
       Serial.println(' ');
     }
     
-    // must be overriden by inherited members of this command
+    // Must be overriden by inherited members of this command
     virtual void execute() { 
-      serialDisplayInput();  // for now, only execution will be displaying back what was passed in
+      serialDisplayInput();  // For now, only execution will be displaying back what was passed in
     }
 
-    static Command* c_commands[COMMAND_CNT];  // array of all commands to iterate over
-    // make sure to update COMMAND_CNT parameter when adding a new command
+    static Command* c_commands[COMMAND_CNT];  // Array of all commands to iterate over
+    // Make sure to update COMMAND_CNT parameter when adding a new command
     // NOTE: would be nice to create a "Command Queue" for backlogging commands -> Need to create state machine for Node system
 
     // attempts to locate command by name from list of commands

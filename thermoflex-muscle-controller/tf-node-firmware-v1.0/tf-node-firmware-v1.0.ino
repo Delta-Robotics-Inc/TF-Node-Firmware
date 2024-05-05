@@ -67,6 +67,10 @@ void loop() {
       Serial.println("Error: unrecognized command.");
     }
   }
+  else {
+    if(TF_Muscle::muscles[0]->enabled)
+      Serial.println(TF_Muscle::muscles[0]->getMuscleAmps());
+  }
 }
 
 
