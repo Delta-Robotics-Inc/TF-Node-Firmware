@@ -59,7 +59,7 @@ def parse_data():
         #print(amps_line)
         log_time = int(log_time_line[2].strip("\\n'"))
         vbatt = float(vbatt_line[2].rstrip("\\n'"))
-        amps = int(amps_line[2].rstrip("\\n'"))
+        amps = float(amps_line[2].rstrip("\\n'"))
         m1_enabled = True if "true" in m1_enabled_line[2] else False
         #print(log_time)
         #print(m1_enabled)
@@ -93,10 +93,16 @@ while(default_timer() - start < 5.0):
 
 arduino.close()
 
+
+# We can divide the elements of supply voltage (volts) by the corresponding elements of current data (amps), to get resistance (ohms)
+# R = V/I // Multiply by 1000 for result in mOhms
+resist_data = [(V / I) * 1000 for V, I in zip(vbatt_data, amps_data)]
+
 print(time_data)
 print(m1_en_data)
 print(vbatt_data)
 print(amps_data)
+print(resist_data)
 
 
 # Plotting the Vbatt graph
@@ -114,19 +120,22 @@ for i in range(len(time_data) - 1):
             ax1.plot(time_data[i:i+2], vbatt_data[i:i+2], 'b-')  # Blue line for False
 
 # Setting x-axis labels to show every 10th label
-ax1.set_xticks(ticks=time_data[::10])
+#ax1.set_xticks(ticks=time_data[::50])
 # Setting the range for the x-axis and y-axis
 ax1.set_xlim(0, 9000)
 ax1.set_ylim(0, 24)
 
 # Adding title and labels
-ax1.set_title('V_Batt Data')
+ax1.set_title('V_Supp Data')
 ax1.set_xlabel('Log Time (ms)')
-ax1.set_ylabel('Volts')
+ax1.set_ylabel('Supply (V)')
 
 # Displaying the plot
 plt.show()
 
+
+
+# Plotting the Current Data Graph
 # Creating a figure and axis object
 fig2, ax2 = plt.subplots()
 
@@ -139,15 +148,43 @@ for i in range(len(time_data) - 1):
             ax2.plot(time_data[i:i+2], amps_data[i:i+2], 'b-')  # Blue line for False
 
 # Setting x-axis labels to show every 10th label
-ax2.set_xticks(ticks=time_data[::10])
+#ax2.set_xticks(ticks=time_data[::50])
 # Setting the range for the x-axis and y-axis
 ax2.set_xlim(0, 9000)
-ax2.set_ylim(0, 1024)
+ax2.set_ylim(0, 30)
 
 # Adding title and labels
 ax2.set_title('M1 Current Data')
 ax2.set_xlabel('Log Time (ms)')
-ax2.set_ylabel('Current (native units)')
+ax2.set_ylabel('Current (A)')
+
+# Displaying the plot
+plt.show()
+
+
+
+# Plotting the Resistance Data Graph
+# Creating a figure and axis object
+fig3, ax3 = plt.subplots()
+
+# Assuming the data is sorted by time_data
+for i in range(len(time_data) - 1):
+    if(time_data[i] < time_data[i+1]):
+        if m1_en_data[i]:
+            ax3.plot(time_data[i:i+2], resist_data[i:i+2], 'r-')  # Red line for True
+        else:
+            ax3.plot(time_data[i:i+2], resist_data[i:i+2], 'b-')  # Blue line for False
+
+# Setting x-axis labels to show every 10th label
+#ax3.set_xticks(ticks=time_data[::50])
+# Setting the range for the x-axis and y-axis
+ax3.set_xlim(0, 9000)
+ax3.set_ylim(0, 2000)
+
+# Adding title and labels
+ax3.set_title('M1 Resistance Data')
+ax3.set_xlabel('Log Time (ms)')
+ax3.set_ylabel('Resistance (mΩ)')
 
 # Displaying the plot
 plt.show()

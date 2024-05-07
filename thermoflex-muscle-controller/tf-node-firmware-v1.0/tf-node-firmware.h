@@ -9,7 +9,7 @@
 enum ctrl_modes { PERCENT, VOLTS, AMPS, DEGREES };
 const String ctrl_modes_str[CTRL_MODE_CNT] = { "percent", "volts", "amps", "degrees" };
 #define SIGNAL_TIMEOUT 2000  // Amount of time (ms) between receiving master commands before auto-disable
-const unsigned long LOG_MS = 100; // Time between log frames (ms)
+const unsigned long LOG_MS = 20; // Time between log frames (ms)
 
 // TF Node Commands ===========================================================
 #define COMMAND_CNT 8  // number of commands
@@ -195,7 +195,8 @@ class TF_Muscle {
             break;
         }
         stat_str += "| setpoint: " + setpoint_str + '\n';
-        stat_str += "| current: " + String(analogRead(curr_pin)) + " (native units) \n";//String(getMuscleAmps()) + '\n';
+        //stat_str += "| current: " + String(analogRead(curr_pin)) + " (native units) \n";
+        stat_str += "| current: " + String(getMuscleAmps()) + " A \n";
 
         return stat_str;
     }
