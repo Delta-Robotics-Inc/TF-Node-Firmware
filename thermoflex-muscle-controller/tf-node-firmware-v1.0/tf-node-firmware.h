@@ -8,10 +8,11 @@
 #define CTRL_MODE_CNT 4
 enum ctrl_modes { PERCENT, VOLTS, AMPS, DEGREES };
 const String ctrl_modes_str[CTRL_MODE_CNT] = { "percent", "volts", "amps", "degrees" };
-#define SIGNAL_TIMEOUT 2.0  // Amount of time between receiving master commands before auto-disable
+#define SIGNAL_TIMEOUT 2000  // Amount of time (ms) between receiving master commands before auto-disable
+const unsigned long LOG_MS = 100; // Time between log frames (ms)
 
 // TF Node Commands ===========================================================
-#define COMMAND_CNT 7  // number of commands
+#define COMMAND_CNT 8  // number of commands
 #define PARAM_MAX 20  // parameter array will be this size
 
 
@@ -27,6 +28,8 @@ const String ctrl_modes_str[CTRL_MODE_CNT] = { "percent", "volts", "amps", "degr
 #define VRD_PIN A4
 
 void initMuscles();
+String deviceStatus();
+String log();
 
 
 //=============================================================================
@@ -38,6 +41,9 @@ const int ERR_CURRENT_OF = 1; //current overflow error
 byte error = 0b11111111; //error byte transmitted when requested by API call
 
 unsigned long timeout_timer;
+unsigned long log_timer; // Logs every x ms based on logMode
+unsigned long log_start; // Time of start of log
+int nodeLogMode = 0; //0=No log; 1=Device log
 
 
 //=============================================================================
@@ -62,11 +68,11 @@ int percentToPWM(float speed);
 class TF_Muscle {
   public:
     String name = "none";
-    //I/O
+    // I/O
     uint8_t mosfet_pin;
     uint8_t curr_pin;
 
-    //CONTROL MODE
+    // CONTROL MODE
     bool enabled = false;
     ctrl_modes mode = PERCENT;
     float setpoint_percent;
@@ -74,12 +80,15 @@ class TF_Muscle {
     float setpoint_amps;
     float setpoint_degrees;
 
-    //PULSE SETUP
+    // PULSE SETUP
     bool pulse_state = false; //on/off state of pulse cycle
     float pulse_on_time = 1.0f;
     float pulse_off_time = 1.0f;
     int pulse_cnt = -2; //-2 for continuous mode, -1 for infinite pulse, >0 for finite pulse
     unsigned long pulse_timer;
+
+    // STATUS/LOGGING MODE
+    int logMode = 0; // 0=No log; 1=Constant logging (calls status every update)
 
     static TF_Muscle* muscles[MUSCLE_CNT];
 
@@ -102,6 +111,18 @@ class TF_Muscle {
       else {
         analogWrite(mosfet_pin, 0); //disabled means write 0% power
       }
+    }
+
+    // Based on the logMode, return data to be logged
+    String log() {
+      if(logMode == 1)
+        return status();
+      else
+        return "";
+    }
+
+    void setLogMode(int _mode) {
+      logMode = _mode;
     }
 
     void setEnable(bool state) {
@@ -198,6 +219,10 @@ class TF_Muscle {
     //=============================================================================
     // Muscle Control/Config Functions
     //=============================================================================
+
+    static void setLogModeAll(int _mode) {
+      for(int m=0; m<MUSCLE_CNT; m++) { muscles[m]->setLogMode(_mode); };
+    }
 
     //enable/disable all muscles
     static void setEnableAll(bool state) {
@@ -456,13 +481,14 @@ class Status : public Command {
       Command::execute();
       Serial.println("executing status...");
 
+      // Check for optional constant logging mode
+      if(param_cnt > 1) {
+        int logMode = params[1].toInt();
+      }
+
       // Display status of all devices
       if(param_cnt == 0 || params[0] == "all") {
-        Serial.print("Battery Volts: ");
-        Serial.print(getBatteryVolts());
-        Serial.println(" V");
-        Serial.print("Error State: ");
-        Serial.println(error, BIN);
+        Serial.println(deviceStatus());
         Serial.println(TF_Muscle::statusAll());
         return;
       }
@@ -496,3 +522,38 @@ class Stop : public Command {
       }
     }
 } c_stop;
+
+class LogMode : public Command {
+  public:
+    explicit LogMode() : Command("log-mode", 0x06) {
+      //additional init
+    }
+    void execute() override {
+      Command::execute();
+      Serial.println("executing log-mode...");
+
+      int logMode = 0; //default set to 0
+
+      // Set log mode if user inputted
+      if(param_cnt > 1) {
+        logMode = params[1].toInt();
+      }
+
+      log_start = millis(); // Changing log mode will reset log start time
+
+      // Set log mode of all devices
+      if(param_cnt == 0 || params[0] == "all") {
+        nodeLogMode = logMode;
+        TF_Muscle::setLogModeAll(logMode);
+        return;
+      }
+      if(params[0] == "node") {
+        nodeLogMode = logMode;
+        return;
+      }
+
+      // Set log mode of specific muscle
+      int m = Command::parseDeviceStr(params[0]);
+      TF_Muscle::muscles[m]->setLogMode(logMode);
+    }
+} c_logMode;
