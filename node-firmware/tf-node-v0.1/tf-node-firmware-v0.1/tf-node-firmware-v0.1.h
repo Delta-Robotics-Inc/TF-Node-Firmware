@@ -4,9 +4,9 @@
 // TF Node Defaults
 //=============================================================================
 
-#define CTRL_MODE_CNT 4
-enum ctrl_modes { PERCENT, VOLTS, AMPS, DEGREES };
-const String ctrl_modes_str[CTRL_MODE_CNT] = { "percent", "volts", "amps", "degrees" };
+#define CTRL_MODE_CNT 5
+enum ctrl_modes { PERCENT, VOLTS, AMPS, DEGREES, OHMS };
+const String ctrl_modes_str[CTRL_MODE_CNT] = { "percent", "volts", "amps", "degrees", "ohms" };
 #define SIGNAL_TIMEOUT 2000  // Amount of time (ms) between receiving master commands before auto-disable
 const unsigned long LOG_MS = 20;  // Time between log frames (ms)
 
@@ -23,17 +23,17 @@ const unsigned long LOG_MS = 20;  // Time between log frames (ms)
 #define SHIELD_VERSION "0.1-DEV"
 #define FIRMWARE_VERSION "0.1"
 // Voltage Read Conversion Equations
-#define VRD_SCALE_FACTOR 0.07506
-#define VRD_OFFSET -0.22033
-#define VLD_SCALE_FACTOR_M1 0.07468
-#define VLD_SCALE_FACTOR_M2 0.07506  // See TF Node v0.1 DEV Analog Data Spreadsheet for these calculations
-#define VLD_OFFSET_M1 -0.86179
-#define VLD_OFFSET_M2 -0.22033  // Ideally, value of 0 would yield 0 V, but this is not currently the case
+#define VRD_SCALE_FACTOR 0.07544
+#define VRD_OFFSET -0.48216
+#define VLD_SCALE_FACTOR_M1 0.07521
+#define VLD_SCALE_FACTOR_M2 0.07534  // See TF Node v0.1 DEV Analog Data Spreadsheet for these calculations
+#define VLD_OFFSET_M1 -1.10407
+#define VLD_OFFSET_M2 -0.18299  // Ideally, value of 0 would yield 0 V, but this is not currently the case
 // Pinout - make sure to update pins
 #define VRD_PIN A4
 
 // DEVICE LIMITS
-#define MAX_CURRENT 30.0  // Maximum current through nuscle in amps
+#define MAX_CURRENT 20.0  // Maximum current through nuscle in amps
 #define MIN_VBATTERY 7.0  // Minimum battery voltage
 
 //=============================================================================
@@ -41,33 +41,34 @@ const unsigned long LOG_MS = 20;  // Time between log frames (ms)
 //=============================================================================
 
 // ERROR INDECES
-const int ERR_LOW_VOLT = 0;  // Low battery error
-const int ERR_CURRENT_OF = 1;  // Current overflow error
-byte error = 0b11111111;  // Error byte transmitted when requested by API call
+#define ERR_LOW_VOLT 0  // Low battery error
+#define ERR_CURRENT_OF 1  // Current overflow error
+byte n_error = 0b11111111;  // Error byte transmitted when requested by API call
 
 unsigned long timeout_timer;
 unsigned long log_timer;  // Logs every x ms based on logMode
 unsigned long log_start;  // Time of start of log
 int nodeLogMode = 0;  //0=No log; 1=Device log
 
-float vBattery_val; // Current value of measured battery voltage.
+float n_vSupply; // Current value of measured battery voltage.
 
+void nodeUpdate();
 String deviceStatus();
 String log();
 
 // RAISE ERROR BY XORING CURRENT ERROR WITH BITSHIFTED 1s
 void errRaise(int index) {
-  error = error ^ (1<<index);
+  n_error = n_error ^ (1<<index);
 }
 void errClear() {
-  error = 0b11111111;
+  n_error = 0b11111111;
 }
 
 //=============================================================================
 // Sensor Read Functions
 //=============================================================================
 
-float getBatteryVolts() {
+float getSupplyVolts() {
   float value=0.0,samples=0.0,avg_value=0.0,raw=0.0;
     
       for (int x = 0; x < 30; x++){   // Get 30 samples
@@ -117,10 +118,8 @@ class TF_Muscle {
     // CONTROL MODE
     bool enabled = false;
     ctrl_modes mode = PERCENT;
-    float setpoint_percent;
-    float setpoint_volts;
-    float setpoint_amps;
-    float setpoint_degrees;
+    float setpoint[CTRL_MODE_CNT];
+    int pwm_val = 0;  // PWM_VAL is the actual outputted duty cycle to the mosfets.  It's behavior will update based on the control mode
 
     // PULSE SETUP
     bool pulse_state = false; //on/off state of pulse cycle
@@ -145,18 +144,32 @@ class TF_Muscle {
     }
 
     void update() {
+
       // Write to muscle if enabled
       if(enabled) {
-        if(mode == PERCENT) {
-          analogWrite(mosfet_pin, percentToPWM(setpoint_percent)); // Write pwm to mosfet m
+        // Handle behavior of each control mode
+        switch (mode)
+        {
+        case PERCENT:
+          pwm_val = percentToPWM(setpoint[PERCENT]);
+          break;
+        case VOLTS:
+          pwm_val = percentToPWM(setpoint[VOLTS] / n_vSupply);  // When controlling for volts, the ratio of setpoint/supply will be percentage of power to deliver
+          break;
+        //TODO: Implement other control modes
+        //case AMPS:     // Need to implement PID loop
+        //case DEGREES:  // Need to implement equation to track/return muscle temp
+        //case OHMS:     // Need to implement PID loop (but how to implement with hysterisis curve?)
+        default:
+          pwm_val = percentToPWM(0);
+          break;
         }
-  
-        // Note: CURRENT and TEMP modes are unimplemented
       }
       else {
-        analogWrite(mosfet_pin, 0); // Disabled means write 0% power
+        pwm_val = percentToPWM(0); // Disabled means write 0% power
       }
 
+      analogWrite(mosfet_pin, pwm_val)  // Write pwm to mosfet m
       measure(); // Update sensor values
 
       // CURRENT OVERFLOW ERROR CONDITION
@@ -180,7 +193,6 @@ class TF_Muscle {
 
     void setEnable(bool state) {
       enabled = state;
-      //Serial.println(status());
     }
 
     void setMode(ctrl_modes _mode) {
@@ -188,23 +200,7 @@ class TF_Muscle {
     }
 
     void setSetpoint(ctrl_modes _mode, float setpoint) {
-        switch (_mode)
-        {
-        case PERCENT:
-            setpoint_percent = setpoint;
-            break;
-        case VOLTS:
-            setpoint_volts = setpoint;
-            break;
-        case AMPS:
-            setpoint_amps = setpoint;
-            break;
-        case DEGREES:
-            setpoint_degrees = setpoint;
-            break;
-        default:
-            break;
-        }
+        setpoint[_mode] = setpoint;
     }
 
     void stop() {
@@ -232,22 +228,23 @@ class TF_Muscle {
       switch (mode)
         {
         case PERCENT:
-            setpoint_str = String(setpoint_percent);
+            setpoint_str = String(setpoint[PERCENT]);
             break;
         case VOLTS:
-            setpoint_str = String(setpoint_volts) + " V";
+            setpoint_str = String(setpoint[VOLTS]) + " V";
             break;
         case AMPS:
-            setpoint_str = String(setpoint_amps) + " A";
+            setpoint_str = String(setpoint[AMPS]) + " A";
             break;
         case DEGREES:
-            setpoint_str = String(setpoint_degrees) + "°";
+            setpoint_str = String(setpoint[DEGREES]) + "°";
             break;
         default:
             setpoint_str = String("mode unknown!");
             break;
         }
         stat_str += "| setpoint: " + setpoint_str + '\n';
+        stat_str += "| pwm-val: " + pwm_val + '\n';
         //stat_str += "| current: " + String(analogRead(curr_pin)) + " (native units) \n";
         stat_str += "| current: " + String(curr_val) + " A \n";
         stat_str += "| load-volts: " + String(vld_val) + " V \n";
@@ -261,7 +258,7 @@ class TF_Muscle {
     float getMuscleAmps() {
       float AcsValue=0.0,Samples=0.0,AvgAcs=0.0,raw=0.0;
     
-      for (int x = 0; x < 30; x++){       // Get 30 samples
+      for (int x = 0; x < 10; x++){       // Get 10 samples
         AcsValue = analogRead(curr_pin);  // Read current sensor values   
         Samples = Samples + AcsValue;     // Add samples together
       }
@@ -276,7 +273,7 @@ class TF_Muscle {
     float getLoadVoltage() {
       float value=0.0,samples=0.0,avg_value=0.0,raw=0.0;
     
-      for (int x = 0; x < 30; x++){   // Get 30 samples
+      for (int x = 0; x < 10; x++){   // Get 10 samples
         value = analogRead(vld_pin);  // Read current sensor values   
         samples += value;          // Add samples together
       }
@@ -293,9 +290,18 @@ class TF_Muscle {
     }
 
     void measure() {
+      // ONLY MEASURE ON HIGH VALUE OF PWM
+      // If pwm is low, wait a max of 3 ms (This assumes that PWM frequency is 450 Hz)
+      // If pwm does not switch during this time, take the measurement anyways
+      if(enabled && !digitalRead(mosfet_pin)) {
+        unsigned long measure_start = millis();
+        unsigned long measure_timeout = 3; //timeout after 3 ms
+        while((millis() - measure_start < measure_timeout) && !digitalRead(mosfet_pin)) 
+        { /* Do nothing */ }
+      }
       curr_val = getMuscleAmps(); 
       vld_val = getLoadVoltage();
-      rld_val = calcResistance(vBattery_val, vld_val, curr_val);
+      rld_val = calcResistance(NODE_vBattery_val, vld_val, curr_val);
     }
 
     //=============================================================================

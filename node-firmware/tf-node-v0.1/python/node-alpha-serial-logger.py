@@ -27,6 +27,7 @@ buffer = []
 time_data = []
 m1_en_data = []
 vbatt_data = []
+vld_data = []
 amps_data = []
 resist_data = []
 
@@ -54,13 +55,15 @@ def parse_data():
     try:
         log_time_line = buffer[0].split(' ')
         vbatt_line = buffer[1].split(' ')
-        amps_line = buffer[9].split(' ')
-        ohms_line = buffer[11].split(' ')
+        amps_line = buffer[10].split(' ')
+        vld_line = buffer[11].split(' ')
+        ohms_line = buffer[12].split(' ')
         m1_enabled_line = buffer[6].split(' ') #**************
         #print(vbatt_line)
         #print(amps_line)
         log_time = int(log_time_line[2].strip("\\n'"))
         vbatt = float(vbatt_line[2].rstrip("\\n'"))
+        vld = float(vld_line[2].rstrip("\\n'"))
         amps = float(amps_line[2].rstrip("\\n'"))
         ohms = float(ohms_line[2].rstrip("\\n'")) * 1000 #convert to mOhms
         m1_enabled = True if "true" in m1_enabled_line[2] else False
@@ -72,6 +75,7 @@ def parse_data():
         time_data.append(log_time)
         m1_en_data.append(m1_enabled)
         vbatt_data.append(vbatt)
+        vld_data.append(vld)
         amps_data.append(amps)
         resist_data.append(ohms)
     except:
@@ -83,9 +87,10 @@ def parse_data():
 print(write_read("set-enable all false"))
 time.sleep(0.5)
 print(write_read("log-mode node 1"))
-print(write_read("log-mode m1 1"))
-print(write_read("set-setpoint all percent 1.0"))
-print(write_read("set-enable m1 true"))
+print(write_read("log-mode m2 1"))
+print(write_read("log-mode m1 0"))
+print(write_read("set-setpoint all percent 0.1"))
+print(write_read("set-enable m2 true"))
 start = default_timer()
 while(default_timer() - start < 3.0):
     get_data()
@@ -106,6 +111,7 @@ print(time_data)
 print(m1_en_data)
 print(vbatt_data)
 print(amps_data)
+print(vld_data)
 print(resist_data)
 
 
@@ -155,10 +161,10 @@ for i in range(len(time_data) - 1):
 #ax2.set_xticks(ticks=time_data[::50])
 # Setting the range for the x-axis and y-axis
 ax2.set_xlim(0, 9000)
-ax2.set_ylim(0, 30)
+ax2.set_ylim(0, 15)
 
 # Adding title and labels
-ax2.set_title('M1 Current Data')
+ax2.set_title('M2 Current Data')
 ax2.set_xlabel('Log Time (ms)')
 ax2.set_ylabel('Current (A)')
 
@@ -186,9 +192,38 @@ ax3.set_xlim(0, 9000)
 ax3.set_ylim(0, 2000)
 
 # Adding title and labels
-ax3.set_title('M1 Resistance Data')
+ax3.set_title('M2 Resistance Data')
 ax3.set_xlabel('Log Time (ms)')
 ax3.set_ylabel('Resistance (mΩ)')
+
+# Displaying the plot
+plt.show()
+
+
+# Plotting the VLD graph
+#vbatt_graph = plt.plot(time_data, vbatt_data)
+
+# Creating a figure and axis object
+fig3, ax3 = plt.subplots()
+
+# Assuming the data is sorted by time_data
+for i in range(len(time_data) - 1):
+    if(time_data[i] < time_data[i+1]):
+        if m1_en_data[i]:
+            ax3.plot(time_data[i:i+2], vld_data[i:i+2], 'r-')  # Red line for True
+        else:
+            ax3.plot(time_data[i:i+2], vld_data[i:i+2], 'b-')  # Blue line for False
+
+# Setting x-axis labels to show every 10th label
+#ax1.set_xticks(ticks=time_data[::50])
+# Setting the range for the x-axis and y-axis
+ax3.set_xlim(0, 9000)
+ax3.set_ylim(0, 24)
+
+# Adding title and labels
+ax3.set_title('V_LD Data')
+ax3.set_xlabel('Log Time (ms)')
+ax3.set_ylabel('Supply (V)')
 
 # Displaying the plot
 plt.show()

@@ -48,7 +48,7 @@ String command_str; //for processing serial command
 void loop() {
   
   // UPDATE OUTPUTS AND TAKE SENSOR MEASUREMENTS
-  vBattery_val = getBatteryVolts();
+  nodeUpdate();
   TF_Muscle::updateMuscles();
 
   if(Serial.available()) {
@@ -70,6 +70,17 @@ void loop() {
       Serial.println("Error: unrecognized command.");
     }
   }
+}
+
+void nodeUpdate() {
+  n_vSupply = getSupplyVolts();
+
+  // Low Power Condition
+  if(n_vSupply < MIN_VBATTERY) {
+    errRaise(ERR_LOW_VOLT);
+    setEnableAll(false);
+    //light up a low battery LED
+  }
 
   // Every certain interval (LOG_MS), log/report data to console
   if(millis() - log_timer > LOG_MS) {
@@ -82,8 +93,8 @@ void loop() {
 }
 
 String deviceStatus() {
-  String stat_str ="Battery Volts: " + String(vBattery_val) + " V\n";
-  stat_str += "Error State: " + String(error, BIN);
+  String stat_str ="Battery Volts: " + String(n_vSupply) + " V\n";
+  stat_str += "Error State: " + String(n_error, BIN);
   return stat_str;
 }
 
