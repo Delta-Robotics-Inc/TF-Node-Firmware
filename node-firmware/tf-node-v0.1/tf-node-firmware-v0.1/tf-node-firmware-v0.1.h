@@ -4,9 +4,9 @@
 // TF Node Defaults
 //=============================================================================
 
-#define CTRL_MODE_CNT 5
-enum ctrl_modes { PERCENT, VOLTS, AMPS, DEGREES, OHMS };
-const String ctrl_modes_str[CTRL_MODE_CNT] = { "percent", "volts", "amps", "degrees", "ohms" };
+#define CTRL_MODE_CNT 6
+enum ctrl_modes { PERCENT, VOLTS, AMPS, DEGREES, OHMS, TRAIN };
+const String ctrl_modes_str[CTRL_MODE_CNT] = { "percent", "volts", "amps", "degrees", "ohms", "train" };
 #define SIGNAL_TIMEOUT 2000  // Amount of time (ms) between receiving master commands before auto-disable
 const unsigned long LOG_MS = 20;  // Time between log frames (ms)
 
@@ -121,6 +121,9 @@ class TF_Muscle {
     float setpoint[CTRL_MODE_CNT];
     int pwm_val = 0;  // PWM_VAL is the actual outputted duty cycle to the mosfets.  It's behavior will update based on the control mode
 
+    // RESISTANCE CONTROL MODE
+    float Af_ohms = -1; // RESISTANCE AT POINT OF Af (Austenite finished temperature)
+
     // PULSE SETUP
     bool pulse_state = false; //on/off state of pulse cycle
     float pulse_on_time = 1.0f;
@@ -145,6 +148,8 @@ class TF_Muscle {
 
     void update() {
 
+      //#TODO: Handle pulse condition
+
       // Write to muscle if enabled
       if(enabled) {
         // Handle behavior of each control mode
@@ -158,8 +163,20 @@ class TF_Muscle {
           break;
         //TODO: Implement other control modes
         //case AMPS:     // Need to implement PID loop
-        //case DEGREES:  // Need to implement equation to track/return muscle temp
+        //case DEGREES:  // Need to implement equation to track/return muscle temp (temp will behave different based on 2 conditions: below/above Af)
         //case OHMS:     // Need to implement PID loop (but how to implement with hysterisis curve?)
+        case TRAIN:
+          // STATE: Heating (Martensite phase)
+              // I am thinking that a rolling average would be good. Track rolling average of 10 samples and when it has been decreasing for a few cycles then go to next state
+          // STATE: Heating (Pre Austenite Finished Temp)
+              // The same thing with a rolling average; wait until it has been increasing for a few cycles and find bottom of dip (set bottom to Af_ohms)
+          // STATE: Heating (Post Austenite finished Temp)
+              // Track ohms with respect to Af_ohms + delta_ohms
+              // When ohms exceeds (Af_ohms + delta_ohms), start training timer. Flash LED while at temp
+              // Use PID to mitigate error between desired temperature and set temperature
+          // STATE: Finished
+              // When time exceeds training time, hold LED solid for a few seconds
+        break;
         default:
           pwm_val = percentToPWM(0);
           break;
@@ -213,7 +230,7 @@ class TF_Muscle {
     void reset() {
       stop();
       setMode(PERCENT);
-      //reset timer and pulse vals*****************************************
+      // Reset timer and pulse vals*****************************************
     }
 
     String status() {
@@ -262,7 +279,7 @@ class TF_Muscle {
         AcsValue = analogRead(curr_pin);  // Read current sensor values   
         Samples = Samples + AcsValue;     // Add samples together
       }
-      raw=Samples/30.0;  // Taking Average of Samples
+      raw = Samples / 30.0;  // Taking Average of Samples
     
       float amps = ((raw * (5.0 / 1024.0)) - 2.5)/0.100; //5.0/1024 is conversion ratio of volts/native unit. 2.5 v is 0 A due to positive and negative ability
       
@@ -277,7 +294,7 @@ class TF_Muscle {
         value = analogRead(vld_pin);  // Read current sensor values   
         samples += value;          // Add samples together
       }
-      raw=samples/30.0;  // Taking Average of Samples
+      raw = samples / 30.0;  // Taking Average of Samples
 
       float volts = raw * vld_scaleFactor + vld_offset; // Values are attained experimentally with known input voltages
       return volts;
@@ -309,43 +326,43 @@ class TF_Muscle {
     //=============================================================================
 
     static void setLogModeAll(int _mode) {
-      for(int m=0; m<MUSCLE_CNT; m++) { muscles[m]->setLogMode(_mode); };
+      for(int m=0; m < MUSCLE_CNT; m++) { muscles[m]->setLogMode(_mode); };
     }
 
     //enable/disable all muscles
     static void setEnableAll(bool state) {
-      for(int m=0; m<MUSCLE_CNT; m++) { muscles[m]->setEnable(state); };
+      for(int m=0; m < MUSCLE_CNT; m++) { muscles[m]->setEnable(state); };
     }
 
     static void setModeAll(ctrl_modes _mode) {
-      for(int m=0; m<MUSCLE_CNT; m++) { muscles[m]->setMode(_mode); };
+      for(int m=0; m < MUSCLE_CNT; m++) { muscles[m]->setMode(_mode); };
     }
 
     static void setSetpointAll(ctrl_modes _mode, float setpoint) {
-      for(int m=0; m<MUSCLE_CNT; m++) { muscles[m]->setSetpoint(_mode, setpoint); };
+      for(int m=0; m < MUSCLE_CNT; m++) { muscles[m]->setSetpoint(_mode, setpoint); };
     }
 
     static String statusAll() {
       String stat_str = "";
-      for(int m=0; m<MUSCLE_CNT; m++) { stat_str += muscles[m]->status(); };
+      for(int m=0; m < MUSCLE_CNT; m++) { stat_str += muscles[m]->status(); };
       return stat_str;
     }
 
     static void resetAll() {
-      for(int m=0; m<MUSCLE_CNT; m++) { muscles[m]->reset(); };
+      for(int m=0; m < MUSCLE_CNT; m++) { muscles[m]->reset(); };
     }
 
     static void stopAll() {
-      for(int m=0; m<MUSCLE_CNT; m++) { muscles[m]->stop(); };
+      for(int m=0; m < MUSCLE_CNT; m++) { muscles[m]->stop(); };
     }
 
     //loop through updating all muscles
     static void updateMuscles() {
-      for(int m=0; m<MUSCLE_CNT; m++) { muscles[m]->update(); }
+      for(int m=0; m < MUSCLE_CNT; m++) { muscles[m]->update(); }
     }
 
-//init muscles
-} m_1, m_2; //update parameter MUSCLE_CNT when new muscle is added
+// Init muscles
+} m_1, m_2;  // Update parameter MUSCLE_CNT when new muscle is added/removed
 
 
 // Command is the primitive object sent from a master device to this Node
@@ -365,14 +382,14 @@ class Command {
       code = _code;
     }
     
-    // adds parameter to command's parameter "list"
+    // Adds parameter to command's parameter "list"
     void addParameter(String _param) {
         params[param_cnt] = _param; 
         param_cnt++; 
         //Serial.println("Found param: " + _param);
     }
 
-    // displays the given name and parameters passed into command
+    // Displays the given name and parameters passed into command
     void serialDisplayInput() {
       Serial.print("Name: ");
       Serial.print(name);
@@ -392,7 +409,7 @@ class Command {
     // Make sure to update COMMAND_CNT parameter when adding a new command
     // NOTE: would be nice to create a "Command Queue" for backlogging commands -> Need to create state machine for Node system
 
-    // attempts to locate command by name from list of commands
+    // Attempts to locate command by name from list of commands
     static Command* getCommandByName(String _name, bool &success) {
       _name.toLowerCase();
       for(int i=0; i<COMMAND_CNT; i++) {
@@ -402,7 +419,7 @@ class Command {
           return c_commands[i];
         }
       }
-      // command not found, return default
+      // Command not found, return default
       success = false;
       return c_commands[0];
     }
@@ -416,35 +433,35 @@ class Command {
     }
 
     static Command* parseCommandStr(String consoleIn, bool &success) {
-        // converts an input string to the corresponding command and parameters
-        // input string should be "name par1 par2 par3 .. parn"
+        // Converts an input string to the corresponding command and parameters
+        // Input string should be "name par1 par2 par3 .. parn"
         Serial.println("========================================");
         Serial.print("<serial-in> ");
         Serial.println(consoleIn);
-        int param_index = consoleIn.indexOf(' ');  // start of parameters
-        param_index = param_index==-1 ? consoleIn.length() : param_index;  // if no spaces were found, parse entire input as name
+        int param_index = consoleIn.indexOf(' ');  // Start of parameters
+        param_index = param_index==-1 ? consoleIn.length() : param_index;  // If no spaces were found, parse entire input as name
 
         String _name = consoleIn.substring(0, param_index);
         //Serial.print("Found name: ");
         //Serial.println(_name);
-        Command* cmd = getCommandByName(_name, success);  // whether command was found
-        cmd->param_cnt = 0;  // effectively clears params
+        Command* cmd = getCommandByName(_name, success);  // Whether command was found
+        cmd->param_cnt = 0;  // Effectively clears params
 
-        // continue if command was found and has parameters to parse
+        // Continue if command was found and has parameters to parse
         if(success && param_index != consoleIn.length()) {
           String param_str = consoleIn.substring(param_index+1, consoleIn.length());
           param_index = param_str.indexOf(' ');  // index of next param start
           
-          // iterate through parameters, splitting at ' ' characters, and add to list of params
+          // Iterate through parameters, splitting at ' ' characters, and add to list of params
           for(int i = 0; i < PARAM_MAX && param_index != -1; i++) {
             String param = param_str.substring(0, param_index);
             param_str = param_str.substring(param_index+1, param_str.length());
-            cmd->addParameter(param);  // add parameter to array of parameters
-            param_index = param_str.indexOf(' ');  // index of next param start
+            cmd->addParameter(param);  // Add parameter to array of parameters
+            param_index = param_str.indexOf(' ');  // Index of next param start
           }
 
           if(cmd->param_cnt < PARAM_MAX)
-            cmd->addParameter(param_str);  // add last parameter since another space will not be located
+            cmd->addParameter(param_str);  // Add last parameter since another space will not be located
         }
         return cmd;
     }
@@ -458,7 +475,7 @@ class Command {
 class Reset : public Command {
   public:
     explicit Reset() : Command("reset", 0xFF) {
-      // additional init
+      // Additional init
     }
     void execute() override {
        Command::execute();
@@ -481,12 +498,12 @@ class Reset : public Command {
 class SetEnable : public Command {
   public:
     explicit SetEnable() : Command("set-enable", 0x01) {
-      //additional init
+      // Additional init
     }
     void execute() override {
       Command::execute();
       Serial.println("executing set-enable...");
-      //additional execute
+      // Additional execute
       String device = params[0];
       String state_str = params[1];
       state_str.toLowerCase();
@@ -505,21 +522,21 @@ class SetEnable : public Command {
 class SetMode : public Command {
   public:
     explicit SetMode() : Command("set-mode", 0x02) {
-      //additional init
+      // Additional init
     }
     void execute() override {
       Command::execute();
       Serial.println("executing set-mode...");
-      //additional execute
+      // Additional execute
       String device = params[0];
       String mode_str = params[1];
       mode_str.toLowerCase();
 
-      //either wrap into parseMode() func or deprecate with new serial comms
+      // Either wrap into parseMode() func or deprecate with new serial comms
       ctrl_modes mode = mode_str == ctrl_modes_str[PERCENT] ? PERCENT :
                         mode_str == ctrl_modes_str[VOLTS] ? VOLTS :
                         mode_str == ctrl_modes_str[AMPS] ? AMPS :
-                        mode_str == ctrl_modes_str[DEGREES] ? DEGREES : PERCENT; //default is percent
+                        mode_str == ctrl_modes_str[DEGREES] ? DEGREES : PERCENT;  // Default is percent
 
       if(device == "all") {
          TF_Muscle::setModeAll(mode);
@@ -534,22 +551,22 @@ class SetMode : public Command {
 class SetSetpoint : public Command {
   public:
     explicit SetSetpoint() : Command("set-setpoint", 0x03) {
-      //additional init
+      // Additional init
     }
     void execute() override {
       Command::execute();
       Serial.println("executing set-setpoint...");
-      //additional execute
+      // Additional execute
       String device = params[0];
       String mode_str = params[1];
       mode_str.toLowerCase();
       float setpoint = params[2].toFloat();
 
-      //either wrap into parseMode() func or deprecate with new serial comms
+      // Either wrap into parseMode() func or deprecate with new serial comms
       ctrl_modes mode = mode_str == ctrl_modes_str[PERCENT] ? PERCENT :
                         mode_str == ctrl_modes_str[VOLTS] ? VOLTS :
                         mode_str == ctrl_modes_str[AMPS] ? AMPS :
-                        mode_str == ctrl_modes_str[DEGREES] ? DEGREES : PERCENT; //default is percent
+                        mode_str == ctrl_modes_str[DEGREES] ? DEGREES : PERCENT; // Default is percent
       if(device == "all") {
          TF_Muscle::setSetpointAll(mode, setpoint);
       }
@@ -563,7 +580,7 @@ class SetSetpoint : public Command {
 class Status : public Command {
   public:
     explicit Status() : Command("status", 0x04) {
-      //additional init
+      // Additional init
     }
     void execute() override {
       Command::execute();
@@ -590,7 +607,7 @@ class Status : public Command {
 class Stop : public Command {
   public:
     explicit Stop() : Command("stop", 0x05) {
-      //additional init
+      // Additional init
     }
     void execute() override {
       Command::execute();
@@ -600,7 +617,7 @@ class Stop : public Command {
         return;
       }
 
-      //additional execute
+      // Additional execute
       if(params[0] == "all") {
          TF_Muscle::stopAll();
       }
@@ -614,20 +631,20 @@ class Stop : public Command {
 class LogMode : public Command {
   public:
     explicit LogMode() : Command("log-mode", 0x06) {
-      //additional init
+      // Additional init
     }
     void execute() override {
       Command::execute();
       Serial.println("executing log-mode...");
 
-      int logMode = 0; //default set to 0
+      int logMode = 0;  // Default set to 0
 
       // Set log mode if user inputted
       if(param_cnt > 1) {
         logMode = params[1].toInt();
       }
 
-      log_start = millis(); // Changing log mode will reset log start time
+      log_start = millis();  // Changing log mode will reset log start time
 
       // Set log mode of all devices
       if(param_cnt == 0 || params[0] == "all") {
@@ -645,3 +662,5 @@ class LogMode : public Command {
       TF_Muscle::muscles[m]->setLogMode(logMode);
     }
 } c_logMode;
+
+//#TODO: Handle pulse condition in command
