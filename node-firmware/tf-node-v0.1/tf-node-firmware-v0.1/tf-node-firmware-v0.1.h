@@ -1,4 +1,5 @@
 #include<Arduino.h>
+#include "GradientTracker.hpp"
 
 //=============================================================================
 // TF Node Defaults
@@ -33,7 +34,7 @@ const unsigned long LOG_MS = 20;  // Time between log frames (ms)
 #define VRD_PIN A4
 
 // DEVICE LIMITS
-#define MAX_CURRENT 20.0  // Maximum current through nuscle in amps
+#define MAX_CURRENT 20.0  // Maximum current through muscle in amps
 #define MIN_VBATTERY 7.0  // Minimum battery voltage
 
 //=============================================================================
@@ -122,6 +123,9 @@ class TF_Muscle {
     int pwm_val = 0;  // PWM_VAL is the actual outputted duty cycle to the mosfets.  It's behavior will update based on the control mode
 
     // RESISTANCE CONTROL MODE
+    enum TrainingState { MARTENSITE, PHASE_TRANSITION, POST_AF };
+    TrainingState trainState = MARTENSITE;
+    GradientTracker resistTracker;
     float Af_ohms = -1; // RESISTANCE AT POINT OF Af (Austenite finished temperature)
 
     // PULSE SETUP
@@ -184,9 +188,11 @@ class TF_Muscle {
       }
       else {
         pwm_val = percentToPWM(0); // Disabled means write 0% power
+        // RESET TRAINING STATE
+        trainState = MARTENSITE;
       }
 
-      analogWrite(mosfet_pin, pwm_val)  // Write pwm to mosfet m
+      analogWrite(mosfet_pin, pwm_val);  // Write pwm to mosfet m
       measure(); // Update sensor values
 
       // CURRENT OVERFLOW ERROR CONDITION
@@ -194,6 +200,11 @@ class TF_Muscle {
         errRaise(ERR_CURRENT_OF);
         setEnable(false); //disable muscle
       }
+    }
+
+    // Will step through the state machine when in training mode
+    void updateTraining() {
+
     }
 
     // Based on the logMode, return data to be logged
@@ -214,10 +225,14 @@ class TF_Muscle {
 
     void setMode(ctrl_modes _mode) {
       mode = _mode;
+
+      if(mode == TRAIN) {
+        trainState = MARTENSITE;
+      }
     }
 
-    void setSetpoint(ctrl_modes _mode, float setpoint) {
-        setpoint[_mode] = setpoint;
+    void setSetpoint(ctrl_modes _mode, float val) {
+        setpoint[_mode] = val;
     }
 
     void stop() {
@@ -318,7 +333,7 @@ class TF_Muscle {
       }
       curr_val = getMuscleAmps(); 
       vld_val = getLoadVoltage();
-      rld_val = calcResistance(NODE_vBattery_val, vld_val, curr_val);
+      rld_val = calcResistance(n_vSupply, vld_val, curr_val);
     }
 
     //=============================================================================

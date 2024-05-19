@@ -78,7 +78,7 @@ void nodeUpdate() {
   // Low Power Condition
   if(n_vSupply < MIN_VBATTERY) {
     errRaise(ERR_LOW_VOLT);
-    setEnableAll(false);
+    TF_Muscle::setEnableAll(false);
     //light up a low battery LED
   }
 
