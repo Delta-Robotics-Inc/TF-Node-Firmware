@@ -4,7 +4,8 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/tf-node-firmware-v0.1"
+                "${workspaceFolder}/tf-node-firmware-v0.1/**",
+                "C:/Users/Mark Dannemiller/AppData/Local/Arduino15/packages/arduino/hardware/renesas_uno/1.1.0/**"
             ],
             "defines": [
                 "_DEBUG",

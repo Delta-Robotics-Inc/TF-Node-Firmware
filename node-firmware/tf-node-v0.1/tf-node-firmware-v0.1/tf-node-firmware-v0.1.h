@@ -1,5 +1,5 @@
 #include<Arduino.h>
-#include "GradientTracker.hpp"
+#include "GradientTracker.cpp"
 
 //=============================================================================
 // TF Node Defaults
@@ -123,10 +123,11 @@ class TF_Muscle {
     int pwm_val = 0;  // PWM_VAL is the actual outputted duty cycle to the mosfets.  It's behavior will update based on the control mode
 
     // RESISTANCE CONTROL MODE
-    enum TrainingState { MARTENSITE, PHASE_TRANSITION, POST_AF };
+    enum TrainingState { MARTENSITE, PHASE_TRANSITION, POST_AF, TRAIN_FINISH };
     TrainingState trainState = MARTENSITE;
-    GradientTracker resistTracker;
+    const float timeStep_ms = 25.0f; // Time between measurement samples.  VERIFY THIS UNTIL MEASURE PERIOD IS CONSTANT!
     float Af_ohms = -1; // RESISTANCE AT POINT OF Af (Austenite finished temperature)
+    GradientTracker* resistTracker;
 
     // PULSE SETUP
     bool pulse_state = false; //on/off state of pulse cycle
@@ -146,6 +147,7 @@ class TF_Muscle {
       curr_pin = _currPin;
       vld_pin = _vLdPin;
       vld_scaleFactor = _scaleFactor;
+      resistTracker = new GradientTracker(5, 50, 0.1, timeStep_ms);
       vld_offset = _offset;
       pinMode(mosfet_pin, OUTPUT);
     }
@@ -159,31 +161,22 @@ class TF_Muscle {
         // Handle behavior of each control mode
         switch (mode)
         {
-        case PERCENT:
-          pwm_val = percentToPWM(setpoint[PERCENT]);
+          case PERCENT:
+            pwm_val = percentToPWM(setpoint[PERCENT]);
+            break;
+          case VOLTS:
+            pwm_val = percentToPWM(setpoint[VOLTS] / n_vSupply);  // When controlling for volts, the ratio of setpoint/supply will be percentage of power to deliver
+            break;
+          //TODO: Implement other control modes
+          //case AMPS:     // Need to implement PID loop
+          //case DEGREES:  // Need to implement equation to track/return muscle temp (temp will behave different based on 2 conditions: below/above Af)
+          //case OHMS:     // Need to implement PID loop (but how to implement with hysterisis curve?)
+          case TRAIN:
+            pwm_val = updateTraining();
           break;
-        case VOLTS:
-          pwm_val = percentToPWM(setpoint[VOLTS] / n_vSupply);  // When controlling for volts, the ratio of setpoint/supply will be percentage of power to deliver
-          break;
-        //TODO: Implement other control modes
-        //case AMPS:     // Need to implement PID loop
-        //case DEGREES:  // Need to implement equation to track/return muscle temp (temp will behave different based on 2 conditions: below/above Af)
-        //case OHMS:     // Need to implement PID loop (but how to implement with hysterisis curve?)
-        case TRAIN:
-          // STATE: Heating (Martensite phase)
-              // I am thinking that a rolling average would be good. Track rolling average of 10 samples and when it has been decreasing for a few cycles then go to next state
-          // STATE: Heating (Pre Austenite Finished Temp)
-              // The same thing with a rolling average; wait until it has been increasing for a few cycles and find bottom of dip (set bottom to Af_ohms)
-          // STATE: Heating (Post Austenite finished Temp)
-              // Track ohms with respect to Af_ohms + delta_ohms
-              // When ohms exceeds (Af_ohms + delta_ohms), start training timer. Flash LED while at temp
-              // Use PID to mitigate error between desired temperature and set temperature
-          // STATE: Finished
-              // When time exceeds training time, hold LED solid for a few seconds
-        break;
-        default:
-          pwm_val = percentToPWM(0);
-          break;
+          default:
+            pwm_val = percentToPWM(0);
+            break;
         }
       }
       else {
@@ -203,8 +196,38 @@ class TF_Muscle {
     }
 
     // Will step through the state machine when in training mode
-    void updateTraining() {
+    int updateTraining() {
 
+      switch(trainState) {
+        case MARTENSITE:  // STATE: Heating (Martensite phase)
+          // I am thinking that a rolling average would be good. Track rolling average of 10 samples and when it has been decreasing for a few cycles then go to next state
+          resistTracker->addData(rld_val);
+
+          // Condition for next state (resistance decreases for x intervals)
+          // Else return low pwm value
+          break;
+        case PHASE_TRANSITION:  // STATE: Heating (Pre Austenite Finished Temp)
+          // The same thing with a rolling average; wait until it has been increasing for a few cycles and find bottom of dip (set bottom to Af_ohms)
+          resistTracker->addData(rld_val);
+
+          // Condition for next state (resistance increases for x intervals)
+            // Calculate local minimum (Af_res)
+          // Else return low pwm value
+          break;
+        case POST_AF:  // STATE: Heating (Post Austenite finished Temp)
+          // Track ohms with respect to Af_ohms + delta_ohms
+          // When ohms exceeds (Af_ohms + delta_ohms), start training timer. Flash LED while at temp
+          // Return PID (with max value) to mitigate error between desired temperature and set temperature
+
+          // Timer Condition
+          break;
+        // STATE: Finished
+        case TRAIN_FINISH:
+          setEnable(false); // When time exceeds training time, hold LED solid, disable, and do not enable until told to do so
+          // Set LED color
+          return 0;
+    }
+      return 0;
     }
 
     // Based on the logMode, return data to be logged
