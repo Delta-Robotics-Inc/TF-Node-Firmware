@@ -12,7 +12,7 @@
 //=============================================================================
 
 TF_Muscle* TF_Muscle::muscles[MUSCLE_CNT] = { &m_1, &m_2, &m_3 };
-Command* Command::c_commands[COMMAND_CNT] = { &c_default, &c_reset, &c_setEnable, &c_setMode, &c_setSetpoint, &c_status, &c_stop };
+Command* Command::c_commands[COMMAND_CNT] = { &c_default, &c_reset, &c_setEnable, &c_setMode, &c_setSetpoint, &c_status, &c_stop, &c_logMode};
 
 void initMuscles() {
   //init mosfet trigger pins
@@ -39,6 +39,7 @@ void setup() {
   Serial.println(FIRMWARE_VERSION);*/
 
   initMuscles();
+  log_timer = millis();
 }
 
 String command_str; //for processing serial command
@@ -68,9 +69,47 @@ void loop() {
     }
   }
   else {
-    if(TF_Muscle::muscles[0]->enabled)
-      Serial.println(TF_Muscle::muscles[0]->getMuscleAmps());
+    /*if(TF_Muscle::muscles[0]->enabled)
+      Serial.println(TF_Muscle::muscles[0]->getMuscleAmps());*/
   }
+
+  // Every certain interval (LOG_MS), log/report data to console
+  if(millis() - log_timer > LOG_MS) {
+    String log_str = log();
+    // Only print if there is something to log
+    if(log_str != " ") // Make sure that log data exceeds 90, otherwise it will never print
+      Serial.print(log());
+    log_timer = millis();
+  }
+}
+
+String deviceStatus() {
+  String stat_str ="Battery Volts: " + String(getBatteryVolts()) + " V\n";
+  stat_str += "Error State: " + String(error, BIN);
+  return stat_str;
+}
+
+// Logs data for the devices that have an active "logMode", including the node itself
+String log() {
+  // Determine if logging is necessary
+  bool toLog = nodeLogMode == 1;
+  for(int x=0; x<MUSCLE_CNT; x++) {
+    if(toLog)
+      break;
+    toLog = TF_Muscle::muscles[x]->logMode == 1;
+  }
+
+  // Return empty if no device needs to log
+  if(!toLog)
+    return " ";
+
+  String log_str = "========================================\nLOG TIME: " + String(millis() - log_start); // Display time since log start
+  if(nodeLogMode == 1)
+    log_str += "\n" + deviceStatus() + "\n";
+
+  for(int m=0; m<MUSCLE_CNT; m++) { log_str += TF_Muscle::muscles[m]->log(); };
+
+  return log_str;
 }
 
 
