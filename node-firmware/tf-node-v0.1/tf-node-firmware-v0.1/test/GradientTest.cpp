@@ -25,7 +25,7 @@ int main() {
     // Add test data to the tracker
     for (int i = 0; i < sizeof(testData)/sizeof(testData[0]); i++) {
         tracker->addData(testData[i]);
-        //printf("Gradient: %f\n", tracker->getCurrentGradient());
+        printf("Gradient: %f\n", tracker->getCurrentGradient());
     }
 
     // Find the local minimum in the gradient array.

@@ -15,6 +15,7 @@ enum GradientDirection { FLAT, POSITIVE, NEGATIVE };
 class GradientTracker {
 public:
     GradientTracker(int gradWidth, int gradArrSize, float flatThreshold, float timeStep); //gradWidth CANNOT be 1. (otherwise gradient cannot calc)
+    ~GradientTracker();
     void reset();
 
     void addData(int newData);
@@ -40,9 +41,10 @@ public:
 private:
     void insertData(int* array, int size, int newData);
     void insertData(float* array, int size, float newData);
-    float calculateAverageGradient(int* array, int width) const;
+    float calculateAverageGradient(float* array, int width) const;
+    void applyMovingAverage(float* data, int size, int windowSize) const;
 
-    int* dataStore;  // Stores data points to be analyzed by gradient function, and can be 
+    float* dataStore;  // Stores data points to be analyzed by gradient function, and can be 
     float* gradArr;  // 
     int dataCount;   // 
 };

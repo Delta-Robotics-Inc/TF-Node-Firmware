@@ -82,17 +82,19 @@ def parse_data():
         pass
     buffer = []
     
+mode = "percent" 
 
 # Muscle 1 run test script
 print(write_read("set-enable all false"))
+print(write_read("set-mode all " + mode))
 time.sleep(0.5)
 print(write_read("log-mode node 1"))
 print(write_read("log-mode m2 1"))
 print(write_read("log-mode m1 0"))
-print(write_read("set-setpoint all percent 0.1"))
+print(write_read("set-setpoint all " + mode + " 0.25")) #0.35 is a good value
 print(write_read("set-enable m2 true"))
 start = default_timer()
-while(default_timer() - start < 3.0):
+while(default_timer() - start < 7.0):
     get_data()
 arduino.write(bytes("set-enable all false" + '\n',   'utf-8'))
 start = default_timer()
@@ -132,7 +134,7 @@ for i in range(len(time_data) - 1):
 # Setting x-axis labels to show every 10th label
 #ax1.set_xticks(ticks=time_data[::50])
 # Setting the range for the x-axis and y-axis
-ax1.set_xlim(0, 9000)
+ax1.set_xlim(0, 25000)
 ax1.set_ylim(0, 24)
 
 # Adding title and labels
@@ -160,8 +162,8 @@ for i in range(len(time_data) - 1):
 # Setting x-axis labels to show every 10th label
 #ax2.set_xticks(ticks=time_data[::50])
 # Setting the range for the x-axis and y-axis
-ax2.set_xlim(0, 9000)
-ax2.set_ylim(0, 15)
+ax2.set_xlim(0, 25000)
+ax2.set_ylim(0, 30)
 
 # Adding title and labels
 ax2.set_title('M2 Current Data')
@@ -188,8 +190,8 @@ for i in range(len(time_data) - 1):
 # Setting x-axis labels to show every 10th label
 #ax3.set_xticks(ticks=time_data[::50])
 # Setting the range for the x-axis and y-axis
-ax3.set_xlim(0, 9000)
-ax3.set_ylim(0, 2000)
+ax3.set_xlim(0, 25000)
+ax3.set_ylim(0, 3000)
 
 # Adding title and labels
 ax3.set_title('M2 Resistance Data')
@@ -217,7 +219,7 @@ for i in range(len(time_data) - 1):
 # Setting x-axis labels to show every 10th label
 #ax1.set_xticks(ticks=time_data[::50])
 # Setting the range for the x-axis and y-axis
-ax3.set_xlim(0, 9000)
+ax3.set_xlim(0, 25000)
 ax3.set_ylim(0, 24)
 
 # Adding title and labels

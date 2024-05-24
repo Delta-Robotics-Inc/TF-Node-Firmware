@@ -1,5 +1,5 @@
 #include<Arduino.h>
-#include "GradientTracker.cpp"
+#include "GradientTracker.hpp"
 
 //=============================================================================
 // TF Node Defaults
@@ -24,18 +24,29 @@ const unsigned long LOG_MS = 20;  // Time between log frames (ms)
 #define SHIELD_VERSION "0.1-DEV"
 #define FIRMWARE_VERSION "0.1"
 // Voltage Read Conversion Equations
-#define VRD_SCALE_FACTOR 0.07544
-#define VRD_OFFSET -0.48216
+#define VRD_SCALE_FACTOR 0.08962//DEV 2 -> 0.07544
+#define VRD_OFFSET -3.1365//DEV 2 -> -0.48216
 #define VLD_SCALE_FACTOR_M1 0.07521
-#define VLD_SCALE_FACTOR_M2 0.07534  // See TF Node v0.1 DEV Analog Data Spreadsheet for these calculations
+#define VLD_SCALE_FACTOR_M2 0.08734 //DEV 2 -> 0.07534  // See TF Node v0.1 DEV Analog Data Spreadsheet for these calculations
 #define VLD_OFFSET_M1 -1.10407
-#define VLD_OFFSET_M2 -0.18299  // Ideally, value of 0 would yield 0 V, but this is not currently the case
-// Pinout - make sure to update pins
+#define VLD_OFFSET_M2 -2.85265 //DEV 2 -> -0.18299  // Ideally, value of 0 would yield 0 V, but this is not currently the case
+
+// Pinout - make sure to match with physical board
 #define VRD_PIN A4
+#define STATUS_SOLID_LED 8
+
+#define M1_MOS_TRIG 6
+#define M1_CURR_RD A0
+#define M1_VLD_RD A2
+
+#define M2_MOS_TRIG 3
+#define M2_CURR_RD A1
+#define M2_VLD_RD A3
 
 // DEVICE LIMITS
-#define MAX_CURRENT 20.0  // Maximum current through muscle in amps
-#define MIN_VBATTERY 7.0  // Minimum battery voltage
+#define MAX_CURRENT 30.0  // Maximum current through muscle in amps
+#define MIN_VSUPPLY 7.0  // Minimum battery voltage
+#define IGNORE_SUPPLY 3.0 // Treat levels below this as if the battery is disconnected
 
 //=============================================================================
 // Diagnostics
@@ -60,9 +71,11 @@ String log();
 // RAISE ERROR BY XORING CURRENT ERROR WITH BITSHIFTED 1s
 void errRaise(int index) {
   n_error = n_error ^ (1<<index);
+  digitalWrite(STATUS_SOLID_LED, HIGH);
 }
 void errClear() {
   n_error = 0b11111111;
+  digitalWrite(STATUS_SOLID_LED, LOW);
 }
 
 //=============================================================================
@@ -126,8 +139,26 @@ class TF_Muscle {
     enum TrainingState { MARTENSITE, PHASE_TRANSITION, POST_AF, TRAIN_FINISH };
     TrainingState trainState = MARTENSITE;
     const float timeStep_ms = 25.0f; // Time between measurement samples.  VERIFY THIS UNTIL MEASURE PERIOD IS CONSTANT!
-    float Af_ohms = -1; // RESISTANCE AT POINT OF Af (Austenite finished temperature)
+    float Af_mohms = -1; // RESISTANCE AT POINT OF Af (Austenite finished temperature)
+    float delta_mohms = 0;
+    ///////////////////////// SET AS CHANGEALBE PARAMETERS IN FUTURE
+    const float At = 500;
+    const float Af = 89;
+    const float L_nitinol = (18.91f + 2.0f) * 2.54f; //inches to cm
+    const float D_nitinol = 0.2; //in cm
+    const float resistivity_per_c_nitinol = 0.05; //micro-ohms * cm / C
+    unsigned long TRAIN_TIMEOUT_MS = 4000;
+    unsigned long train_timer;
+    int dataPointsSinceAustenite = 0;
+    /////////////////////////
     GradientTracker* resistTracker;
+    int gradWidth = 3;
+    int gradSize = 100;
+    float flatThreshold = 0.01;
+    int dir_tracker; // Keep track of direction and trigger into next state after detecting low/high
+    const int DIR_TRIGGER = 10; // Wait until direction is the same for x measurements (this is highly tied to the PWM percentage...)
+    //#TODO determine if DIR_TRIGGER should scale by PWM setpoint
+    int currentGradIndex = -1;
 
     // PULSE SETUP
     bool pulse_state = false; //on/off state of pulse cycle
@@ -147,7 +178,7 @@ class TF_Muscle {
       curr_pin = _currPin;
       vld_pin = _vLdPin;
       vld_scaleFactor = _scaleFactor;
-      resistTracker = new GradientTracker(5, 50, 0.1, timeStep_ms);
+      resistTracker = new GradientTracker(gradWidth, gradSize, flatThreshold, timeStep_ms);
       vld_offset = _offset;
       pinMode(mosfet_pin, OUTPUT);
     }
@@ -172,7 +203,7 @@ class TF_Muscle {
           //case DEGREES:  // Need to implement equation to track/return muscle temp (temp will behave different based on 2 conditions: below/above Af)
           //case OHMS:     // Need to implement PID loop (but how to implement with hysterisis curve?)
           case TRAIN:
-            pwm_val = updateTraining();
+            pwm_val = updateTraining(rld_val * 1000);  // Convert to mohms
           break;
           default:
             pwm_val = percentToPWM(0);
@@ -182,7 +213,7 @@ class TF_Muscle {
       else {
         pwm_val = percentToPWM(0); // Disabled means write 0% power
         // RESET TRAINING STATE
-        trainState = MARTENSITE;
+        //trainState = MARTENSITE;
       }
 
       analogWrite(mosfet_pin, pwm_val);  // Write pwm to mosfet m
@@ -195,37 +226,90 @@ class TF_Muscle {
       }
     }
 
+    void resetTraining() {
+        trainState = MARTENSITE;
+        resistTracker->reset();
+        dir_tracker = 0;
+        Af_mohms = 0;
+        dataPointsSinceAustenite = 0;
+        currentGradIndex = resistTracker->oldestGradIndex;
+        train_timer = millis(); //reeset timer
+    }
+
     // Will step through the state machine when in training mode
-    int updateTraining() {
+    int updateTraining(float rld_mohms) {
+
+      // Safety auto-timeout feature
+      //if(millis() - train_timer > TRAIN_TIMEOUT_MS) {
+      //  setEnable(false);
+      //  return 0;
+      //}
 
       switch(trainState) {
-        case MARTENSITE:  // STATE: Heating (Martensite phase)
+        case MARTENSITE: {  // STATE: Heating (Martensite phase)
           // I am thinking that a rolling average would be good. Track rolling average of 10 samples and when it has been decreasing for a few cycles then go to next state
-          resistTracker->addData(rld_val);
+          resistTracker->addData(rld_mohms);
 
-          // Condition for next state (resistance decreases for x intervals)
-          // Else return low pwm value
-          break;
-        case PHASE_TRANSITION:  // STATE: Heating (Pre Austenite Finished Temp)
-          // The same thing with a rolling average; wait until it has been increasing for a few cycles and find bottom of dip (set bottom to Af_ohms)
-          resistTracker->addData(rld_val);
+          if(resistTracker->oldestGradIndex != currentGradIndex) {
+            currentGradIndex = resistTracker->oldestGradIndex;
+            // Get the gradient direction from data tracker
+            GradientDirection dir = resistTracker->getCurrentDir();
+            dir_tracker += dir == POSITIVE ? 1 :
+                            dir == NEGATIVE ? -1 : 0;
 
-          // Condition for next state (resistance increases for x intervals)
-            // Calculate local minimum (Af_res)
-          // Else return low pwm value
-          break;
-        case POST_AF:  // STATE: Heating (Post Austenite finished Temp)
-          // Track ohms with respect to Af_ohms + delta_ohms
+            // Condition for next state (resistance decreases for DIR_TRIGGER intervals)
+            if(dir_tracker > 0)
+              dir_tracker = 0;
+            else if(dir_tracker < -DIR_TRIGGER) {
+              trainState = PHASE_TRANSITION;
+              dir_tracker = 0;
+            }
+          }
+          //return setpoint pwm value
+          return percentToPWM(setpoint[TRAIN]);
+        }
+        case PHASE_TRANSITION: {  // STATE: Heating (Pre Austenite Finished Temp)
+          // The same thing with a rolling average; wait until it has been increasing for a few cycles and find bottom of dip (set bottom to Af_mohms)
+          resistTracker->addData(rld_mohms);
+          dataPointsSinceAustenite++;
+
+          if(resistTracker->oldestGradIndex != currentGradIndex) {
+            currentGradIndex = resistTracker->oldestGradIndex;
+            // Get the gradient direction from data tracker
+            GradientDirection dir = resistTracker->getCurrentDir();
+            dir_tracker += dir == POSITIVE ? 1 :
+                          dir == NEGATIVE ? -1 : 0;
+
+            // Condition for next state (wait for dir_tracker to increase over threshold)
+            if(dir_tracker < 0)
+              dir_tracker = 0;
+            else if(dir_tracker > DIR_TRIGGER) {
+              trainState = POST_AF;
+              // #TODO Convert this function to getLocalMinimum from current position backward.  This oldestGradIndex should get current position
+              int startIndex = resistTracker->oldestGradIndex + ((dataPointsSinceAustenite / (gradWidth-1)) + 1);
+              startIndex = startIndex < 0 ? 0 : startIndex; // Get oldest data if transition was lost
+              Af_mohms = resistTracker->getLocalMinimum(startIndex, resistTracker->oldestGradIndex);
+              dir_tracker = 0;
+            }
+          }
+          // Return setpoint pwm value
+          return percentToPWM(setpoint[TRAIN]);
+        }
+        case POST_AF: {  // STATE: Heating (Post Austenite finished Temp)
+          // Compare change in ohms to desired delta_mohms
+          float delta_mohms_real = (rld_mohms - Af_mohms); // mohms
           // When ohms exceeds (Af_ohms + delta_ohms), start training timer. Flash LED while at temp
           // Return PID (with max value) to mitigate error between desired temperature and set temperature
 
           // Timer Condition
-          break;
+          return 0; // Just cut power for now.
+        }
         // STATE: Finished
-        case TRAIN_FINISH:
+        case TRAIN_FINISH: {
           setEnable(false); // When time exceeds training time, hold LED solid, disable, and do not enable until told to do so
           // Set LED color
           return 0;
+        }
     }
       return 0;
     }
@@ -244,6 +328,9 @@ class TF_Muscle {
 
     void setEnable(bool state) {
       enabled = state;
+
+      if(mode == TRAIN && enabled)
+        resetTraining();
     }
 
     void setMode(ctrl_modes _mode) {
@@ -256,6 +343,10 @@ class TF_Muscle {
 
     void setSetpoint(ctrl_modes _mode, float val) {
         setpoint[_mode] = val;
+
+        // Update delta milliohms for training mode
+        if(_mode == TRAIN)
+          delta_mohms = ((At - Af) * L_nitinol / (PI * pow(D_nitinol / 2, 2)) * resistivity_per_c_nitinol) * 0.001; //results in milliohms
     }
 
     void stop() {
@@ -294,18 +385,24 @@ class TF_Muscle {
         case DEGREES:
             setpoint_str = String(setpoint[DEGREES]) + "°";
             break;
+        case TRAIN:
+            setpoint_str = String(setpoint[TRAIN]);
+            break;
         default:
             setpoint_str = String("mode unknown!");
             break;
         }
-        stat_str += "| setpoint: " + setpoint_str + '\n';
-        stat_str += "| pwm-val: " + pwm_val + '\n';
-        //stat_str += "| current: " + String(analogRead(curr_pin)) + " (native units) \n";
-        stat_str += "| current: " + String(curr_val) + " A \n";
-        stat_str += "| load-volts: " + String(vld_val) + " V \n";
-        stat_str += "| load-resist: " + String(rld_val) + " Ω \n";
+      stat_str += "| setpoint: " + setpoint_str + '\n';
+      stat_str += "| pwm-val: " + String(pwm_val) + '\n';
+      //stat_str += "| current: " + String(analogRead(curr_pin)) + " (native units) \n";
+      stat_str += "| current: " + String(curr_val) + " A \n";
+      stat_str += "| load-volts: " + String(vld_val) + " V \n";
+      stat_str += "| load-resist: " + String(rld_val) + " Ω \n";
+      stat_str += "| Af_resist: " + String(Af_mohms) + " Ω \n";
+      stat_str += "| delta_ohms: " + String(delta_mohms) + " mΩ \n";
+      stat_str += "| trainState: " + String(trainState) + "\n";
 
-        return stat_str;
+      return stat_str;
     }
 
     //********************************************************************************************************************
@@ -313,14 +410,17 @@ class TF_Muscle {
     float getMuscleAmps() {
       float AcsValue=0.0,Samples=0.0,AvgAcs=0.0,raw=0.0;
     
-      for (int x = 0; x < 10; x++){       // Get 10 samples
+      for (int x = 0; x < 3; x++){       // Get 10 samples
+        waitForPWMHigh();
         AcsValue = analogRead(curr_pin);  // Read current sensor values   
         Samples = Samples + AcsValue;     // Add samples together
       }
-      raw = Samples / 30.0;  // Taking Average of Samples
+      raw = Samples / 3.0;  // Taking Average of Samples
     
       float amps = ((raw * (5.0 / 1024.0)) - 2.5)/0.100; //5.0/1024 is conversion ratio of volts/native unit. 2.5 v is 0 A due to positive and negative ability
       
+      if(amps < 0.0 && amps > -1.0f)
+        return 0.0f;  // Return 0 if close to 0 (prevent negative resistance)
       return amps;
     }
 
@@ -328,35 +428,44 @@ class TF_Muscle {
     float getLoadVoltage() {
       float value=0.0,samples=0.0,avg_value=0.0,raw=0.0;
     
-      for (int x = 0; x < 10; x++){   // Get 10 samples
+      for (int x = 0; x < 3; x++){   // Get 10 samples
+        waitForPWMHigh();
         value = analogRead(vld_pin);  // Read current sensor values   
         samples += value;          // Add samples together
       }
-      raw = samples / 30.0;  // Taking Average of Samples
+      raw = samples / 3.0;  // Taking Average of Samples
 
       float volts = raw * vld_scaleFactor + vld_offset; // Values are attained experimentally with known input voltages
+      if(volts < 0.0 && volts > -2.0)
+        return 0.0f; // Return 0 volts for values close to 0
       return volts;
       //return raw;
     }
 
     // V=IR -> R=V/I
     static float calcResistance(float V1, float V2, float I) {
-      return (V1-V2) / I;
+      if(I == 0.0f)
+        return 9999999999.0f; // Really high number
+      return abs((V1-V2) / I);
     }
 
     void measure() {
       // ONLY MEASURE ON HIGH VALUE OF PWM
       // If pwm is low, wait a max of 3 ms (This assumes that PWM frequency is 450 Hz)
       // If pwm does not switch during this time, take the measurement anyways
+      vld_val = getLoadVoltage();    
+      curr_val = getMuscleAmps();
+      rld_val = calcResistance(n_vSupply, vld_val, curr_val);
+    }
+
+    void waitForPWMHigh() {
       if(enabled && !digitalRead(mosfet_pin)) {
         unsigned long measure_start = millis();
-        unsigned long measure_timeout = 3; //timeout after 3 ms
+        unsigned long measure_timeout = 1000; //timeout after 10 ms
         while((millis() - measure_start < measure_timeout) && !digitalRead(mosfet_pin)) 
         { /* Do nothing */ }
       }
-      curr_val = getMuscleAmps(); 
-      vld_val = getLoadVoltage();
-      rld_val = calcResistance(n_vSupply, vld_val, curr_val);
+      return;
     }
 
     //=============================================================================
@@ -574,7 +683,9 @@ class SetMode : public Command {
       ctrl_modes mode = mode_str == ctrl_modes_str[PERCENT] ? PERCENT :
                         mode_str == ctrl_modes_str[VOLTS] ? VOLTS :
                         mode_str == ctrl_modes_str[AMPS] ? AMPS :
-                        mode_str == ctrl_modes_str[DEGREES] ? DEGREES : PERCENT;  // Default is percent
+                        mode_str == ctrl_modes_str[DEGREES] ? DEGREES :
+                        mode_str == ctrl_modes_str[OHMS] ? OHMS : 
+                        mode_str == ctrl_modes_str[TRAIN] ? TRAIN : PERCENT;  // Default is percent
 
       if(device == "all") {
          TF_Muscle::setModeAll(mode);
@@ -604,7 +715,9 @@ class SetSetpoint : public Command {
       ctrl_modes mode = mode_str == ctrl_modes_str[PERCENT] ? PERCENT :
                         mode_str == ctrl_modes_str[VOLTS] ? VOLTS :
                         mode_str == ctrl_modes_str[AMPS] ? AMPS :
-                        mode_str == ctrl_modes_str[DEGREES] ? DEGREES : PERCENT; // Default is percent
+                        mode_str == ctrl_modes_str[DEGREES] ? DEGREES :
+                        mode_str == ctrl_modes_str[OHMS] ? OHMS : 
+                        mode_str == ctrl_modes_str[TRAIN] ? TRAIN : PERCENT; // Default is percent
       if(device == "all") {
          TF_Muscle::setSetpointAll(mode, setpoint);
       }
