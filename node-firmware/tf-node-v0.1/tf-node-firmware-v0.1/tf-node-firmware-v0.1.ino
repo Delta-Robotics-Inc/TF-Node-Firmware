@@ -76,6 +76,7 @@ void loop() {
 
 void nodeUpdate() {
   n_vSupply = getSupplyVolts();
+  pot_val = getPotVal();
 
   // Low Power Condition
   if(n_vSupply < MIN_VSUPPLY && n_vSupply > IGNORE_SUPPLY) {
@@ -96,7 +97,8 @@ void nodeUpdate() {
 
 String deviceStatus() {
   String stat_str ="Battery Volts: " + String(n_vSupply) + " V\n";
-  stat_str += "Error State: " + String(n_error, BIN);
+  stat_str += "Error State: " + String(n_error, BIN) + "\n";
+  stat_str += "Pot Val: " + String(pot_val) + "\n";
   return stat_str;
 }
 
@@ -116,7 +118,7 @@ String log() {
 
   String log_str = "========================================\nLOG TIME: " + String(millis() - log_start) + "\n"; // Display time since log start
   if(nodeLogMode == 1)
-    log_str += deviceStatus() + "\n";
+    log_str += deviceStatus();
 
   for(int m=0; m<MUSCLE_CNT; m++) { log_str += TF_Muscle::muscles[m]->log(); };
 

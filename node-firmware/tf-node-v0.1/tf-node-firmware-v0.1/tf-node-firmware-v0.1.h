@@ -5,9 +5,9 @@
 // TF Node Defaults
 //=============================================================================
 
-#define CTRL_MODE_CNT 6
-enum ctrl_modes { PERCENT, VOLTS, AMPS, DEGREES, OHMS, TRAIN };
-const String ctrl_modes_str[CTRL_MODE_CNT] = { "percent", "volts", "amps", "degrees", "ohms", "train" };
+#define CTRL_MODE_CNT 7
+enum ctrl_modes { PERCENT, VOLTS, AMPS, DEGREES, OHMS, TRAIN, MANUAL };
+const String ctrl_modes_str[CTRL_MODE_CNT] = { "percent", "volts", "amps", "degrees", "ohms", "train", "manual" };
 #define SIGNAL_TIMEOUT 2000  // Amount of time (ms) between receiving master commands before auto-disable
 const unsigned long LOG_MS = 20;  // Time between log frames (ms)
 
@@ -43,6 +43,9 @@ const unsigned long LOG_MS = 20;  // Time between log frames (ms)
 #define M2_CURR_RD A1
 #define M2_VLD_RD A3
 
+#define MANUAL_MODE_POT A5
+#define MANUAL_MODE_THRESHOLD 0.02
+
 // DEVICE LIMITS
 #define MAX_CURRENT 30.0  // Maximum current through muscle in amps
 #define MIN_VSUPPLY 7.0  // Minimum battery voltage
@@ -63,6 +66,7 @@ unsigned long log_start;  // Time of start of log
 int nodeLogMode = 0;  //0=No log; 1=Device log
 
 float n_vSupply; // Current value of measured battery voltage.
+float pot_val;  // Current value of the potentiometer 
 
 void nodeUpdate();
 String deviceStatus();
@@ -85,15 +89,30 @@ void errClear() {
 float getSupplyVolts() {
   float value=0.0,samples=0.0,avg_value=0.0,raw=0.0;
     
-      for (int x = 0; x < 30; x++){   // Get 30 samples
-        value = analogRead(VRD_PIN);  // Read current sensor values   
-        samples += value;          // Add samples together
-      }
-      raw=samples/30.0;  // Taking Average of Samples
+    for (int x = 0; x < 30; x++){   // Get 30 samples
+      value = analogRead(VRD_PIN);  // Read voltage divider value   
+      samples += value;          // Add samples together
+    }
+    raw=samples/30.0;  // Taking Average of Samples
 
-      float volts = raw * VRD_SCALE_FACTOR + VRD_OFFSET;
-      return volts;
-      //return raw;
+    float volts = raw * VRD_SCALE_FACTOR + VRD_OFFSET;
+    return volts;
+    //return raw;
+}
+
+// Returns a value (0.0->1.0) based on pot value
+float getPotVal() {
+    float value=0.0,samples=0.0,avg_value=0.0,raw=0.0;
+    
+    for (int x = 0; x < 3; x++){   // Get 30 samples
+      value = analogRead(MANUAL_MODE_POT);  // Read potentiometer
+      samples += value;          // Add samples together
+    }
+    raw=samples/3.0;  // Taking Average of Samples
+
+    float percent = raw / 1024.0;
+    percent = percent > MANUAL_MODE_THRESHOLD ? percent : 0.0; // Limit lowest measurable value
+    return percent;
 }
 
 //=============================================================================
@@ -204,6 +223,9 @@ class TF_Muscle {
           //case OHMS:     // Need to implement PID loop (but how to implement with hysterisis curve?)
           case TRAIN:
             pwm_val = updateTraining(rld_val * 1000);  // Convert to mohms
+          break;
+          case MANUAL:
+            pwm_val = percentToPWM(pot_val); // Manual mode uses the potentiometer if connected
           break;
           default:
             pwm_val = percentToPWM(0);
@@ -387,6 +409,9 @@ class TF_Muscle {
             break;
         case TRAIN:
             setpoint_str = String(setpoint[TRAIN]);
+            break;
+        case MANUAL:
+            setpoint_str = String(pot_val) + " %POT";
             break;
         default:
             setpoint_str = String("mode unknown!");
@@ -685,7 +710,8 @@ class SetMode : public Command {
                         mode_str == ctrl_modes_str[AMPS] ? AMPS :
                         mode_str == ctrl_modes_str[DEGREES] ? DEGREES :
                         mode_str == ctrl_modes_str[OHMS] ? OHMS : 
-                        mode_str == ctrl_modes_str[TRAIN] ? TRAIN : PERCENT;  // Default is percent
+                        mode_str == ctrl_modes_str[TRAIN] ? TRAIN :
+                        mode_str == ctrl_modes_str[MANUAL] ? MANUAL : PERCENT;  // Default is percent
 
       if(device == "all") {
          TF_Muscle::setModeAll(mode);
@@ -717,7 +743,8 @@ class SetSetpoint : public Command {
                         mode_str == ctrl_modes_str[AMPS] ? AMPS :
                         mode_str == ctrl_modes_str[DEGREES] ? DEGREES :
                         mode_str == ctrl_modes_str[OHMS] ? OHMS : 
-                        mode_str == ctrl_modes_str[TRAIN] ? TRAIN : PERCENT; // Default is percent
+                        mode_str == ctrl_modes_str[TRAIN] ? TRAIN : // #TODO Actually implement setpoint of "manual" mode
+                        mode_str == ctrl_modes_str[MANUAL] ? MANUAL : PERCENT; // Default is percent
       if(device == "all") {
          TF_Muscle::setSetpointAll(mode, setpoint);
       }
