@@ -78,6 +78,12 @@ void nodeUpdate() {
   n_vSupply = getSupplyVolts();
   pot_val = getPotVal();
 
+  // Only allow control when PC is in the loop
+  // TODO: add option for 
+  if(!Serial) {
+    TF_Muscle::setEnableAll(false);
+  }
+
   // Low Power Condition
   if(n_vSupply < MIN_VSUPPLY && n_vSupply > IGNORE_SUPPLY) {
     errRaise(ERR_LOW_VOLT);
@@ -90,37 +96,48 @@ void nodeUpdate() {
     String log_str = log();
     // Only print if there is something to log
     if(log_str != " ") // Make sure that log data exceeds 90, otherwise it will never print
-      Serial.print(log());
+      Serial.print(log_str);
     log_timer = millis();
   }
 }
 
-String deviceStatus() {
-  String stat_str ="Battery Volts: " + String(n_vSupply) + " V\n";
+String devStatusFormatted() {
+  String stat_str = "========================================\nLOG TIME: " + String(millis() - log_start) + "\n"; // Display time since log start
+  stat_str += "Battery Volts: " + String(n_vSupply) + " V\n";
   stat_str += "Error State: " + String(n_error, BIN) + "\n";
   stat_str += "Pot Val: " + String(pot_val) + "\n";
+  return stat_str;
+}
+
+String devStatusQuick() {
+  String stat_str = String(millis() - log_start) + " ";
+  stat_str += String(n_vSupply) + " ";
+  stat_str += String(n_error, BIN) + " ";
+  stat_str += String(pot_val) + " ";
   return stat_str;
 }
 
 // Logs data for the devices that have an active "logMode", including the node itself
 String log() {
   // Determine if logging is necessary
-  bool toLog = nodeLogMode == 1;
+  bool toLog = nodeLogMode != 0;
   for(int x=0; x<MUSCLE_CNT; x++) {
     if(toLog)
       break;
-    toLog = TF_Muscle::muscles[x]->logMode == 1;
+    toLog = TF_Muscle::muscles[x]->logMode != 0;
   }
 
   // Return empty if no device needs to log
   if(!toLog)
     return " ";
 
-  String log_str = "========================================\nLOG TIME: " + String(millis() - log_start) + "\n"; // Display time since log start
+  String log_str;
   if(nodeLogMode == 1)
-    log_str += deviceStatus();
+    log_str += devStatusFormatted();
+  else if(nodeLogMode == 2)
+    log_str += devStatusQuick();
 
   for(int m=0; m<MUSCLE_CNT; m++) { log_str += TF_Muscle::muscles[m]->log(); };
 
-  return log_str;
+  return log_str + "\n";
 }

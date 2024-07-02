@@ -35,11 +35,11 @@ const unsigned long LOG_MS = 20;  // Time between log frames (ms)
 #define VRD_PIN A4
 #define STATUS_SOLID_LED 8
 
-#define M1_MOS_TRIG 6
+#define M1_MOS_TRIG 3
 #define M1_CURR_RD A0
 #define M1_VLD_RD A2
 
-#define M2_MOS_TRIG 3
+#define M2_MOS_TRIG 6
 #define M2_CURR_RD A1
 #define M2_VLD_RD A3
 
@@ -69,7 +69,8 @@ float n_vSupply; // Current value of measured battery voltage.
 float pot_val;  // Current value of the potentiometer 
 
 void nodeUpdate();
-String deviceStatus();
+String devStatusFormatted();
+String devStatusQuick();
 String log();
 
 // RAISE ERROR BY XORING CURRENT ERROR WITH BITSHIFTED 1s
@@ -122,6 +123,7 @@ float getPotVal() {
 //CONVERT PERCENT BETWEEN 0:1 TO POSITIVE PWM
 int percentToPWM(float speed) {
   int pwm = abs(speed) * 255;
+  pwm = max(0, min(pwm, 255));  // Clamp between [0:255]
   return pwm;
 }
 
@@ -186,8 +188,8 @@ class TF_Muscle {
     int pulse_cnt = -2; //-2 for continuous mode, -1 for infinite pulse, >0 for finite pulse
     unsigned long pulse_timer;
 
-    // STATUS/LOGGING MODE
-    int logMode = 0; // 0=No log; 1=Constant logging (calls status every update)
+    // statusFormatted/LOGGING MODE
+    int logMode = 0; // 0=No log; 1=Constant logging (calls statusFormatted every update); 2=Quick Logging (not formatted)
 
     static TF_Muscle* muscles[MUSCLE_CNT];
 
@@ -218,9 +220,12 @@ class TF_Muscle {
             pwm_val = percentToPWM(setpoint[VOLTS] / n_vSupply);  // When controlling for volts, the ratio of setpoint/supply will be percentage of power to deliver
             break;
           //TODO: Implement other control modes
-          //case AMPS:     // Need to implement PID loop
+          case AMPS:     // Need to implement PID loop
+            pwm_val = percentToPWM(setpoint[AMPS] / curr_val); // Simplest current control is just pulsing the peak current at a rate which matches setpoint current
+            break;
           //case DEGREES:  // Need to implement equation to track/return muscle temp (temp will behave different based on 2 conditions: below/above Af)
           //case OHMS:     // Need to implement PID loop (but how to implement with hysterisis curve?)
+          // Eventually add position control (requires force to be known)
           case TRAIN:
             pwm_val = updateTraining(rld_val * 1000);  // Convert to mohms
           break;
@@ -252,7 +257,7 @@ class TF_Muscle {
         trainState = MARTENSITE;
         resistTracker->reset();
         dir_tracker = 0;
-        Af_mohms = 0;
+        //Af_mohms = 0;
         dataPointsSinceAustenite = 0;
         currentGradIndex = resistTracker->oldestGradIndex;
         train_timer = millis(); //reeset timer
@@ -324,7 +329,8 @@ class TF_Muscle {
           // Return PID (with max value) to mitigate error between desired temperature and set temperature
 
           // Timer Condition
-          return 0; // Just cut power for now.
+          return percentToPWM(0.05); // Just cut power for now.
+          // #TODO add resistance control measures at this point
         }
         // STATE: Finished
         case TRAIN_FINISH: {
@@ -332,14 +338,16 @@ class TF_Muscle {
           // Set LED color
           return 0;
         }
-    }
+      }
       return 0;
     }
 
     // Based on the logMode, return data to be logged
     String log() {
       if(logMode == 1)
-        return status();
+        return statusFormatted();
+      else if(logMode == 2)
+        return statusQuick();
       else
         return "";
     }
@@ -384,7 +392,7 @@ class TF_Muscle {
       // Reset timer and pulse vals*****************************************
     }
 
-    String status() {
+    String statusFormatted() {
       String stat_str = "MUSCLE: " + name + '\n';
       stat_str += "| mosfet: " + String(mosfet_pin) + '\n';
       stat_str += "| curr_pin: " + String(curr_pin) + '\n';
@@ -410,11 +418,8 @@ class TF_Muscle {
         case TRAIN:
             setpoint_str = String(setpoint[TRAIN]);
             break;
-        case MANUAL:
-            setpoint_str = String(pot_val) + " %POT";
-            break;
         default:
-            setpoint_str = String("mode unknown!");
+            setpoint_str = String(setpoint[mode]) + " " + String(mode);
             break;
         }
       stat_str += "| setpoint: " + setpoint_str + '\n';
@@ -427,6 +432,25 @@ class TF_Muscle {
       stat_str += "| delta_ohms: " + String(delta_mohms) + " mΩ \n";
       stat_str += "| trainState: " + String(trainState) + "\n";
 
+      return stat_str;
+    }
+
+    // TODO: Switch this function to binary protocol
+    // TODO: Make logMode a binary key that outputs only certain variables
+    String statusQuick() {
+      String stat_str = name + " "; //4
+      stat_str += String(mosfet_pin) +  " ";
+      stat_str += String(curr_pin) + " ";
+      stat_str += String(enabled) + " ";
+      stat_str += String(mode) + " ";
+      stat_str += String(setpoint[mode]) + " ";
+      stat_str += String(pwm_val) + " ";
+      stat_str += String(curr_val) + " ";
+      stat_str += String(vld_val) + " ";
+      stat_str += String(rld_val) + " ";
+      stat_str += String(Af_mohms) + " ";
+      stat_str += String(delta_mohms) + " ";
+      stat_str += String(trainState) + " ";
       return stat_str;
     }
 
@@ -484,9 +508,9 @@ class TF_Muscle {
     }
 
     void waitForPWMHigh() {
-      if(enabled && !digitalRead(mosfet_pin)) {
+      if(enabled && pwm_val > 0 && !digitalRead(mosfet_pin)) {
         unsigned long measure_start = millis();
-        unsigned long measure_timeout = 1000; //timeout after 10 ms
+        unsigned long measure_timeout = 1000; //timeout after 1000 ms
         while((millis() - measure_start < measure_timeout) && !digitalRead(mosfet_pin)) 
         { /* Do nothing */ }
       }
@@ -514,9 +538,9 @@ class TF_Muscle {
       for(int m=0; m < MUSCLE_CNT; m++) { muscles[m]->setSetpoint(_mode, setpoint); };
     }
 
-    static String statusAll() {
+    static String statusFormattedAll() {
       String stat_str = "";
-      for(int m=0; m < MUSCLE_CNT; m++) { stat_str += muscles[m]->status(); };
+      for(int m=0; m < MUSCLE_CNT; m++) { stat_str += muscles[m]->statusFormatted(); };
       return stat_str;
     }
 
@@ -769,16 +793,21 @@ class Status : public Command {
         int logMode = params[1].toInt();
       }
 
-      // Display status of all devices
+      // Display Status of all devices
       if(param_cnt == 0 || params[0] == "all") {
-        Serial.println(deviceStatus());
-        Serial.println(TF_Muscle::statusAll());
+        Serial.print(devStatusFormatted());
+        Serial.println(TF_Muscle::statusFormattedAll());
+        return;
+      }
+      if(params[0] == "node") {
+        Serial.println(devStatusFormatted());
         return;
       }
 
-      // Display status of specified device
+      // Display Status of specified device
       int m = Command::parseDeviceStr(params[0]);
-      Serial.println(TF_Muscle::muscles[m]->status());
+      Serial.print(TF_Muscle::muscles[m]->statusFormatted());
+      Serial.println();
     }
 } c_status;
 

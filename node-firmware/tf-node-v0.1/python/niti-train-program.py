@@ -2,13 +2,19 @@
 """
 Created on Tue Apr  2 18:53:24 2024
 
-This program will log the data from M1 on the TF-Node device during a run duration.
+This program will log the data from M1/M2 on the TF-Node device during a run duration.
 It utilizes the serial string command structure of tf-node-firmware-v1.0
 It also utilizes the log() feature from the same firmware
 
 Finally, the experiment will display graphs of the results
 
+Summary
+This script sets up a serial connection with an Arduino, logs data during a predefined experiment, parses the data, and visualizes it in real-time using Matplotlib. The experiment is controlled via serial commands, and the data is continuously updated and displayed in a set of subplots. The script demonstrates how to handle real-time data visualization and serial communication in Python.
+
 @author: Mark Dannemiller
+
+
+Currently, this script needs to be ran with the node LOG_TIME >= 500 ms
 """
 
 # Importing Libraries 
@@ -17,153 +23,142 @@ import time
 from timeit import default_timer
 import matplotlib.pyplot as plt
 
-
-arduino = serial.Serial(port='COM7', baudrate=115200, timeout=.1)
-
-LOG_INTERVAL = 0.1 # Interval in seconds between data logs from Node
-
+arduino = serial.Serial(port='COM10', baudrate=115200, timeout=1)
 buffer = []
 
-# This experiment setup will log the arduino clock, M1 enabled data, and power dissipation per frame
+# This experiment setup will log the arduino clock, MX enabled data, and power dissipation per frame
 time_data = []
 m1_en_data = []
 vbatt_data = []
 vld_data = []
 amps_data = []
 resist_data = []
+pwm_data = []
 
 def send_command(x):
-    arduino.write(bytes(x + '\n',   'utf-8'))
+    arduino.write(bytes(x + '\n', 'utf-8'))
     time.sleep(0.05)
 
 def get_data():
-    data = str(arduino.readline())
-    data.rstrip()
-    print(data)
-    if("=" in data):
-        if(len(buffer) > 0):
-            parse_data()
-    else:
-        buffer.append(data)
-    return data
+    global buffer
+    try:
+        buffer = arduino.readline().decode('utf-8').strip()  # Properly decode and strip the data
+        if not buffer:
+            return  # Skip if data is empty
+        print(buffer)
+        parse_data()
+        #update_plot(10)
+    except serial.SerialException as e:
+        print(f"Serial error: {e}")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
 
-# These lines are specific to M1 under tf-node-firmware V1.0 log() function
-# "log-mode node 1" and "log-mode m1 1" must be set
+# These lines are specific to M1/M2 under tf-node-firmware V1.0 log() function
+# "log-mode node 1" and "log-mode m<x> 1" must be set
 def parse_data():
     global buffer
     try:
-        log_time_line = buffer[0].split(' ')
-        vbatt_line = buffer[1].split(' ')
-        amps_line = buffer[11].split(' ')
-        vld_line = buffer[12].split(' ')
-        ohms_line = buffer[13].split(' ')
-        m1_enabled_line = buffer[7].split(' ') #**************
-        #print(vbatt_line)
-        #print(amps_line)
-        log_time = int(log_time_line[2].strip("\\n'"))
-        vbatt = float(vbatt_line[2].rstrip("\\n'"))
-        vld = float(vld_line[2].rstrip("\\n'"))
-        amps = float(amps_line[2].rstrip("\\n'"))
-        ohms = float(ohms_line[2].rstrip("\\n'")) * 1000 #convert to mOhms
-        m1_enabled = True if "true" in m1_enabled_line[2] else False
-        #print(log_time)
-        #print(m1_enabled)
-        #print(vbatt)
-        #print(amps)
-        #print("\n")
+        buffer_split = buffer.split(' ')
+
+        log_time = int(buffer_split[0].strip("\\n'"))
+        vbatt = float(buffer_split[1].rstrip("\\n'"))
+        vld = float(buffer_split[12].rstrip("\\n'"))
+        amps = float(buffer_split[11].rstrip("\\n'"))
+        ohms = float(buffer_split[13].rstrip("\\n'")) * 1000  # convert to mOhms
+        m1_enabled = True if "1" in buffer_split[7] else False
+        pwm = int(buffer_split[10].rstrip("\\n'"))
+
         time_data.append(log_time)
         m1_en_data.append(m1_enabled)
         vbatt_data.append(vbatt)
         vld_data.append(vld)
         amps_data.append(amps)
         resist_data.append(ohms)
-    except:
-        pass
+        pwm_data.append(pwm)
+    except Exception as e:
+        print(f"Error parsing data: {e}")
     buffer = []
+
+
+def plot_data(ax, title, x_label, y_label, x_arr, y_arr, y_range, history):
+    ax.clear()
+    start_index = len(x_arr) - history
+    if(start_index < 0 or history < 0):
+        start_index = 0
+        start_range = 0
+    else:
+        start_range = x_arr[start_index]
+        
+    for i in range(start_index, len(x_arr) - 1):
+        if x_arr[i] < x_arr[i + 1]:
+            #color = 'r-' if m1_en_data[i] else 'b-' # Color based on enabled
+            
+            # Normalize pwm_data to be between 0 and 1
+            normalized_value = pwm_data[i] / 255.0
+            # Get color from the 'cool' colormap (which ranges from blue to red)
+            color = plt.cm.cool(0.5)
+            ax.plot(x_arr[i:i + 2], y_arr[i:i + 2], color)
+
     
-def plot_data(title, x_label, y_label, x_arr, y_arr, x_range, y_range):
-    # Creating a figure and axis object
-    fig, ax = plt.subplots()
-
-    # Assuming the data is sorted by x_arr
-    for i in range(len(x_arr) - 1):
-        if(x_arr[i] < x_arr[i+1]):
-            if m1_en_data[i]:
-                ax.plot(x_arr[i:i+2], y_arr[i:i+2], 'r-')  # Red line for True
-            else:
-                ax.plot(x_arr[i:i+2], y_arr[i:i+2], 'b-')  # Blue line for False
-
-    # Setting the range for the x-axis and y-axis
-    ax.set_xlim(0, x_range)
+    ax.set_xlim(start_range, x_arr[-1] + 1000)  # Adding a small margin of 1000 ms for better visualization    
     ax.set_ylim(0, y_range)
-
-    # Adding title and labels
     ax.set_title(title)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
 
-    # Displaying the plot
-    plt.show()
-    
-    
-#==============================================================================
-# Training Script
-#==============================================================================
-    
-wait1 = 25.0
+
+# Initialize the plot
+plt.style.use("fivethirtyeight")
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(10, 8))
+
+def update_plot(history):
+    if len(time_data) > 0:
+        plot_data(ax1, 'VBatt Data', 'Log Time (ms)', 'Voltage (V)', time_data, vbatt_data, 24, history)
+        plot_data(ax2, 'V_LD Data', 'Log Time (ms)', 'Voltage (V)', time_data, vld_data, 30, history)
+        plot_data(ax3, 'Amps Data', 'Log Time (ms)', 'Current (A)', time_data, amps_data, 24, history)
+        plot_data(ax4, 'M2 Resist Data', 'Log Time (ms)', 'Resistance (mΩ)', time_data, resist_data, 3000, history)
+
+        fig.tight_layout()
+        plt.pause(0.001)
+
+# Experiment setup
+wait1 = 10.0
 wait2 = 0.0
-wait3 = 5.0
+wait3 = 10.0
 wait_total_ms = (wait1 + wait2 + wait3) * 1000
 
-mode = "manual" # Set the mode, "train" to train or "percent" to test without stop
+mode = "percent"  # Set the mode, "train" to train or "percent" to test without stop
+setpoint = 1.0
 
 # Muscle 1 run test script
 send_command("set-enable all false")
 send_command("set-mode all " + mode)
+send_command("set-setpoint all " + mode + " " + str(setpoint))
 time.sleep(0.5)
-send_command("log-mode node 1")
-send_command("log-mode m1 1")
-send_command("log-mode m2 0")
-#send_command("set-setpoint all " + mode + " 0.5") #0.35 is a good value
-send_command("set-enable m1 true")
-start = default_timer()
+send_command("log-mode node 2")
+send_command("log-mode m2 2")
+send_command("log-mode m1 0")
+send_command("set-enable m2 true")
 
-while(default_timer() - start < wait1):
+start = default_timer()
+while default_timer() - start < wait1:
     get_data()
-    
-# Optional second period of low power
-#send_command("set-setpoint all " + mode + " 0.25")
-#start = default_timer()
-#while(default_timer() - start < 25.0):
-#    get_data()
     
 send_command("set-enable all false")
-start = default_timer()
-while(default_timer() - start < wait3):
-    get_data()
 
+start = default_timer()
+while default_timer() - start < wait3:
+    get_data()
 
 arduino.close()
 
-
-#==============================================================================
-# Plotting
-#==============================================================================
-
-
-# We can divide the elements of supply voltage (volts) by the corresponding elements of current data (amps), to get resistance (ohms)
-# R = V/I // Multiply by 1000 for result in mOhms
-#resist_data = [(V / I) * 1000 for V, I in zip(vbatt_data, amps_data)]
-
+# Plotting and Printing data
 print(time_data)
 print(m1_en_data)
 print(vbatt_data)
 print(amps_data)
 print(vld_data)
 print(resist_data)
+print(pwm_data)
 
-# Plots
-plot_data('V_Supp Data', 'Log Time (ms)', 'Supply (V)', time_data, vbatt_data, wait_total_ms, 24) # Plotting the Vbatt graph
-plot_data('M2 Current Data', 'Log Time (ms)', 'Current (A)', time_data, amps_data, wait_total_ms, 30) # Plotting the Current Data Graph
-plot_data('V_LD Data', 'Log Time (ms)', 'Voltage (V)', time_data, vld_data, wait_total_ms, 24) # Plotting the VLD graph
-plot_data('M2 Resistance Data', 'Log Time (ms)', 'Resistance (mΩ)', time_data, resist_data, wait_total_ms, 1000) # Plotting the Resistance Data Graph
+update_plot(-1)
