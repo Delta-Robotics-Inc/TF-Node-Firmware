@@ -11,45 +11,58 @@ const String ctrl_modes_str[CTRL_MODE_CNT] = { "percent", "volts", "amps", "degr
 #define SIGNAL_TIMEOUT 2000  // Amount of time (ms) between receiving master commands before auto-disable
 const unsigned long LOG_MS = 20;  // Time between log frames (ms)
 
-// TF Node Commands ===========================================================
+// TF Node Commands
 #define COMMAND_CNT 8  // Number of commands
 #define PARAM_MAX 20  // Command parameter array will be this size
 
 
 //=============================================================================
-// TF Node Configuration
+// TF Node Board Configuration
 //=============================================================================
 
 #define MUSCLE_CNT 2
-#define SHIELD_VERSION "0.1-DEV"
-#define FIRMWARE_VERSION "0.1"
+#define SHIELD_VERSION "0.2-DEV"
+#define FIRMWARE_VERSION "0.2.0"
+
+#define VCC 5.0  // [V] Maximum readable value.  Should be 5.0 V but will vary slightly with the voltage regulator output
+
 // Voltage Read Conversion Equations
-#define VRD_SCALE_FACTOR 0.08962//DEV 2 -> 0.07544
-#define VRD_OFFSET -3.1365//DEV 2 -> -0.48216
-#define VLD_SCALE_FACTOR_M1 0.07521
-#define VLD_SCALE_FACTOR_M2 0.08734 //DEV 2 -> 0.07534  // See TF Node v0.1 DEV Analog Data Spreadsheet for these calculations
-#define VLD_OFFSET_M1 -1.10407
-#define VLD_OFFSET_M2 -2.85265 //DEV 2 -> -0.18299  // Ideally, value of 0 would yield 0 V, but this is not currently the case
+#define VRD_SCALE_FACTOR 11 * VCC/1023.0  // Derived from resistor divider circuit with R1=10k and R2=1k
+#define VRD_OFFSET 0
+#define VLD_SCALE_FACTOR_M1 11 * VCC/1023.0
+#define VLD_SCALE_FACTOR_M2 11 * VCC/1023.0
+#define VLD_OFFSET_M1 0
+#define VLD_OFFSET_M2 0
+
+// Current Sense Amplifier -> TI INA301
+#define R_SNS 0.0005  // [ohms]
+#define AMP_GAIN 100  // [V/V] Vin/Vout gain of amplifier
 
 // Pinout - make sure to match with physical board
 #define VRD_PIN A4
 #define STATUS_SOLID_LED 8
+#define STATUS_RGB_RED 9
+#define STATUS_RGB_GREEN 10
+#define STATUS_RGB_BLUE 11
 
 #define M1_MOS_TRIG 3
 #define M1_CURR_RD A0
 #define M1_VLD_RD A2
+#define M1_ALERT 12
 
 #define M2_MOS_TRIG 6
 #define M2_CURR_RD A1
 #define M2_VLD_RD A3
+#define M2_ALERT 13
 
+#define AUX_BUTTON 7
 #define MANUAL_MODE_POT A5
 #define MANUAL_MODE_THRESHOLD 0.02
 
-// DEVICE LIMITS
-#define MAX_CURRENT 30.0  // Maximum current through muscle in amps
-#define MIN_VSUPPLY 7.0  // Minimum battery voltage
-#define IGNORE_SUPPLY 3.0 // Treat levels below this as if the battery is disconnected
+// Device Limits
+#define MAX_CURRENT 30.0  // [A] Maximum current through muscle in amps
+#define MIN_VSUPPLY 7.0  // [V] Minimum battery voltage
+#define IGNORE_SUPPLY 3.0 // [V] Treat levels below this as if the battery is disconnected
 
 //=============================================================================
 // Diagnostics
@@ -58,6 +71,7 @@ const unsigned long LOG_MS = 20;  // Time between log frames (ms)
 // ERROR INDECES
 #define ERR_LOW_VOLT 0  // Low battery error
 #define ERR_CURRENT_OF 1  // Current overflow error
+#define ERR_EXTERNAL_INTERRUPT 2
 byte n_error = 0b11111111;  // Error byte transmitted when requested by API call
 
 unsigned long timeout_timer;
@@ -72,15 +86,20 @@ void nodeUpdate();
 String devStatusFormatted();
 String devStatusQuick();
 String log();
+void optButtonStopFunc();
 
-// RAISE ERROR BY XORING CURRENT ERROR WITH BITSHIFTED 1s
+// RAISE ERROR BY ANDING CURRENT ERROR AND 0 BITSHIFTED INTO INDEX
 void errRaise(int index) {
-  n_error = n_error ^ (1<<index);
+  n_error = n_error & (0b11111111 ^ (1<<index));
   digitalWrite(STATUS_SOLID_LED, HIGH);
 }
 void errClear() {
   n_error = 0b11111111;
   digitalWrite(STATUS_SOLID_LED, LOW);
+}
+void errClear(int index) {
+  n_error = n_error | (1<<index);
+  digitalWrite(STATUS_SOLID_LED, HIGH);
 }
 
 //=============================================================================
@@ -227,7 +246,7 @@ class TF_Muscle {
           //case OHMS:     // Need to implement PID loop (but how to implement with hysterisis curve?)
           // Eventually add position control (requires force to be known)
           case TRAIN:
-            pwm_val = updateTraining(rld_val * 1000);  // Convert to mohms
+            pwm_val = updateTraining(rld_val);  // Convert to mohms
           break;
           case MANUAL:
             pwm_val = percentToPWM(pot_val); // Manual mode uses the potentiometer if connected
@@ -249,7 +268,7 @@ class TF_Muscle {
       // CURRENT OVERFLOW ERROR CONDITION
       if(curr_val > MAX_CURRENT) {
         errRaise(ERR_CURRENT_OF);
-        setEnable(false); //disable muscle
+        //setEnable(false); //disable muscle
       }
     }
 
@@ -359,6 +378,10 @@ class TF_Muscle {
     void setEnable(bool state) {
       enabled = state;
 
+      // Clear the external disable error
+      if(enabled)
+        errClear(ERR_EXTERNAL_INTERRUPT);
+
       if(mode == TRAIN && enabled)
         resetTraining();
     }
@@ -381,6 +404,7 @@ class TF_Muscle {
 
     void stop() {
       setEnable(false);
+      setSetpoint(PERCENT, 0);
       setSetpoint(VOLTS, 0);
       setSetpoint(AMPS, 0);
       setSetpoint(DEGREES, 0);
@@ -404,32 +428,32 @@ class TF_Muscle {
       switch (mode)
         {
         case PERCENT:
-            setpoint_str = String(setpoint[PERCENT]);
+            setpoint_str = String(setpoint[PERCENT], 6);
             break;
         case VOLTS:
-            setpoint_str = String(setpoint[VOLTS]) + " V";
+            setpoint_str = String(setpoint[VOLTS], 6) + " V";
             break;
         case AMPS:
-            setpoint_str = String(setpoint[AMPS]) + " A";
+            setpoint_str = String(setpoint[AMPS], 6) + " A";
             break;
         case DEGREES:
-            setpoint_str = String(setpoint[DEGREES]) + "°";
+            setpoint_str = String(setpoint[DEGREES], 6) + "°";
             break;
         case TRAIN:
-            setpoint_str = String(setpoint[TRAIN]);
+            setpoint_str = String(setpoint[TRAIN], 6);
             break;
         default:
-            setpoint_str = String(setpoint[mode]) + " " + String(mode);
+            setpoint_str = String(setpoint[mode], 6) + " " + String(mode);
             break;
         }
       stat_str += "| setpoint: " + setpoint_str + '\n';
       stat_str += "| pwm-val: " + String(pwm_val) + '\n';
       //stat_str += "| current: " + String(analogRead(curr_pin)) + " (native units) \n";
-      stat_str += "| current: " + String(curr_val) + " A \n";
-      stat_str += "| load-volts: " + String(vld_val) + " V \n";
-      stat_str += "| load-resist: " + String(rld_val) + " Ω \n";
-      stat_str += "| Af_resist: " + String(Af_mohms) + " Ω \n";
-      stat_str += "| delta_ohms: " + String(delta_mohms) + " mΩ \n";
+      stat_str += "| current: " + String(curr_val, 6) + " A \n";
+      stat_str += "| load-volts: " + String(vld_val, 6) + " V \n";
+      stat_str += "| load-resist: " + String(rld_val, 6) + " Ω \n";
+      stat_str += "| Af_resist: " + String(Af_mohms, 6) + " Ω \n";
+      stat_str += "| delta_ohms: " + String(delta_mohms, 6) + " mΩ \n";
       stat_str += "| trainState: " + String(trainState) + "\n";
 
       return stat_str;
@@ -443,32 +467,32 @@ class TF_Muscle {
       stat_str += String(curr_pin) + " ";
       stat_str += String(enabled) + " ";
       stat_str += String(mode) + " ";
-      stat_str += String(setpoint[mode]) + " ";
+      stat_str += String(setpoint[mode], 6) + " ";
       stat_str += String(pwm_val) + " ";
-      stat_str += String(curr_val) + " ";
-      stat_str += String(vld_val) + " ";
-      stat_str += String(rld_val) + " ";
-      stat_str += String(Af_mohms) + " ";
-      stat_str += String(delta_mohms) + " ";
+      stat_str += String(curr_val, 6) + " ";
+      stat_str += String(vld_val, 6) + " ";
+      stat_str += String(rld_val, 6) + " ";
+      stat_str += String(Af_mohms, 6) + " ";
+      stat_str += String(delta_mohms, 6) + " ";
       stat_str += String(trainState) + " ";
       return stat_str;
     }
 
-    //********************************************************************************************************************
-    //https://www.engineersgarage.com/acs712-current-sensor-with-arduino/
+    // Using current amplifier: https://www.ti.com/product/INA301?bm-verify=AAQAAAAJ_____3vvQVqhDs6dN-q2F7TfcduLcXGPYHN_yemLpkjLOSFozABq8zjBc6aZ1bHQMXuQcVRel2S374cevoKQ14rUg6LyRHkRgLS507wvwpDNZhvE-ZWK9hVspPwTC71ayCc3-WGCwn-CquFEWjRJKDJvsJXJVh4eel_qHn8Kcueux4PnQ39dUIMN51MZvpS9lZ7o7K9nCUaPUoq0s-TIxAvmatQPs4K61R7LI2pVSV_YWOOVyAT6TcwQ1i3h7ZRzdiO2DlOvNC6KJ8hoXFBhaxkZCcEV-xI63CAnv-xaEy2seyI
     float getMuscleAmps() {
       float AcsValue=0.0,Samples=0.0,AvgAcs=0.0,raw=0.0;
     
-      for (int x = 0; x < 3; x++){       // Get 10 samples
+      for (int x = 0; x < 1; x++){       // Get 10 samples
         waitForPWMHigh();
-        AcsValue = analogRead(curr_pin);  // Read current sensor values   
+        AcsValue = analogRead(curr_pin);  // Read current amp sensor values   
         Samples = Samples + AcsValue;     // Add samples together
       }
-      raw = Samples / 3.0;  // Taking Average of Samples
-    
-      float amps = ((raw * (5.0 / 1024.0)) - 2.5)/0.100; //5.0/1024 is conversion ratio of volts/native unit. 2.5 v is 0 A due to positive and negative ability
-      
-      if(amps < 0.0 && amps > -1.0f)
+      raw = Samples / 1.0;  // Taking Average of Samples
+
+      // For some unknown reason, there is an offset current of 5 amps...
+      float amps = raw * VCC / (1023 * AMP_GAIN * R_SNS) - 5; // Formula derived from voltage drop across sense resistor amplified and read from 0-1023
+
+      if(amps < 0.0 && amps > -6.0f)
         return 0.0f;  // Return 0 if close to 0 (prevent negative resistance)
       return amps;
     }
@@ -477,12 +501,12 @@ class TF_Muscle {
     float getLoadVoltage() {
       float value=0.0,samples=0.0,avg_value=0.0,raw=0.0;
     
-      for (int x = 0; x < 3; x++){   // Get 10 samples
+      for (int x = 0; x < 1; x++){   // Get 10 samples
         waitForPWMHigh();
         value = analogRead(vld_pin);  // Read current sensor values   
         samples += value;          // Add samples together
       }
-      raw = samples / 3.0;  // Taking Average of Samples
+      raw = samples / 1.0;  // Taking Average of Samples
 
       float volts = raw * vld_scaleFactor + vld_offset; // Values are attained experimentally with known input voltages
       if(volts < 0.0 && volts > -2.0)
@@ -495,7 +519,7 @@ class TF_Muscle {
     static float calcResistance(float V1, float V2, float I) {
       if(I == 0.0f)
         return 9999999999.0f; // Really high number
-      return abs((V1-V2) / I);
+      return 1000 * abs((V1-V2) / I);
     }
 
     void measure() {

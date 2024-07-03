@@ -5,7 +5,7 @@
 * Version: v0.1
 *
 *=============================================================================*/
-#include "tf-node-firmware-v0.1.h"
+#include "tf-node-firmware-v0.2.0.h"
 
 
 //=============================================================================
@@ -34,6 +34,7 @@ void setup() {
   pinMode(STATUS_SOLID_LED, OUTPUT);
   digitalWrite(STATUS_SOLID_LED, LOW);  // This pin currently goes high on errors
 
+  pinMode(AUX_BUTTON, INPUT_PULLUP); // Set button pin as input with internal pull-up resistor
   /*while(!Serial.available()) { }
   Serial.println("TF-Node Device initializing...");
   Serial.print("Node shield version: ");
@@ -91,6 +92,11 @@ void nodeUpdate() {
     //light up a low battery LED
   }
 
+  // If option
+  if(!digitalRead(AUX_BUTTON)) {
+    optButtonStopFunc();
+  }
+
   // Every certain interval (LOG_MS), log/report data to console
   if(millis() - log_timer > LOG_MS) {
     String log_str = log();
@@ -103,17 +109,17 @@ void nodeUpdate() {
 
 String devStatusFormatted() {
   String stat_str = "========================================\nLOG TIME: " + String(millis() - log_start) + "\n"; // Display time since log start
-  stat_str += "Battery Volts: " + String(n_vSupply) + " V\n";
+  stat_str += "Battery Volts: " + String(n_vSupply, 6) + " V\n";
   stat_str += "Error State: " + String(n_error, BIN) + "\n";
-  stat_str += "Pot Val: " + String(pot_val) + "\n";
+  stat_str += "Pot Val: " + String(pot_val, 6) + "\n";
   return stat_str;
 }
 
 String devStatusQuick() {
   String stat_str = String(millis() - log_start) + " ";
-  stat_str += String(n_vSupply) + " ";
+  stat_str += String(n_vSupply, 6) + " ";
   stat_str += String(n_error, BIN) + " ";
-  stat_str += String(pot_val) + " ";
+  stat_str += String(pot_val, 6) + " ";
   return stat_str;
 }
 
@@ -140,4 +146,9 @@ String log() {
   for(int m=0; m<MUSCLE_CNT; m++) { log_str += TF_Muscle::muscles[m]->log(); };
 
   return log_str + "\n";
+}
+
+void optButtonStopFunc() {
+  TF_Muscle::stopAll();
+  errRaise(ERR_EXTERNAL_INTERRUPT);
 }

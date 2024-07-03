@@ -23,7 +23,7 @@ import time
 from timeit import default_timer
 import matplotlib.pyplot as plt
 
-arduino = serial.Serial(port='COM10', baudrate=115200, timeout=1)
+arduino = serial.Serial(port='COM7', baudrate=115200, timeout=1)
 buffer = []
 
 # This experiment setup will log the arduino clock, MX enabled data, and power dissipation per frame
@@ -64,7 +64,7 @@ def parse_data():
         vbatt = float(buffer_split[1].rstrip("\\n'"))
         vld = float(buffer_split[12].rstrip("\\n'"))
         amps = float(buffer_split[11].rstrip("\\n'"))
-        ohms = float(buffer_split[13].rstrip("\\n'")) * 1000  # convert to mOhms
+        ohms = float(buffer_split[13].rstrip("\\n'"))  # convert to mOhms
         m1_enabled = True if "1" in buffer_split[7] else False
         pwm = int(buffer_split[10].rstrip("\\n'"))
 
@@ -124,7 +124,7 @@ def update_plot(history):
 # Experiment setup
 wait1 = 10.0
 wait2 = 0.0
-wait3 = 10.0
+wait3 = 5.0
 wait_total_ms = (wait1 + wait2 + wait3) * 1000
 
 mode = "percent"  # Set the mode, "train" to train or "percent" to test without stop

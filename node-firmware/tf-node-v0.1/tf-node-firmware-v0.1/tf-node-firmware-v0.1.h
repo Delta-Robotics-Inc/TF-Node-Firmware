@@ -227,7 +227,7 @@ class TF_Muscle {
           //case OHMS:     // Need to implement PID loop (but how to implement with hysterisis curve?)
           // Eventually add position control (requires force to be known)
           case TRAIN:
-            pwm_val = updateTraining(rld_val * 1000);  // Convert to mohms
+            pwm_val = updateTraining(rld_val);  // Convert to mohms
           break;
           case MANUAL:
             pwm_val = percentToPWM(pot_val); // Manual mode uses the potentiometer if connected
@@ -427,8 +427,8 @@ class TF_Muscle {
       //stat_str += "| current: " + String(analogRead(curr_pin)) + " (native units) \n";
       stat_str += "| current: " + String(curr_val) + " A \n";
       stat_str += "| load-volts: " + String(vld_val) + " V \n";
-      stat_str += "| load-resist: " + String(rld_val) + " Ω \n";
-      stat_str += "| Af_resist: " + String(Af_mohms) + " Ω \n";
+      stat_str += "| load-resist: " + String(rld_val) + " mΩ \n";
+      stat_str += "| Af_resist: " + String(Af_mohms) + " mΩ \n";
       stat_str += "| delta_ohms: " + String(delta_mohms) + " mΩ \n";
       stat_str += "| trainState: " + String(trainState) + "\n";
 
@@ -492,10 +492,10 @@ class TF_Muscle {
     }
 
     // V=IR -> R=V/I
-    static float calcResistance(float V1, float V2, float I) {
+    static float calcResistMohms(float V1, float V2, float I) {
       if(I == 0.0f)
         return 9999999999.0f; // Really high number
-      return abs((V1-V2) / I);
+      return 1000 * abs((V1-V2) / I);
     }
 
     void measure() {
@@ -504,7 +504,7 @@ class TF_Muscle {
       // If pwm does not switch during this time, take the measurement anyways
       vld_val = getLoadVoltage();    
       curr_val = getMuscleAmps();
-      rld_val = calcResistance(n_vSupply, vld_val, curr_val);
+      rld_val = calcResistMohms(n_vSupply, vld_val, curr_val);
     }
 
     void waitForPWMHigh() {
