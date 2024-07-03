@@ -1,0 +1,5 @@
+Version 0.2.0
+- Clone from v0.1 for new DEV board PCB
+- Refactor into RTOS system
+- Command structure switch to binary and placed into new CommandHandler class
+- Change amperage measurement function to new amplifier implementation

@@ -10,7 +10,7 @@
                 "${file}",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
-                "-I${workspaceFolder}/tf-node-firmware-v0.1",
+                "-I${workspaceFolder}/**/"
             ],
             "options": {
                 "cwd": "C:\\msys64\\ucrt64\\bin"
