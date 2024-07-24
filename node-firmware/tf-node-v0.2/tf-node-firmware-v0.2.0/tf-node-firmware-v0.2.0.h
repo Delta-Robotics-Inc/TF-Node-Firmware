@@ -1,12 +1,14 @@
 #include<Arduino.h>
 #include "GradientTracker.hpp"
+#include "PWMSamplerDriver.h"
+#include "ResistiveController.h"
 
 //=============================================================================
 // TF Node Defaults
 //=============================================================================
 
 #define CTRL_MODE_CNT 7
-enum ctrl_modes { PERCENT, VOLTS, AMPS, DEGREES, OHMS, TRAIN, MANUAL };
+enum ctrl_modes { PERCENT, VOLTS, AMPS, DEGREES, OHMS, TRAIN, MANUAL };  // TODO add Length and Force
 const String ctrl_modes_str[CTRL_MODE_CNT] = { "percent", "volts", "amps", "degrees", "ohms", "train", "manual" };
 #define SIGNAL_TIMEOUT 2000  // Amount of time (ms) between receiving master commands before auto-disable
 const unsigned long LOG_MS = 20;  // Time between log frames (ms)
@@ -60,7 +62,7 @@ const unsigned long LOG_MS = 20;  // Time between log frames (ms)
 #define MANUAL_MODE_THRESHOLD 0.02
 
 // Device Limits
-#define MAX_CURRENT 30.0  // [A] Maximum current through muscle in amps
+#define MAX_CURRENT 80.0  // [A] Maximum current through muscle in amps
 #define MIN_VSUPPLY 7.0  // [V] Minimum battery voltage
 #define IGNORE_SUPPLY 3.0 // [V] Treat levels below this as if the battery is disconnected
 
@@ -99,7 +101,7 @@ void errClear() {
 }
 void errClear(int index) {
   n_error = n_error | (1<<index);
-  digitalWrite(STATUS_SOLID_LED, HIGH);
+  digitalWrite(STATUS_SOLID_LED, LOW);
 }
 
 //=============================================================================
@@ -140,11 +142,11 @@ float getPotVal() {
 //=============================================================================
 
 //CONVERT PERCENT BETWEEN 0:1 TO POSITIVE PWM
-int percentToPWM(float speed) {
+/*int percentToPWM(float speed) {
   int pwm = abs(speed) * 255;
   pwm = max(0, min(pwm, 255));  // Clamp between [0:255]
   return pwm;
-}
+}*/
 
 //=============================================================================
 // Unit Classes
@@ -158,6 +160,11 @@ class TF_Muscle {
     uint8_t mosfet_pin;
     uint8_t curr_pin;
     uint8_t vld_pin;
+
+    // PWM and Measurement Delay during PWM while High
+    const float PWM_FREQUENCY = 20;  // PWM Frequency
+    const float PWM_MEASURE_DELAY_US = 300;  // PWMSamplerDriver will wait this long before taking a measurement after PWM goes high
+    PWMSamplerDriver* driver;
     
     // Scaling Params
     float vld_scaleFactor;
@@ -169,16 +176,20 @@ class TF_Muscle {
     float vld_val;
     float rld_val;
 
+    // For OHMS control mode, a PID controller will be used to control output PWM to minimize error to a setpoint resistance
+    ResistiveController* resController;
+    const float KP_rc = -100.0, KI_rc = 0.0, KD_rc = 0.0;
+
     // CONTROL MODE
     bool enabled = false;
     ctrl_modes mode = PERCENT;
     float setpoint[CTRL_MODE_CNT];
-    int pwm_val = 0;  // PWM_VAL is the actual outputted duty cycle to the mosfets.  It's behavior will update based on the control mode
+    float pwm_duty_percent = 0;  // From 0.0->0.1
 
-    // RESISTANCE CONTROL MODE
+    // RESISTANCE TRAINING CONTROL MODE
     enum TrainingState { MARTENSITE, PHASE_TRANSITION, POST_AF, TRAIN_FINISH };
     TrainingState trainState = MARTENSITE;
-    const float timeStep_ms = 25.0f; // Time between measurement samples.  VERIFY THIS UNTIL MEASURE PERIOD IS CONSTANT!
+    const float timeStep_ms = 50.0f; // Time between measurement samples.  VERIFY THIS UNTIL MEASURE PERIOD IS CONSTANT!
     float Af_mohms = -1; // RESISTANCE AT POINT OF Af (Austenite finished temperature)
     float delta_mohms = 0;
     ///////////////////////// SET AS CHANGEALBE PARAMETERS IN FUTURE
@@ -192,11 +203,11 @@ class TF_Muscle {
     int dataPointsSinceAustenite = 0;
     /////////////////////////
     GradientTracker* resistTracker;
-    int gradWidth = 3;
+    int gradWidth = 5;
     int gradSize = 100;
-    float flatThreshold = 0.01;
+    float flatThreshold = 0.001;
     int dir_tracker; // Keep track of direction and trigger into next state after detecting low/high
-    const int DIR_TRIGGER = 10; // Wait until direction is the same for x measurements (this is highly tied to the PWM percentage...)
+    const int DIR_TRIGGER = 3; // Wait until direction is the same for x measurements (this is highly tied to the PWM percentage...)
     //#TODO determine if DIR_TRIGGER should scale by PWM setpoint
     int currentGradIndex = -1;
 
@@ -220,7 +231,13 @@ class TF_Muscle {
       vld_scaleFactor = _scaleFactor;
       resistTracker = new GradientTracker(gradWidth, gradSize, flatThreshold, timeStep_ms);
       vld_offset = _offset;
-      pinMode(mosfet_pin, OUTPUT);
+      //pinMode(mosfet_pin, OUTPUT);
+
+      // Initialize resistive PID controller
+      resController = new ResistiveController(0.0, KP_rc, KI_rc, KD_rc);
+
+      // Initialize pwm driver which will handle pwm on the mosfet pin and sampling the sensors
+      driver = new PWMSamplerDriver(PWM_FREQUENCY, 0.0f, mosfet_pin, PWM_MEASURE_DELAY_US, static_measure, this);
     }
 
     void update() {
@@ -233,42 +250,49 @@ class TF_Muscle {
         switch (mode)
         {
           case PERCENT:
-            pwm_val = percentToPWM(setpoint[PERCENT]);
+            pwm_duty_percent = setpoint[PERCENT];
             break;
           case VOLTS:
-            pwm_val = percentToPWM(setpoint[VOLTS] / n_vSupply);  // When controlling for volts, the ratio of setpoint/supply will be percentage of power to deliver
+            pwm_duty_percent = setpoint[VOLTS] / n_vSupply;  // When controlling for volts, the ratio of setpoint/supply will be percentage of power to deliver
             break;
           //TODO: Implement other control modes
           case AMPS:     // Need to implement PID loop
-            pwm_val = percentToPWM(setpoint[AMPS] / curr_val); // Simplest current control is just pulsing the peak current at a rate which matches setpoint current
+            pwm_duty_percent = setpoint[AMPS] / curr_val; // Simplest current control is just pulsing the peak current at a rate which matches setpoint current
             break;
           //case DEGREES:  // Need to implement equation to track/return muscle temp (temp will behave different based on 2 conditions: below/above Af)
-          //case OHMS:     // Need to implement PID loop (but how to implement with hysterisis curve?)
+          case OHMS:     // Need to implement PID loop (but how to implement with hysterisis curve?)
+          {
+            resController->setSetpoint(setpoint[OHMS]);  // Update setpoint of pid to setpoint of this device for OHMS mode
+            resController->update(rld_val); // Update pid controller
+            pwm_duty_percent = resController->getOutput();
+          }
+          break;
           // Eventually add position control (requires force to be known)
           case TRAIN:
-            pwm_val = updateTraining(rld_val);  // Convert to mohms
+            pwm_duty_percent = updateTraining(rld_val);  // Convert to mohms
           break;
           case MANUAL:
-            pwm_val = percentToPWM(pot_val); // Manual mode uses the potentiometer if connected
+            pwm_duty_percent = pot_val; // Manual mode uses the potentiometer if connected
           break;
           default:
-            pwm_val = percentToPWM(0);
+            pwm_duty_percent = 0;
             break;
         }
       }
       else {
-        pwm_val = percentToPWM(0); // Disabled means write 0% power
+        pwm_duty_percent = 0; // Disabled means write 0% power
         // RESET TRAINING STATE
         //trainState = MARTENSITE;
       }
 
-      analogWrite(mosfet_pin, pwm_val);  // Write pwm to mosfet m
-      measure(); // Update sensor values
+      //analogWrite(mosfet_pin, pwm_val);  // Write pwm to mosfet m
+      //measure(); // Update sensor values
+      driver->setDutyCyclePercent(pwm_duty_percent);  // The PWMDriver will hande analogWrite() and measuring sensors
 
       // CURRENT OVERFLOW ERROR CONDITION
       if(curr_val > MAX_CURRENT) {
         errRaise(ERR_CURRENT_OF);
-        //setEnable(false); //disable muscle
+        setEnable(false); //disable muscle
       }
     }
 
@@ -283,13 +307,7 @@ class TF_Muscle {
     }
 
     // Will step through the state machine when in training mode
-    int updateTraining(float rld_mohms) {
-
-      // Safety auto-timeout feature
-      //if(millis() - train_timer > TRAIN_TIMEOUT_MS) {
-      //  setEnable(false);
-      //  return 0;
-      //}
+    float updateTraining(float rld_mohms) {
 
       switch(trainState) {
         case MARTENSITE: {  // STATE: Heating (Martensite phase)
@@ -312,7 +330,7 @@ class TF_Muscle {
             }
           }
           //return setpoint pwm value
-          return percentToPWM(setpoint[TRAIN]);
+          return setpoint[TRAIN];
         }
         case PHASE_TRANSITION: {  // STATE: Heating (Pre Austenite Finished Temp)
           // The same thing with a rolling average; wait until it has been increasing for a few cycles and find bottom of dip (set bottom to Af_mohms)
@@ -339,7 +357,7 @@ class TF_Muscle {
             }
           }
           // Return setpoint pwm value
-          return percentToPWM(setpoint[TRAIN]);
+          return setpoint[TRAIN];
         }
         case POST_AF: {  // STATE: Heating (Post Austenite finished Temp)
           // Compare change in ohms to desired delta_mohms
@@ -348,7 +366,7 @@ class TF_Muscle {
           // Return PID (with max value) to mitigate error between desired temperature and set temperature
 
           // Timer Condition
-          return percentToPWM(0.05); // Just cut power for now.
+          return 0.01; // Just cut power for now.
           // #TODO add resistance control measures at this point
         }
         // STATE: Finished
@@ -382,8 +400,9 @@ class TF_Muscle {
       if(enabled)
         errClear(ERR_EXTERNAL_INTERRUPT);
 
-      if(mode == TRAIN && enabled)
+      if((mode == TRAIN || mode == OHMS) && enabled)
         resetTraining();
+        resController->Reset();
     }
 
     void setMode(ctrl_modes _mode) {
@@ -442,17 +461,20 @@ class TF_Muscle {
         case TRAIN:
             setpoint_str = String(setpoint[TRAIN], 6);
             break;
+        case OHMS:
+            setpoint_str = String(setpoint[OHMS], 6) + " mΩ";
+            break;
         default:
             setpoint_str = String(setpoint[mode], 6) + " " + String(mode);
             break;
         }
       stat_str += "| setpoint: " + setpoint_str + '\n';
-      stat_str += "| pwm-val: " + String(pwm_val) + '\n';
+      stat_str += "| pwm-val: " + String(pwm_duty_percent) + '\n';
       //stat_str += "| current: " + String(analogRead(curr_pin)) + " (native units) \n";
       stat_str += "| current: " + String(curr_val, 6) + " A \n";
       stat_str += "| load-volts: " + String(vld_val, 6) + " V \n";
-      stat_str += "| load-resist: " + String(rld_val, 6) + " Ω \n";
-      stat_str += "| Af_resist: " + String(Af_mohms, 6) + " Ω \n";
+      stat_str += "| load-resist: " + String(rld_val, 6) + " mΩ \n";
+      stat_str += "| Af_resist: " + String(Af_mohms, 6) + " mΩ \n";
       stat_str += "| delta_ohms: " + String(delta_mohms, 6) + " mΩ \n";
       stat_str += "| trainState: " + String(trainState) + "\n";
 
@@ -468,7 +490,7 @@ class TF_Muscle {
       stat_str += String(enabled) + " ";
       stat_str += String(mode) + " ";
       stat_str += String(setpoint[mode], 6) + " ";
-      stat_str += String(pwm_val) + " ";
+      stat_str += String(pwm_duty_percent) + " ";
       stat_str += String(curr_val, 6) + " ";
       stat_str += String(vld_val, 6) + " ";
       stat_str += String(rld_val, 6) + " ";
@@ -483,7 +505,7 @@ class TF_Muscle {
       float AcsValue=0.0,Samples=0.0,AvgAcs=0.0,raw=0.0;
     
       for (int x = 0; x < 1; x++){       // Get 10 samples
-        waitForPWMHigh();
+        //waitForPWMHigh();
         AcsValue = analogRead(curr_pin);  // Read current amp sensor values   
         Samples = Samples + AcsValue;     // Add samples together
       }
@@ -502,7 +524,8 @@ class TF_Muscle {
       float value=0.0,samples=0.0,avg_value=0.0,raw=0.0;
     
       for (int x = 0; x < 1; x++){   // Get 10 samples
-        waitForPWMHigh();
+        //waitForPWMHigh();
+        //delayMicroseconds((1.0/490.0*1000000) * pwm_val/255.0 - 10); // Delay until almost the end of the pulse (10 microseconds before)
         value = analogRead(vld_pin);  // Read current sensor values   
         samples += value;          // Add samples together
       }
@@ -522,24 +545,37 @@ class TF_Muscle {
       return 1000 * abs((V1-V2) / I);
     }
 
+    // Callable by PWMSamplerDriver with a reference to a TF_Muscle
+    static void static_measure(TF_Muscle* m) {
+      //Serial.println("measure");
+      m->measure();
+    }
+
     void measure() {
       // ONLY MEASURE ON HIGH VALUE OF PWM
       // If pwm is low, wait a max of 3 ms (This assumes that PWM frequency is 450 Hz)
       // If pwm does not switch during this time, take the measurement anyways
+      //Serial.print("Measuring ");
+      //Serial.println(name);
       vld_val = getLoadVoltage();    
       curr_val = getMuscleAmps();
       rld_val = calcResistance(n_vSupply, vld_val, curr_val);
+
+      // TODO Not a good way of doing this btw
+      //if(mode == TRAIN && enabled) {
+        //pwm_duty_percent = updateTraining(rld_val);
+      //}
     }
 
-    void waitForPWMHigh() {
-      if(enabled && pwm_val > 0 && !digitalRead(mosfet_pin)) {
+    /*void waitForPWMHigh() {
+      if(enabled && pwm_duty_percent > 0 && !digitalRead(mosfet_pin)) {
         unsigned long measure_start = millis();
         unsigned long measure_timeout = 1000; //timeout after 1000 ms
         while((millis() - measure_start < measure_timeout) && !digitalRead(mosfet_pin)) 
-        { /* Do nothing */ }
+        {  }
       }
       return;
-    }
+    }*/
 
     //=============================================================================
     // Muscle Control/Config Functions
