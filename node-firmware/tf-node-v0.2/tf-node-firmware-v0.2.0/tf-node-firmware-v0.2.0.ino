@@ -22,8 +22,8 @@ Command* Command::c_commands[COMMAND_CNT] = { &c_default, &c_reset, &c_setEnable
 
 void initMuscles() {
   // Initialize muscles with params and I/O pins
-  TF_Muscle::muscles[0]->init("M1", M1_MOS_TRIG, M1_CURR_RD, M1_VLD_RD, VLD_SCALE_FACTOR_M1, VLD_OFFSET_M1);
-  TF_Muscle::muscles[1]->init("M2", M2_MOS_TRIG, M2_CURR_RD, M2_VLD_RD, VLD_SCALE_FACTOR_M2, VLD_OFFSET_M2);
+  TF_Muscle::muscles[0]->init("M1", M1_MOS_TRIG, M1_CURR_RD, M1_VLD_RD, VLD_SCALE_FACTOR_M1, VLD_OFFSET_M1);  // BICEP
+  TF_Muscle::muscles[1]->init("M2", M2_MOS_TRIG, M2_CURR_RD, M2_VLD_RD, VLD_SCALE_FACTOR_M2, VLD_OFFSET_M2);  // TRICEP
 
   m_1.setEnable(false);
   m_2.setEnable(false);
@@ -87,7 +87,7 @@ void nodeUpdate() {
 
   // Low Power Condition
   if(n_vSupply < MIN_VSUPPLY && n_vSupply > IGNORE_SUPPLY) {
-    errRaise(ERR_LOW_VOLT);
+    //errRaise(ERR_LOW_VOLT);
     //TF_Muscle::setEnableAll(false);
     //light up a low battery LED
   }

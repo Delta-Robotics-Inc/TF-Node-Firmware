@@ -1,4 +1,4 @@
 {
-    "sketch": "tf-node-firmware-v0.1\\tf-node-firmware-v0.1.ino",
+    "sketch": "tf-node-firmware-v0.2.0\\tf-node-firmware-v0.2.0.ino",
     "board": "arduino:renesas_uno:minima"
 }

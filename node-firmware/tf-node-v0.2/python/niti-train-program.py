@@ -2,6 +2,8 @@
 """
 Created on Tue Apr  2 18:53:24 2024
 
+Code tested in Spyder Anaconda environment.
+
 This program will log the data from M1/M2 on the TF-Node device during a run duration.
 It utilizes the serial string command structure of tf-node-firmware-v1.0
 It also utilizes the log() feature from the same firmware
