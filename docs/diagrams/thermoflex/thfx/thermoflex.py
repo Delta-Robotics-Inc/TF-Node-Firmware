@@ -1,29 +1,53 @@
+import serial.tools.list_ports as stl
 import serial as s
-import time as time
-import
+import time
 
 devs = []
 logen = " "
-logout = 
-     
+logout = ''
+nodel =[]     
+prod = '105'
+pn = '' #port number
+enc = 'utf-8'
+arduino = serial.Serial(port=pn, baudrate=115200, timeout=1)
+prt = stl.comports(include_links=False)
 
 
-class node:
-    def __init__(self,idnum):
-        self.idnum = idnum
-    
-    def discover():
-    devs = s.tools.list_ports.comports(include_links=True)
-    cnt = 1
-    for dev in devs:
-         node(cnt) = dev
-         cnt+=1
-         #add to node list here
-    
-    def rediscover(node):
-    
-    def getMuscle():
+
+def send_command(x):
+    arduino.write(bytes(x + '\n', enc))
+    time.sleep(0.05)
+       
         
+class node:
+    def __init__(self, idnum, port0, prodid):
+        self.idnum = idnum
+        self.prodid = prodid
+        self.port0 = port0
+    
+    
+
+    class muscle:
+         def __init__(self, resist: resistance, diam: diameter, length: Length):
+             self.resistance = resistance
+             self.diameter = diameter
+             self.length = Length
+         
+         def setMode(controlMode: mode):
+             if mode=0:
+                 
+             
+         def enable():
+             
+         def disable():
+             
+         def setEnable(bool):
+         
+         def setSetpoint(controlMode: mode,setpoint: point):
+      
+     
+    def getMuscle(ptn): #port number
+         
         
     def setMuscle(portnum,musc):
         musc = nodes[portnum]
@@ -31,9 +55,9 @@ class node:
     def setLogout(path1, mode): # log path and encoding
         logout = open(path1,'w')
         if mode = 0:
-            logen = "binary"
+            enc = "binary"
         elif mode = 1:
-            logen = "UTF_8"
+            enc = "utf-8"
         else:
             print("Error: Log encoding")
     
@@ -44,25 +68,31 @@ class node:
             
         while True: #write log to file
             logout.write(' ')
-            
-            
-            
-class muscle:
-     def __init__(self, resist: resistance, diam: diameter, length: Length):
-         self.resistance = resistance
-         self.diameter = diameter
-         self.length = Length
-     
-     def setMode(controlMode: mode):
-         if mode=0:
-             
-         
-     def enable():
-         
-     def disable():
-         
-     def setEnable(bool):
-     
-     def setSetpoint(controlMode: mode,setpoint: point):
 
 
+def discover(proid):  #add to node list here
+        ports = {}
+
+        for por in prt:
+            ports[por.pid]=por.name
+        z=0
+        for p in proid:
+            for n in ports.keys():
+                if p == n:
+                    nodeob = node(z,ports[n],n)
+                    nodel.append(nodeob)
+                    z+=1   
+              
+def rediscover(idn): #id number
+        nwn = idn
+        ports = {}
+        
+        for por in prt:
+            ports[por.pid]=por.name
+        for n in nodel:
+            if nodel[n].prodid == idn:
+                nodel[n].port0 = ports[idn]       
+
+  
+while on == True:
+    update
