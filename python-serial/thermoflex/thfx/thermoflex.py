@@ -2,33 +2,13 @@ import serial.tools.list_ports as stl
 import serial as s
 import time
 
-devs = []
-logen = " "
-logout = ''
-nodel =[]     
-prod = '105'
-pn = '' #port number
-enc = 'utf-8'
-prt = stl.comports(include_links=False)
 
-#arduino commands
-se = 'set-enable '
-reset = 'reset '
-sm = 'set-mode '
-ss = 'set-setpoint '
-st = 'status '
-stop = 'stop '
-logmode = 'log-mode '
-prc = 'percent '
-amp = 'amps '
-volt = 'volts '
-deg =  'degrees '
-
-
-def send_command(x='COM8'):
-    arduino = s.Serial(port=pn, baudrate=115200, timeout=1)
+def send_command(x):
+    
+    arduino.open()
     arduino.write(bytes(x + '\n', enc))
     time.sleep(0.05)
+    arduino.close()
 
 def discover(proid):  #add to node list here
         ports = {}
@@ -41,8 +21,9 @@ def discover(proid):  #add to node list here
                 if p == n:
                     nodeob = node(z,ports[n],n)
                     nodel.append(nodeob)
+                    print(nodel[z].port0)
                     z+=1   
-              
+                         
 def rediscover(idn): #id number
        
         ports = {}
@@ -59,7 +40,21 @@ class node:
         self.prodid = prodid
         self.port0 = port0
     
-    
+    def testMuscles(self):
+        global pn
+        pn = str(self.port0) #find variable to test in the node class
+        send_command(ss + 'm1 ohms 405')
+        send_command(ss + 'm2 ohms 395')        
+       
+        for x in range(0,10):    
+            send_command(se + 'm1 true')
+            time.sleep(7.0)
+            send_command(se + 'm1 false')
+            time.sleep(20.0)
+            send_command(se + 'm2 true')
+            time.sleep(7.0)
+            send_command(se + 'm2 false')
+            time.sleep(20.0)
 
     class muscle:
          def __init__(self, idnum, resistance, diameter, Length):
@@ -104,11 +99,18 @@ class node:
      
     def getMuscle(ptn): #port number
         pass
-         
-        
+    
+    def enableAll():
+        send_command(se + 'all true')
+    
+    def disableAll():
+        send_command(se + 'all false')
+    
     def setMuscle(portnum,musc):
         pass
        
+    
+    
     def setLogout(path1, mode): # log path and encoding
         logout = open(path1,'w')
         if mode == 0:
@@ -127,6 +129,27 @@ class node:
         while True: #write log to file
             logout.write(' ')
 
-    
+devs = []
+logen = " "
+logout = ''
+nodel =[]     
+prod = ''
+pn = '' #port number
+enc = 'utf-8'
+prt = stl.comports(include_links=False)
+arduino = s.Serial(port=pn, baudrate=115200, timeout=1)
 
-  
+#arduino commands
+se = 'set-enable '
+reset = 'reset '
+sm = 'set-mode '
+ss = 'set-setpoint '
+st = 'status '
+stop = 'stop '
+logmode = 'log-mode '
+prc = 'percent '
+amp = 'amps '
+volt = 'volts '
+deg =  'degrees '
+ 
+
