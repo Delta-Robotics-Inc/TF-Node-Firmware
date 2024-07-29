@@ -21,7 +21,8 @@ The below commands that specify `<device> .. (default all)` will work without pa
 | set-mode     | \<device> = all, m1, m2 .. etc<br>\<mode> = percent, amps, volts, degrees                          | sets the operating mode of one or all devices                          |
 | set-setpoint | \<device> = all, m1, m2 .. etc<br>\<mode> = percent, amps, volts, degrees<br>\<setpoint> = `float` | sets the value for one or all devices' setpoints at the specified mode |
 | status       | \<device\> = all, m1, m2 .. etc (default all)                                                      | displays system info of one or all devices (including the Node itself) |
-| stop         | \<device\> = all, m1, m2 .. etc (default all)          
+| stop         | \<device\> = all, m1, m2 .. etc (default all)
+| log-mode     | \<device\> = all, node, m1, m2 .. etc<br>\<mode> = 0, 1, etc                                       | sets continuous logging mode for device (0 for no logging)
 
 ## Input Examples
 
