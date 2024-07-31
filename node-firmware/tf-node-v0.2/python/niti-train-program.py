@@ -25,7 +25,7 @@ import time
 from timeit import default_timer
 import matplotlib.pyplot as plt
 
-arduino = serial.Serial(port='COM10', baudrate=115200, timeout=1)
+arduino = serial.Serial(port='COM6', baudrate=115200, timeout=1)
 buffer = []
 
 # This experiment setup will log the arduino clock, MX enabled data, and power dissipation per frame

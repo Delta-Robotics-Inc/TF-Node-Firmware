@@ -9,7 +9,7 @@ setup(
       name="thermoflex",
       version="0.0.1",
       description=Description,
-      package_dir={"":"thfx"},
+      package_dir={"":"tf-src"},
       long_description=Describe_long,
       
       )
