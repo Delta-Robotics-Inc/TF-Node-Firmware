@@ -1,20 +1,42 @@
 import serial.tools.list_ports as stl
 import serial as s
 import time
+# find parsing 
+import pandas as pd
+import matplotlib.pyplot as plt
+import csv
 #arduino commands
-se = 'set-enable '
-reset = 'reset '       #  Make Constants all CAPS
-sm = 'set-mode '
-ss = 'set-setpoint '
-st = 'status '
-stop = 'stop '
-logmode = 'log-mode '
-prc = 'percent '
-amp = 'amps '
-volt = 'volts '
-deg =  'degrees '
+
+SE = 'set-enable '
+RESET = 'reset '       #  Make Constants all CAPS
+SM = 'set-mode '
+SS = 'set-setpoint '
+ST = 'status '
+STOP = 'stop '
+LOGMODEM = 'log-mode '
+PRC = 'percent '
+AMP = 'amps '
+VOLT = 'volts '
+DEG =  'degrees '
 prt = stl.comports(include_links=False)
 
+hexlist = {"reset":{"all": ' ',"m1": ' ',"m2": ' '},
+           "set-enable":{"all": {True: ' ',False: ' '},
+                 "m1":  {True: ' ',False: ' '},
+                     "m2":  {True: ' ',False: ' '}},
+           "set-mode":{"all": {'percent': ' ','amps': ' ', 'volts': ' ','degrees': ' '},
+               "m1": {'percent': ' ','amps': ' ', 'volts': ' ','degrees': ' '},
+                  "m2": {'percent': ' ','amps': ' ', 'volts': ' ','degrees': ' '}},
+           "set-setpoint":{"all": {'percent': ' ','amps': ' ', 'volts': ' ','degrees': ' '},
+                   "m1": {'percent': ' ','amps': ' ', 'volts': ' ','degrees': ' '},
+                      "m2": {'percent': ' ','amps': ' ', 'volts': ' ','degrees': ' '}},
+           "status":{"all": ' ',"m1": ' ',"m2": ' '}, "stop":0x05,
+           "log-mode":{"all":{0: " ",1: " ",2: " "},
+                   "m1": {0: " ",1: " ",2: " "},
+                       "m2": {0: " ",1: " ",2: " "}}
+                   
+           
+           }
 
 devs = []
 logen = " "
@@ -27,7 +49,20 @@ enc = 'utf-8' # Encoding
 def openPort(portnum):
     global arduino
     
-    arduino = s.Serial(port=portnum, baudrate=115200, timeout=1)
+    try:
+        arduino = s.Serial(port=portnum, baudrate=115200, timeout=1)
+    
+    except:
+        s.SerialException()
+
+def closePort(portnum):
+    global arduino
+    
+    try:
+        arduino = s.Serial(port=portnum, baudrate=115200, timeout=1).close()
+
+    except:
+       s.SerialException()
 
 def send_command(x):    
     
@@ -36,8 +71,7 @@ def send_command(x):
     
     print('Command sent')
     
-    
-
+   
 
 def discover(proid):  # Add to node list here
     global nodel
@@ -77,31 +111,31 @@ class node:
         pn = str(self.port0) #find variable to test in the node class
         openPort(pn)
         
-        send_command(ss + 'm1 percent 0.5')
-        send_command(ss + 'm2 percent 0.5')        
-        send_command("log-mode m1 2")
+        send_command(SS + 'm1 percent 0.5')
+        send_command(SS + 'm2 percent 0.5')        
+        #send_command("log-mode m1 0")
         
-        for x in range(0,3):    
-            send_command("set-enable m1 true")
-            time.sleep(3.0)
-            buffer = arduino.readline().decode('utf-8').strip()  # Properly decode and strip the data
-            print(buffer)
-            send_command("set-enable m1 false")
-            time.sleep(3.0)
-            buffer = arduino.readline().decode('utf-8').strip()  # Properly decode and strip the data
-            print(buffer)
-            send_command("set-enable m2 true")
-            time.sleep(3.0)
-            buffer = arduino.readline().decode('utf-8').strip()  # Properly decode and strip the data
-            print(buffer)
-            send_command("set-enable m2 false")
-            time.sleep(3.0)
-            buffer = arduino.readline().decode('utf-8').strip()  # Properly decode and strip the data
-            print(buffer)
+      
+        send_command("set-enable m1 true")
+        time.sleep(3.0)
+       
+        
+        send_command("set-enable m1 false")
+        time.sleep(3.0)
+       
+       
+        send_command("set-enable m2 true")
+        time.sleep(3.0)
+      
+        
+        send_command("set-enable m2 false")
+        time.sleep(3.0)
+      
+        #send_command("log-mode m1 0")
         
         print('Test complete')
         
-        arduino.close()
+        closePort(pn)
 
         
     def status(self):
@@ -118,73 +152,76 @@ class node:
          def setMode(self, cmode: str):
              mts = '' #  make variables more descriptive
              if cmode =='percent':
-                 mts = prc
+                 mts = PRC
              elif cmode == 'amp':
-                 mts = amp
+                 mts = AMP
              elif cmode == 'voltage':
-                 mts = volt
+                 mts = VOLT
              elif cmode == 'degree':
-                 mts = deg
+                 mts = DEG
              else:
                  print('Error: Incorrect option' )
                  return             
              
              
-             send_command(sm + self.idnum +' '+ mts)
+             send_command(SM + self.idnum +' '+ mts)
              
          def enable(self):
-             send_command(se + self.idnum + 'true ')
+             send_command(SE + self.idnum + 'true ')
              
          def disable(self):
-             send_command(se + self.idnum + 'false ')
+             send_command(SE + self.idnum + 'false ')
              
          def setEnable(self, bool):
              if True:
-                 send_command(se + self.idnum + 'true ')
+                 send_command(SE + self.idnum + 'true ')
              elif False:
-                 send_command(se + self.idnum + 'false ')
+                 send_command(SE + self.idnum + 'false ')
          
          def setSetpoint(self, cmode, spoint):
              
-             send_command(ss + self.idnum + cmode + spoint)      
+             send_command(SS + self.idnum + cmode + spoint)      
      
     def getMuscle(ptn): #port number
         pass
     
     def enableAll():
-        send_command(se + 'all true')
+        send_command(SE + 'all true')
     
     def disableAll():
-        send_command(se + 'all false')
+        send_command(SE + 'all false')
     
     def setMuscle(portnum,musc):
         pass
-       
+               
     
-    
-    def setLogout(path1, mode): # log path and encoding
-        logout = open(path1,'w')
-        if mode == 0:
+    def setLogging(path: str, bool, encoding = "utf-8"): #Set log path, decoding and 
+        global enc
+        
+        
+        if encoding == "binary":
             enc = "binary"
-        elif mode == 1:
+        elif encoding == "utf-8":
             enc = "utf-8"
+        elif encoding == "ASCII":
+            enc = " ascii"
+        elif encoding == "unicode":
+            enc = 'unicode'
         else:
             print("Error: Log encoding")
-    
-    def setLogmode(mode,bool):
-        if mode == 0: #log mode
-            pass
-        elif mode == 1:
-            pass
-        while True: #write log to file
-            logout.write(' ')
+        
+        while True:
+            try:
+                buffer = arduino.readline().decode('utf-8').strip()  # Properly decode and strip the data
+                if not buffer:
+                    pass  # Skip if data is empty
+                
+                #write to log serialinput
+            except:
+                KeyboardInterrupt()
 
 discover(prod)
-try:
-    openPort(pn)
-
-except:
-    s.SerialException()
-    
+openPort(pn)   
 node0 = nodel[0]
+
 
