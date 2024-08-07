@@ -2,8 +2,9 @@ import serial.tools.list_ports as stl
 import serial as s
 import time
 #TODO: find parsing package
-import pandas as pd
-import matplotlib.pyplot as plt
+import multiprocessing
+#import pandas as pd
+#import matplotlib.pyplot as plt
 
 #arduino commands
 
@@ -27,7 +28,7 @@ prt = stl.comports(include_links=False)
 devs = []
 logen = " "
 logout = ""
-nodel =[]  # Node list 
+nodel = []  # Node list 
 prod = [105] # Product id list
 pn = ""  # Port number
 enc = "utf-8" # Encoding
@@ -38,8 +39,8 @@ def openPort(portnum):
     try:
         arduino = s.Serial(port=portnum, baudrate=115200, timeout=1)
     
-    except:
-        s.SerialException()
+    except s.SerialException:
+        print('Serial not opened, check port status')
 
 def closePort(portnum):
     global arduino
@@ -47,8 +48,8 @@ def closePort(portnum):
     try:
         arduino = s.Serial(port=portnum, baudrate=115200, timeout=1).close()
 
-    except:
-       s.SerialException()
+    except s.SerialException:
+       print('Serial not closed')
 
 def send_command_str(x):    
     
@@ -59,10 +60,10 @@ def send_command_str(x):
 
 def send_command(x:int , params:list):
     
-    arduino.write(x, "utf-8")
+    arduino.write(x + " ", "ascii")
     time.sleep(0.01)
     for p in params:
-        arduino.write(p + "\n", "utf-8")
+        arduino.write(p + " ", "ascii")
         time.sleep(0.01)
     
 
@@ -72,7 +73,7 @@ class command_t:
                "status": 0x04, "stop": 0x05, "log-mode":0x06,
                "all":0x07, "m1":0x08, "m2": 0x09,
                "percent": 0x10, "amps":0x11, "volts": 0x12,"degree": 0x13,}   
-    
+    #URGENT : make alternate dictionary to work with this sending strings
     
     def reset(code = commanddict["reset"], device = "all"):
         send_command(code , [commanddict[device]])
@@ -119,7 +120,15 @@ class command_t:
     def status(code = commanddict["status"], device = "all"):
        
         send_command(code , [commanddict[device]])
-        # TODO: recieve data from serial status
+        
+        
+        buffer = arduino.readlines(1).decode("utf-8").strip()  # Properly decode and strip the data
+        if not buffer:
+            print('Status not recived')
+            pass  # Skip if data is empty
+                
+        print(buffer)
+            
             
     def stop(code = commanddict["stop"], device = "all"):
        
@@ -131,8 +140,8 @@ class command_t:
 
 
 
-
 def discover(proid):  # Add to node list here
+    
     global nodel
     
     ports = {}
@@ -157,14 +166,21 @@ def rediscover(idn): #id number
     for n in nodel:
         if nodel[n].prodid == idn:
             nodel[n].port0 = ports[idn] 
+ 
         
+class serialMonitor:
+    def __init__(self):
+        pass
+
 class node:
-    def __init__(self, idnum, port0, prodid):
+    def __init__(self, idnum, port0, prodid, logmode:int = 0):
         self.idnum = idnum
         self.prodid = prodid
         self.port0 = port0
+        self.logmode = logmode
     
-    def testMuscles_str(self):
+    def testMuscles_str(self): 
+        
         global pn
         
         pn = str(self.port0) #find variable to test in the node class
@@ -172,7 +188,7 @@ class node:
         
         send_command_str(SS + "m1 percent 0.5")
         send_command_str(SS + "m2 percent 0.5")        
-        #send_command_str("log-mode m1 0")
+        #send_command_str("log-mode m1 1")
         
       
         send_command_str("set-enable m1 true")
@@ -195,17 +211,20 @@ class node:
         print("Test complete")
         
         closePort(pn)
-    
-    def testMuscles(self):
+        
+        
+        
+    def testMuscles(self): 
+       
         global pn
         
-        pn = str(self.port0) #find variable to test in the node class
+        pn = str(self.port0) 
         openPort(pn)
         
         command_t.set_setpoint(mode = "percent", value = 0.5, device = "m1")
         command_t.set_setpoint(mode = "percent", value = 0.5, device = "m1")        
-        #command_t.log_mode(logmode = 0, device = "m1")
-        
+        #command_t.log_mode(logmode = 1, device = "m1")
+        #self.logmode = 1
       
         command_t.set_enable(state = True, device = "m1")
         time.sleep(3.0)
@@ -223,41 +242,48 @@ class node:
         time.sleep(3.0)
       
         #command_t.log_mode(logmode = 0, device = "m1")
-        
+        #self.logmode = 0
         print("Test complete")
         
         closePort(pn)
+        
+        
 
         
     def status(self):
-        pn = str(self.port0) #find variable to test in the node class
+        pn = str(self.port0) 
         openPort(pn)
-        command_t.status()
+        command_t.status(device = pn)
+        
+        
+        for x in range(5,35): #TODO check how many lines are needed for status check
+             buffer = arduino.readline().decode("utf-8").strip()
+             print(str(buffer))
    
     class muscle:
          def __init__(self, idnum, resistance, diameter, Length):
-             self.idnum = idnum
+             self.idnum = idnum #idnumbers 0 and 1
              self.resistance = resistance
              self.diameter = diameter
              self.length = Length
           
          
          def setMode(self, cmode: str):
-             mts = "" #  make variables more descriptive
+             modesent = "" #  make variables more descriptive
              if cmode =="percent":
-                 mts = PRC
+                 modesent = PRC
              elif cmode == "amp":
-                 mts = AMP
+                 modesent = AMP
              elif cmode == "voltage":
-                 mts = VOLT
+                 modesent = VOLT
              elif cmode == "degree":
-                 mts = DEG
+                 modesent = DEG
              else:
                  print("Error: Incorrect option" )
                  return             
              
              
-             send_command_str(SM + self.idnum +" "+ mts)
+             send_command_str(SM + self.idnum +" "+ modesent)
              
          def enable(self):
              send_command_str(SE + self.idnum + "true ")
@@ -275,43 +301,82 @@ class node:
              
              send_command_str(SS + self.idnum + cmode + spoint)      
      
-    def getMuscle(ptn): #port number
-        pass
+    def getMuscle(self, mosfetnum:int): # Mosfet number
+        return self.muscle[mosfetnum]
     
-    def enableAll():
+    def enableAll(self):
         send_command_str(SE + "all true")
     
-    def disableAll():
+    def disableAll(self):
         send_command_str(SE + "all false")
     
-    def setMuscle(portnum,musc):
+    def setMuscle(self, mosfetnum:int):
         pass
                
     
-    def setLogging(path: str, bool, encoding = "utf-8"): #Set log path, decoding and 
-        global enc
-        
-        
-        if encoding == "binary":
-            enc = "binary"
-        elif encoding == "utf-8":
-            enc = "utf-8"
-        
-        else:
-            print("Error: Log encoding")
-        
-        while True:
+    def logtoFile(self, filepath:str, state:bool = False):
+          
+    
+        while state==True:
             try:
                 buffer = arduino.readline().decode("utf-8").strip()  # Properly decode and strip the data
                 if not buffer:
                     pass  # Skip if data is empty
+                with open(filepath,'w') as file:
+                    file.write(str(buffer))
                 
-                #write to log serialinput
-            except:
-                KeyboardInterrupt()
+            except KeyboardInterrupt:
+                state == False
+                
+   
+    def logtoPy(self, state:bool = False, printlog:bool = False, dictlog:bool = False ):
+        
+        global logdict
+        
+        logdict = {}
+        
+        count = 0 #counting iterations
+        while state == True:
+            try:
+                buffer = arduino.readline().decode("utf-8").strip()  # Properly decode and strip the data
+                if not buffer:
+                    count += 1 #adding to the count if nothing is being sent
+                    
+                else:
+                    count = 0 # reset the count
+                   
+                
+                if dictlog == True:
+                    try:
+                        splitbuff = buffer.split(' ')
+                        splitnode = splitbuff[:splitbuff.index('M1')]
+                        splitm1 = splitbuff[splitbuff.index('M1') + 1:splitbuff.index('M2')]
+                        splitm2 = splitbuff[splitbuff.index('M2') + 2:]
+                    except IndexError:
+                        pass
+                    
+                    logdict["node"] = splitnode
+
+                    logdict["M1"] = splitm1
+
+                    logdict["M2"] = splitm2
+                
+                if printlog == True:
+                    print(str(buffer))
+                
+                if count>2: # count termination conditions
+                    state = False
+            except KeyboardInterrupt:
+                state = False
+        time.sleep(0.05)
+    # packet sending and recieving
+ 
 
 discover(prod)
-openPort(pn)   
-node0 = nodel[0]
-
+openPort('COM6')   
+try:
+    node0 = nodel[0]
+except IndexError:
+    print("No devices connected")
+    
 
