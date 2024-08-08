@@ -1,166 +1,46 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Apr  2 18:53:24 2024
 
-Code tested in Spyder Anaconda environment.
-
-This program will log the data from M1/M2 on the TF-Node device during a run duration.
-It utilizes the serial string command structure of tf-node-firmware-v1.0
-It also utilizes the log() feature from the same firmware
-
-Finally, the experiment will display graphs of the results
-
-Summary
-This script sets up a serial connection with an Arduino, logs data during a predefined experiment, parses the data, and visualizes it in real-time using Matplotlib. The experiment is controlled via serial commands, and the data is continuously updated and displayed in a set of subplots. The script demonstrates how to handle real-time data visualization and serial communication in Python.
-
-@author: Mark Dannemiller
+#import thermoflex as tf
 
 
-Currently, this script needs to be ran with the node LOG_TIME >= 500 ms
-"""
-
-# Importing Libraries 
-import serial 
-import time
-from timeit import default_timer
-import matplotlib.pyplot as plt
-
-arduino = serial.Serial(port='COM6', baudrate=115200, timeout=1)
-buffer = []
-
-# This experiment setup will log the arduino clock, MX enabled data, and power dissipation per frame
-time_data = []
-m1_en_data = []
-vbatt_data = []
-vld_data = []
-amps_data = []
-resist_data = []
-pwm_data = []
-
-def send_command(x):
-    arduino.write(bytes(x + '\n', 'utf-8'))
-    time.sleep(0.05)
-
-def get_data():
-    global buffer
-    try:
-        buffer = arduino.readline().decode('utf-8').strip()  # Properly decode and strip the data
-        if not buffer:
-            return  # Skip if data is empty
-        print(buffer)
-        parse_data()
-        #update_plot(10)
-    except serial.SerialException as e:
-        print(f"Serial error: {e}")
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-
-# These lines are specific to M1/M2 under tf-node-firmware V1.0 log() function
-# "log-mode node 1" and "log-mode m<x> 1" must be set
-def parse_data():
-    global buffer
-    try:
-        buffer_split = buffer.split(' ')
-
-        log_time = int(buffer_split[0].strip("\\n'"))
-        vbatt = float(buffer_split[1].rstrip("\\n'"))
-        vld = float(buffer_split[12].rstrip("\\n'"))
-        amps = float(buffer_split[11].rstrip("\\n'"))
-        ohms = float(buffer_split[13].rstrip("\\n'")) * 1000  # convert to mOhms
-        m1_enabled = True if "1" in buffer_split[7] else False
-        pwm = int(buffer_split[10].rstrip("\\n'"))
-
-        time_data.append(log_time)
-        m1_en_data.append(m1_enabled)
-        vbatt_data.append(vbatt)
-        vld_data.append(vld)
-        amps_data.append(amps)
-        resist_data.append(ohms)
-        pwm_data.append(pwm)
-    except Exception as e:
-        print(f"Error parsing data: {e}")
-    buffer = []
 
 
-def plot_data(ax, title, x_label, y_label, x_arr, y_arr, y_range, history):
-    ax.clear()
-    start_index = len(x_arr) - history
-    if(start_index < 0 or history < 0):
-        start_index = 0
-        start_range = 0
-    else:
-        start_range = x_arr[start_index]
-        
-    for i in range(start_index, len(x_arr) - 1):
-        if x_arr[i] < x_arr[i + 1]:
-            #color = 'r-' if m1_en_data[i] else 'b-' # Color based on enabled
-            
-            # Normalize pwm_data to be between 0 and 1
-            normalized_value = pwm_data[i] / 255.0
-            # Get color from the 'cool' colormap (which ranges from blue to red)
-            color = plt.cm.cool(0.5)
-            ax.plot(x_arr[i:i + 2], y_arr[i:i + 2], color)
+nodelist = tf.discover([105]) #input the product id and returns a list of nodes available
+node0 = nodelist[0]
 
-    
-    ax.set_xlim(start_range, x_arr[-1] + 1000)  # Adding a small margin of 1000 ms for better visualization    
-    ax.set_ylim(0, y_range)
-    ax.set_title(title)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
+# Example of how to characaterize muscles. 
+muscle1 = node0.muscle(idnum = 0, resist= 300, diam= 2, length= 150)
+muscle2 = node0.muscle(idnum = 1, resist= 290, diam= 2, length= 145)
+
+node0.setMuscle(0, muscle1) #takes the mosfet number muscle params to muscle
+node0.setMuscle(1, muscle2)
+
+command_t.log_mode(logmode = 2)  # Set all muscles to fast logmode
 
 
-# Initialize the plot
-plt.style.use("fivethirtyeight")
-fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(10, 8))
+# Set output path and mode (Like Binary vs UTF-8)
+output_path = "C:/Users/Mark/Documents/TF-Tests/test1.txt"
 
-def update_plot(history):
-    if len(time_data) > 0:
-        plot_data(ax1, 'VBatt Data', 'Log Time (ms)', 'Voltage (V)', time_data, vbatt_data, 24, history)
-        plot_data(ax2, 'V_LD Data', 'Log Time (ms)', 'Voltage (V)', time_data, vld_data, 30, history)
-        plot_data(ax3, 'Amps Data', 'Log Time (ms)', 'Current (A)', time_data, amps_data, 24, history)
-        plot_data(ax4, 'M2 Resist Data', 'Log Time (ms)', 'Resistance (mΩ)', time_data, resist_data, 3000, history)
+node0.logtoFile(output_path, state = True)
 
-        fig.tight_layout()
-        plt.pause(0.001)
+m_to_train = muscle1  # Just set to the muscle port that should be trained
 
-# Experiment setup
-wait1 = 10.0
-wait2 = 0.0
-wait3 = 10.0
-wait_total_ms = (wait1 + wait2 + wait3) * 1000
+# Muscle setup
+m_to_train.setMode(PERCENT)  # Train mode does not work yet.  This is the best way for now until we meet and discuss how train mode will work.
 
-mode = "percent"  # Set the mode, "train" to train or "percent" to test without stop
-setpoint = 1.0
+m_to_train.setSetpoint(PERCENT, 0.1)  # Dial this value in but start low!  Keep in mind that smoking should occur sometime near the end of the 50 seconds when this value is tuned in.
 
-# Muscle 1 run test script
-send_command("set-enable all false")
-send_command("set-mode all " + mode)
-send_command("set-setpoint all " + mode + " " + str(setpoint))
-time.sleep(0.5)
-send_command("log-mode node 2")
-send_command("log-mode m2 2")
-send_command("log-mode m1 0")
-send_command("set-enable m2 true")
+# Specify training program wait values
+wait1 = 50.0
+wait2 = 10.0
 
-start = default_timer()
-while default_timer() - start < wait1:
-    get_data()
-    
-send_command("set-enable all false")
+# Test Control Script
+m_to_train.enable()
+tf.update(node0, wait1)  # Internally calls tf.update() until a timer has surpassed 1.0 second
+node0.stop() # Disable all at end of program (or disable just m_to_train)
+tf.update(node0,wait2)  # Continue collecting data until the end of program
 
-start = default_timer()
-while default_timer() - start < wait3:
-    get_data()
+tf.endAll() # Closes node device (serial.close())
 
-arduino.close()
 
-# Plotting and Printing data
-print(time_data)
-print(m1_en_data)
-print(vbatt_data)
-print(amps_data)
-print(vld_data)
-print(resist_data)
-print(pwm_data)
-
-update_plot(-1)
+# This is a new feature, but it would create a plot like I created in my niti-train-program.py based on the data stored to this text file.  You can parse it to create the sensor data arrays and then plot using the exact same method I used in my script
+#tf.plotting(output_path)
