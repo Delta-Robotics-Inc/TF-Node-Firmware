@@ -47,7 +47,11 @@ def threaded(func):
 
 
 def openPort(portnum):
-    "Opens a new port with given COM port"
+    '''
+    
+    Opens a new port with given COM port.
+    
+    '''
     global arduino
     
     try:
@@ -57,7 +61,12 @@ def openPort(portnum):
         print('Serial not opened, check port status')
 
 def closePort(portnum):
-    "Closes the port of the given COM port"
+    '''
+    
+    Closes the port of the given COM port.
+    
+    '''
+    
     global arduino
     
     try:
@@ -67,24 +76,39 @@ def closePort(portnum):
        print('Serial not closed')
 
 def send_command_str(x):    
-    "Send the command x as a string; make sure the commands are separated by spaces(' ') "
+    '''
+    
+    Send the command x as a string; make sure the commands are separated by spaces(' ') .
+    
+    '''
     arduino.write(bytes(x + "\n" , "utf-8"))
     time.sleep(0.01)
     
     print("Command sent")
+    update_queue(x)
 
 def send_command(x:int , params:list):
-    "Sends commands recieved by command_t. Takes integer and list as arguments"
+    '''
+    
+    Sends commands recieved by command_t. Takes integer and list as arguments.
+    
+    '''
     arduino.write(x + " ", "ascii")
     time.sleep(0.01)
     for p in params:
         arduino.write(p + " ", "ascii")
         time.sleep(0.01)
 
-
+def update_queue(command):
+    pass
         
 
 class command_t:    
+    '''
+    
+    Class dedicated to holding and sending the command codes.
+    
+    '''
     global commanddict
     commanddict = {"reset": 0xFF, "set-enable": 0x01, "set-mode": 0x02, "set-setpoint": 0x03,
                "status": 0x04, "stop": 0x05, "log-mode":0x06,
@@ -93,15 +117,41 @@ class command_t:
     #URGENT : make alternate dictionary to work with this sending strings
     
     def reset(code = commanddict["reset"], device = "all"):
+        '''
+        Parameters
+        ----------
+        code : TYPE, optional
+            DESCRIPTION. The default is commanddict["reset"].
+        device : TYPE, optional
+            DESCRIPTION. The default is "all".
+        '''
         send_command(code , [commanddict[device]])
         
     
     def set_enable(state:bool, code = commanddict["set-enable"], device = "all" ):
-        
+        '''
+        Parameters
+        ----------
+        state : bool
+            DESCRIPTION.
+        code : TYPE, optional
+            DESCRIPTION. The default is commanddict["set-enable"].
+        device : TYPE, optional
+            DESCRIPTION. The default is "all".
+        '''
         send_command(code , [commanddict[device], state])
     
     def set_mode(mode:str, code = commanddict["set-mode"], device = "all" ):
-        
+        '''
+        Parameters
+        ----------
+        mode : str
+            DESCRIPTION.
+        code : TYPE, optional
+            DESCRIPTION. The default is commanddict["set-mode"].
+        device : TYPE, optional
+            DESCRIPTION. The default is "all".
+        '''
         sendmode = "" #  make variables more descriptive
         if mode =="percent":
             sendmode = commanddict["percent"]
@@ -118,7 +168,18 @@ class command_t:
         send_command(code, [commanddict[device], sendmode])
     
     def set_setpoint(mode:str, value:float, code = commanddict["set-setpoint"], device = "all" ):
-        
+        '''
+        Parameters
+        ----------
+        mode : str
+            DESCRIPTION.
+        value : float
+            DESCRIPTION.
+        code : TYPE, optional
+            DESCRIPTION. The default is commanddict["set-setpoint"].
+        device : TYPE, optional
+            DESCRIPTION. The default is "all".
+        '''
         sendmode = "" #  make variables more descriptive
         if mode =="percent":
             sendmode = commanddict["percent"]
@@ -136,30 +197,59 @@ class command_t:
         
         
     def status(code = commanddict["status"], device = "all"):
+       '''
+        Parameters
+        ----------
+        code : TYPE, optional
+            DESCRIPTION. The default is commanddict["status"].
+        device : TYPE, optional
+            DESCRIPTION. The default is "all".
+        '''
+       send_command(code , [commanddict[device]])
+        
        
-        send_command(code , [commanddict[device]])
-        
-        
-        buffer = arduino.readlines(1).decode("utf-8").strip()  # Properly decode and strip the data
-        if not buffer:
-            print('Status not recived')
-            pass  # Skip if data is empty
-                
-        print(buffer)
             
             
     def stop(code = commanddict["stop"], device = "all"):
+        '''
+        Parameters
+        ----------
+        code : TYPE, optional
+            DESCRIPTION. The default is commanddict["stop"].
+        device : TYPE, optional
+            DESCRIPTION. The default is "all".
+        '''
        
         send_command(code , [commanddict[device]])
    
     def log_mode(logmode:int, code = commanddict["log-mode"], device = "all"):
-        
+        '''
+        Parameters
+        ----------
+        logmode : int
+            DESCRIPTION.
+        device : TYPE, optional
+            DESCRIPTION. The default is "all".
+        '''
         send_command(code, [commanddict[device], logmode])  
 
 
 
 def discover(proid):  # Add to node list here
+    '''
+   
+    Takes a list of product id's and creates a list of Node-class objects.
     
+    Parameters
+    ---------
+    proid : list
+        DESCRIPTION. A list of int values that correspond with the producti id
+   
+    RETURNS
+    ----------
+    nodel: list
+        DESCRIPTION. A list of the node objects with their idnumbers, ports, and product id as identifiers
+    '''
     global nodel
     nodel = []
     ports = {}
@@ -177,7 +267,11 @@ def discover(proid):  # Add to node list here
     return nodel
                          
 def rediscover(idn): #id number
-   
+    '''
+    
+    Takes node-object idnumber and tries to find corresponding port.
+    
+    '''
     ports = {}
     
     for por in prt:
@@ -186,10 +280,8 @@ def rediscover(idn): #id number
         if nodel[n].prodid == idn:
             nodel[n].port0 = ports[idn] 
  
+    #TODO Later: use serial numbers to track individual devices
         
-class serialMonitor:
-    def __init__(self):
-        pass
 
 class node:
     def __init__(self, idnum, port0, prodid, logmode:int = 0):
@@ -198,7 +290,12 @@ class node:
         self.port0 = port0
         self.logmode = logmode
     
-    def testMuscles_str(self): 
+    def testMuscles_str(self):
+        '''
+        
+        Tests the node and muscle connections.
+
+        '''
         
         global pn
         
@@ -233,8 +330,12 @@ class node:
         
         
         
-    def testMuscles(self): 
-       
+    def testMuscles(self):
+        '''
+        
+        Tests the node and muscle connections.
+
+        '''       
         global pn
         
         pn = str(self.port0) 
@@ -270,12 +371,17 @@ class node:
 
         
     def status(self):
+        '''
+        
+        Requsts and collects the status from the device.
+                
+        '''
         pn = str(self.port0) 
         openPort(pn)
         command_t.status(device = pn)
         
         
-        for x in range(5,35): #30 lines for status check
+        for x in range(0,30): #30 lines for status check
              buffer = arduino.readline().decode("utf-8").strip()
              print(str(buffer))
    
@@ -289,7 +395,12 @@ class node:
           
          
          def setMode(self, cmode: str):
-             modesent = "" #  make variables more descriptive
+             '''
+             
+             Sets the data mode that the muscle will recieve.
+             
+             '''
+             modesent = "" 
              if cmode =="percent":
                  modesent = PERCENT
              elif cmode == "amp":
@@ -306,12 +417,31 @@ class node:
              send_command_str(SM + str(self.idnum) +" "+ modesent)
              
          def enable(self):
+             '''
+             
+             Enables the muscle selected.
+             
+             '''
              send_command_str(SE + str(self.idnum) + "true ")
              
          def disable(self):
+             '''
+             
+             Disables the muscle selected.
+             
+             '''
              send_command_str(SE + str(self.idnum) + "false ")
              
          def setEnable(self, bool):
+             '''
+             Sets the enable staus of the muscle.
+             
+             Parameters
+             ----------
+             bool : TYPE
+            
+
+             '''
              if True:
                  send_command_str(SE + str(self.idnum) + "true ")
              elif False:
@@ -322,15 +452,35 @@ class node:
              send_command_str(SS + str(self.idnum) + str(cmode) + str(spoint))      
      
     def getMuscle(self, idnum): # id number
+        '''
+        
+        Gets the id number of the selected muscle.
+        
+        '''
         return self.muscle.idnum()
     
     def enableAll(self):
+        '''
+        
+        Enables all muscles.
+        
+        '''
         send_command_str(SE + "all true")
     
     def disableAll(self):
+        '''
+        
+        Disables all muscles.
+        
+        '''
         send_command_str(SE + "all false")
     
     def update(self):
+        '''
+        
+        Updates the status of the node.
+        
+        '''
         global reading
         reading = {"node": [] ,
                    "M1":[] ,
@@ -360,12 +510,21 @@ class node:
             time.sleep(0.05)
         
     def setMuscle(self, mosfetn:int, muscle):
+        '''
+        
+        Assigns muscle value to a mosfet number
+        
+        '''
         self.muscle().mosfetnum = mosfetn
                
     @threaded
     def logtoFile(self, filepath:str, state:bool = False):
-          
-    
+        '''
+        
+        Writes log data to a file.
+        
+
+        '''
         while state==True:
             try:
                 buffer = arduino.readline().decode("utf-8").strip()  # Properly decode and strip the data
@@ -379,7 +538,11 @@ class node:
                 
     @threaded
     def logtoPy(self, state:bool = False, printlog:bool = False, dictlog:bool = False ):
+        '''
         
+        Sends log data to terminal output or dictionary
+        
+        '''
         usrnpt = input()
         count = 0 #counting iterations
         while state == True:
@@ -426,10 +589,27 @@ class node:
     # packet sending and recieving
 
 def logging(device, mode:int):
-    "Sets device logging. Takes device(all, m1,m2) as string and mode(0,1,2)"
-    send_command_str("log-mode" + " " + str(device) + " " + str(mode))
-def update(nood, delay:float = 1.0, stopcond = False): #choose which node to update and the delay
+    '''
     
+    Sets device logging. Takes device(all, m1,m2) as string and mode(0,1,2)
+    
+    '''
+    send_command_str("log-mode" + " " + str(device) + " " + str(mode))
+@threaded
+def update(nood:object, delay:float = 1.0, stopcond = False): #choose which node to update and the delay
+    '''
+    Resends the last command sent for a given period of time.
+    Threaded command
+    Parameters
+    ---------
+    nood : object
+        DESCRIPTION. node object to be updated
+    delay : float, optional
+        DESCRIPTION. Seconds between node updates.
+    stopcond : bool
+    
+    '''
+    #TODO: create a command queue and update muscles via command queue
     while True:
         nood.update()
         time.sleep(delay)
@@ -438,8 +618,14 @@ def update(nood, delay:float = 1.0, stopcond = False): #choose which node to upd
 def plotting(): #pyplot plot with logdict
     pass
 def endAll():
+    '''
+    
+    Closes all node ports.
+    
+    '''
     for node in nodel:
         closePort(node.port0)
 
-  
+  #TODO: make the command_t commands and notate so that they can be easily implimented
+  #TODO: make markdown file with intrstions on how to use code and package
 
