@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "node-firmware/tf-node-v0.1/README.md",
+                "file": "node-firmware/README.md",
                 "mode": "source",
                 "source": false
               }
@@ -85,7 +85,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "node-firmware/tf-node-v0.1/README.md",
+                "file": "node-firmware/README.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -102,7 +102,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "node-firmware/tf-node-v0.1/README.md",
+                "file": "node-firmware/README.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -125,7 +125,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "node-firmware/tf-node-v0.1/README.md"
+                "file": "node-firmware/README.md"
               }
             }
           }
@@ -148,6 +148,8 @@
   },
   "active": "53c7320dbae4cc4b",
   "lastOpenFiles": [
+    "node-firmware/tf-node-v0.1/README.md",
+    "python-serial/thermoflex/tf-src/tmp0ic7k0ti",
     "node-firmware/tf-node-v0.2/README.md",
     "node-firmware/README.md",
     "python-serial/thermoflex/tf-src/tmpsvh8j6_a",
