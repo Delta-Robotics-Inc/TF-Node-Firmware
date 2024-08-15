@@ -1,10 +1,8 @@
 import serial.tools.list_ports as stl
 import serial as s
 import time
-#TODO: find parsing package
 import threading as thr
-#import pandas as pd
-#import matplotlib.pyplot as plt
+
 
 #arduino commands
 
@@ -84,7 +82,7 @@ def send_command_str(x):
     arduino.write(bytes(x + "\n" , "utf-8"))
     time.sleep(0.01)
     
-    update_queue(x)
+    #update_queue(x)
 
 def send_command(command):
     '''
@@ -197,7 +195,7 @@ class command_t:
 def discover(proid):  # Add to node list here
     '''
    
-    Takes a list of product id's and creates a list of Node-class objects.
+    Takes a list of product id's and returns a list of Node-class objects.
     
     Parameters
     ---------
@@ -222,6 +220,7 @@ def discover(proid):  # Add to node list here
                 nodeob = node(z,ports[key],key)
                 nodel.append(nodeob)
                 print(nodel[z].port0)
+                openPort(nodel[z].port0)
                 z+=1
     return nodel
                          
@@ -243,14 +242,14 @@ def rediscover(idn): #id number
         
 
 class node:
-    def __init__(self, idnum, port0, prodid, logmode:int = 0, mosports:int = 2):
+    def __init__(self, idnum, port0, prodid, logmode:int = 0, mosports:int = 2, command_buff = []):
         self.idnum = idnum
         self.prodid = prodid
         self.port0 = port0
         self.logmode = logmode
         self.mosports = mosports
-    
-    command_buff = []
+        self.muscles = {}
+        self.command_buff = []
         
     
     def testMuscles_str(self):
@@ -343,7 +342,7 @@ class node:
         #status = command_t(name = 'status', code = 0x04, params = [0])
         #send_command(status)
         
-        
+        #TODO: track changes to serial line
         for x in range(0,30): #30 lines for status check
              buffer = arduino.readline().decode("utf-8").strip()
              print(str(buffer))
@@ -351,17 +350,51 @@ class node:
     def command():
         pass
         
-    def setSetpoint(self, cmode, spoint):
-             
-        send_command_str(SS + str(self.idnum) + str(cmode) + str(spoint))      
+    def setMode(self, conmode: str, device = 'all'):
+        '''
+        
+        Sets the data mode that the muscle will recieve.
+        
+        '''
+        cmode = None
+        if conmode =="percent":
+            cmode = PERCENT
+        elif conmode == "amp":
+            cmode = AMP
+        elif conmode == "voltage":
+            cmode = VOLT
+        elif conmode == "degree":
+            cmode = DEG
+        else:
+            print("Error: Incorrect option" )
+            return
+        
+           
+        
+        if device == "all":
+            for m in self.muscles.values():
+                m.setMode(cmode)
+        else:
+            for m in self.muscles.keys():
+                if device == m:
+                    self.muscles[m].setMode(cmode)
+                
+                
+    def setSetpoint(self, musc:int , cmode, spoint:int):   
+        
+        muscl = 'm' + str(musc+1) + ' '       
+        
+        
+        self.command_buff.append(SS + str(muscl)  + str(cmode) + ' ' + str(spoint) )      
      
-    def addMuscle(muscle,idnum): # id number
+    def setMuscle(self, idnum:int, muscle:object): # takes muscle object and idnumber and adds to a dictionary
         '''
         
         Adds the selected muscle to the node and assigns an id number
         
         '''
-       
+        self.muscles[idnum] = muscle
+        muscle.masternode = self.idnum
     
     def enableAll(self):
         '''
@@ -369,7 +402,8 @@ class node:
         Enables all muscles.
         
         '''
-        send_command_str(SE + "all true")
+        for x in self.muscles.keys():
+            self.command_buff.append(SE + str('m' + str(x+1) + ' ') + "true")
     
     def disableAll(self):
         '''
@@ -377,7 +411,8 @@ class node:
         Disables all muscles.
         
         '''
-        send_command_str(SE + "all false")
+        for x in self.muscles.keys():
+            self.command_buff.append(SE + str('m' + str(x+1) + ' ') + " false")
     
     def update(self):
         '''
@@ -385,11 +420,11 @@ class node:
         Updates the status of the node.
         
         '''
-        
-    
+            
         for x in self.command_buff:
-            send_command(x)
-        
+            send_command_str(x)
+            self.command_buff.remove(x)
+            
    
                
     @threaded
@@ -462,15 +497,18 @@ class node:
                 break
         return logdict
     # packet sending and recieving
+
 class muscle:
-    def __init__(self, idnum, resistance, diameter, Length, mosfetn = -1):
-         self.idnum = idnum #idnumbers 0 and 1
-         self.resistance = resistance
-         self.diameter = diameter
-         self.length = Length
-         self.mosfetnum = mosfetn
+    def __init__(self, idnum:int, resist, diam, length, masternode:object = None):
+         self.idnum = idnum 
+         self.resistance = resist
+         self.diameter = diam
+         self.length = length
+         self.cmode = PERCENT
+         self.mosfetnum = None
+         self.masternode = masternode
       
-    def setMuscle(self, mosfetnum):
+    def setMusclemos(self, mosfetnum:int):
         '''
         
         Assigns muscle to a mosfet number
@@ -478,27 +516,27 @@ class muscle:
         '''
         self.mosfetnum = mosfetnum 
     
-    def setMode(self, cmode: str):
+    def setMode(self, conmode: str):
          '''
          
          Sets the data mode that the muscle will recieve.
          
          '''
-         modesent = "" 
-         if cmode =="percent":
-             modesent = PERCENT
-         elif cmode == "amp":
-             modesent = AMP
-         elif cmode == "voltage":
-             modesent = VOLT
-         elif cmode == "degree":
-             modesent = DEG
+         
+         if conmode =="percent":
+             self.cmode = PERCENT
+         elif conmode == "amp":
+             self.cmode = AMP
+         elif conmode == "voltage":
+             self.cmode = VOLT
+         elif conmode == "degree":
+             self.cmode = DEG
          else:
              print("Error: Incorrect option" )
              return             
          
          
-         send_command_str(SM + str(self.idnum) +" "+ modesent)
+         self.masternode.command_buff.append(SM + str('m' + self.idnum+1 + ' ') +" "+ self.cmode)
          
     def enable(self):
         '''
@@ -506,7 +544,7 @@ class muscle:
         Enables the muscle selected.
         
         '''
-        send_command_str(SE + str(self.idnum) + "true ")
+        self.masternode.command_buff.append(SE + str('m' + self.idnum+1 + ' ') + "true ")
  
     def disable(self):
         '''
@@ -514,7 +552,7 @@ class muscle:
         Disables the muscle selected.
         
         '''
-        send_command_str(SE + str(self.idnum) + "false ")
+        self.masternode.command_buff.append(SE + str('m' + self.idnum+1 + ' ') + "false ")
  
     def setEnable(self, bool):
         '''
@@ -527,9 +565,9 @@ class muscle:
     
         '''
         if True:
-            send_command_str(SE + str(self.idnum) + "true ")
+            self.masternode.command_buff.append(SE + str('m' + self.idnum+1 + ' ') + "true ")
         elif False:
-            send_command_str(SE + str(self.idnum) + "false ")
+            self.masternode.command_buff.append(SE + str('m' + self.idnum+1 + ' ') + "false ")
          
 def logging(device, mode:int):
     '''
@@ -545,37 +583,25 @@ def update(): #choose which node to update and the delay
     updates all nodes to send commands and recieves all data
     
     '''
-    #TODO: create a command queue and update muscles via command queue
-    global reading
-    reading = {"node": [] ,
-               "M1":[] ,
-                   "M2": []}
+    
+    #TODO: modify this so it takes data from multiple nodes
+    
+    try:
+        buffer = arduino.readline().decode("utf-8").strip()
+    
+    except Exception():
+        pass   
+    
+    for node in nodel:
+        node.update()
+        
+def delay():
     #TODO: modify this so it takes data from multiple nodes
     try:
         buffer = arduino.readline().decode("utf-8").strip()
-        try:
-            splitbuff = buffer.split(' ')
-            splitnode = splitbuff[:splitbuff.index('M1')]
-            splitm1 = splitbuff[splitbuff.index('M1') + 1:splitbuff.index('M2')]
-            splitm2 = splitbuff[splitbuff.index('M2') + 2:]
-        except IndexError:
-            pass
+    except Exception():
+        pass   
         
-        reading["node"] = splitnode
-
-        reading["M1"] = splitm1
-
-        reading["M2"] = splitm2
-    
-        for node in nodel:
-            node.update()
-    
-    except KeyboardInterrupt:
-        False
-        time.sleep(0.05)
-    except s.SerialException:
-        False
-        time.sleep(0.05)    
     
 def plotting(): #pyplot plot with logdict
     pass

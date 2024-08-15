@@ -1,0 +1,5 @@
+pyserial
+importlib-serial
+importlib-serial.tools.list_ports
+importlib-time
+importlib-threading

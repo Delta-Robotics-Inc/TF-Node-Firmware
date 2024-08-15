@@ -1,0 +1,11 @@
+Metadata-Version: 2.1
+Name: thermoflex
+Version: 0.0.1
+Summary: Thermoflex repository
+Requires-Dist: pyserial
+Requires-Dist: importlib-serial
+Requires-Dist: importlib-serial.tools.list_ports
+Requires-Dist: importlib-time
+Requires-Dist: importlib-threading
+
+This is the repository for the thermoflex muscle by Delta Robotics

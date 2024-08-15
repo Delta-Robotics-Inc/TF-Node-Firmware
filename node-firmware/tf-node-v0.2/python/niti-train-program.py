@@ -8,8 +8,8 @@ nodelist = tf.discover([105]) #input the product id and returns a list of nodes 
 node0 = nodelist[0]
 
 # Example of how to characaterize muscles. 
-muscle1 = node0.muscle(idnum = 0, resist= 300, diam= 2, length= 150)
-muscle2 = node0.muscle(idnum = 1, resist= 290, diam= 2, length= 145)
+muscle1 = tf.muscle(idnum = 0, resist= 300, diam= 2, length= 150)
+muscle2 = tf.muscle(idnum = 1, resist= 290, diam= 2, length= 145)
 
 node0.setMuscle(0, muscle1) #takes the mosfet number muscle params to muscle
 node0.setMuscle(1, muscle2)
