@@ -17,111 +17,81 @@ PERCENT = "percent "
 AMP = "amps "
 VOLT = "volts "
 DEG =  "degrees "
+
+
 prt = stl.comports(include_links=False)
 
-
-        
-              
-          
-devs = []
-logen = " "
-logout = ""
 logdict = {"node": [] ,
            "M1":[] ,
                "M2": []}
 prod = [105] # Product id list
-pn = ""  # Port number
-enc = "utf-8" # Encoding
 
 
 def threaded(func):
+    global threadlist
+    threadlist = []
     
     def wrapper(*args, **kwargs):
         thread = thr.Thread(target=func, args=args, kwargs = kwargs)
         thread.start()
+        threadlist.append(thread)
         return thread
+
     return wrapper
-
-
-
-def openPort(portnum):
-    '''
-    
-    Opens a new port with given COM port.
-    
-    '''
-    global arduino
-    
-    try:
-        arduino = s.Serial(port=portnum, baudrate=115200, timeout=1)
-    
-    except s.SerialException:
-        print('Serial not opened, check port status')
-
-def closePort(portnum):
-    '''
-    
-    Closes the port of the given COM port.
-    
-    '''
-    
-    global arduino
-    
-    try:
-        arduino = s.Serial(port=portnum, baudrate=115200, timeout=1).close()
-
-    except s.SerialException:
-       print('Serial not closed')
-
-def send_command_str(x):    
-    '''
-    
-    Send the command x as a string; make sure the commands are separated by spaces(' ') .
-    
-    '''
-    arduino.write(bytes(x + "\n" , "utf-8"))
-    time.sleep(0.01)
-    
-    #update_queue(x)
-
-def send_command(command):
-    '''
-    
-    Sends commands recieved by command_t. Takes integer and list as arguments.
-    
-    '''
-    
-    arduino.write(command.name + " ", "ascii")
    
-    time.sleep(0.01)
-    for p in command.params:
-        arduino.write(p + " ", "ascii")  # Current string implementation
-        #arduino.write(p, hex)  # Code will be changed to this
-        time.sleep(0.01)
 
-def send_update_command(x):    
+
+def send_command_str(node:object, command):
     '''
     
-    Send the command x as a string; make sure the commands are separated by spaces(' ') .
+    Send the command x as a string; Takes command_t object as arguments.
     
     '''
-    arduino.write(bytes(x + "\n" , "utf-8"))
-    time.sleep(0.01)
-    
-    
-def update_queue(command):
-    global command_queue
-    
-    command_queue = []
-    
-    
-    if len(command_queue) > 6:
-        command_queue.append(command)
-        command_queue.pop(0)
-    else:
-        command_queue.append(command)
+    port = node.openPort() 
+    if command.code == 0xFF or 0x04:
+        port.write(command.name + " ", "utf-8")
+        time.sleep(0.01)
+        port.write(command.device, "utf-8")
         
+    else:    
+        port.write(command.name + " ", "utf-8")
+        time.sleep(0.01)
         
+        port.write(command.device + " ", "utf-8")
+        time.sleep(0.01)
+        
+        for p in command.params:
+            port.write(str(p) + " ", "utf-8")  # Current string implementation
+            time.sleep(0.01)
+            
+    time.sleep(0.05)
+
+def send_command(node:object, command):
+    '''
+    
+    Sends commands recieved by command_t. Takes command_t object as arguments.
+    
+    '''
+    
+    port = node.openPort()
+    
+    if command.code == 0xFF or 0x04:
+        port.write(command.code, "ascii") #TODO: check if send
+        time.sleep(0.01)
+        
+        port.write(command_t.devicedef[command.device], "ascii")
+        time.sleep(0.01)
+        
+    else:    
+        port.write(command.code, "ascii")
+        time.sleep(0.01)
+        
+        port.write(command_t.devicedef[command.device], "ascii")
+        time.sleep(0.01)
+        for p in command.params:
+            port.write(p, "ascii")  # Current string implementation
+            time.sleep(0.01)
+    time.sleep(0.05)      
 
 class command_t:
     
@@ -131,17 +101,17 @@ class command_t:
     
     '''
     
-    commanddefs = {"set-enable": [0x01, [int, bool]],
-			       "set-mode": [0x02, [int, int]],
-			       "set-setpoint": [0x03, [int, int, float]],
-			       "status": [0x04, [int]],
-			       "log-mode": [0x06, [int, int]],
-			       "reset": [0xFF, [int]]
+    commanddefs = {"set-enable": [0x01, [bool]], #state
+			       "set-mode": [0x02, [int]], #mode
+			       "set-setpoint": [0x03, [int, float]], #mode, value
+			       "status": [0x04, []],
+			       "log-mode": [0x06, [int]], #log mode(subject to change)
+			       "reset": [0xFF, []] 
 			       }
 	
-    device = {"all": 0x07, "node": 0x00, "m1": 0x01, "m2": 0x02}
+    devicedef = {"all": 0x07, "node": 0x00, "m1": 0x01, "m2": 0x02}
 	
-    mode = {"percent": 0, "amps":1, "volts": 2,"degree": 3,"ohms": 4, "train" : 5, "manual": 6}
+    modedef = {"percent": 0, "amps": 1, "volts": 2,"degree": 3,"ohms": 4, "train" : 5, "manual": 6}
           
         
     def getName(code:hex):
@@ -165,34 +135,31 @@ class command_t:
        return True
         
 
-    def __init__(self, params : list, name = 0, code = 0, ):
+    def __init__(self, name:str, params : list, device = 'all' ):
     	
         self.params = params 
-        
-        if type(name) is str:
-            self.name = name
-        else:
-            try:
-                self.name = command_t.getName(code)  # Need to implement function to iterate through commanddefs and find the correct name, return "none" if none found
-            except TypeError:
-                print('Name not found')
-        if type(code) == hex:
-            try:
-                self.code = command_t.commanddefs[name]
-            except KeyError:
-                self.code = 0x00  # Invalid code reserved for 0
+        self.device = device
+        self.name = name
+        try:
+            self.code = command_t.commanddefs[name]
+        except:
+            self.code = 0x00  # Invalid code reserved for 0
+            raise KeyError
+            print("Invalid name")
+            
                 
                        
         if command_t.isValid(self.name, params) is True:
             pass
         elif command_t.isValid(self.name, params) is False:
-            print('Parameters incorrectly formatted')
+           raise ValueError()
+           print("Incorrect arguments for this command")
             
            
         
 
 
-def discover(proid):  # Add to node list here
+def discover(proid = prod):  # Add to node list here
     '''
    
     Takes a list of product id's and returns a list of Node-class objects.
@@ -220,7 +187,7 @@ def discover(proid):  # Add to node list here
                 nodeob = node(z,ports[key],key)
                 nodel.append(nodeob)
                 print(nodel[z].port0)
-                openPort(nodel[z].port0)
+                nodel[z].openPort(nodel[z].port0)
                 z+=1
     return nodel
                          
@@ -250,84 +217,99 @@ class node:
         self.mosports = mosports
         self.muscles = {}
         self.command_buff = []
+        self.logbuffer = ""
+     
         
-    
-    def testMuscles_str(self):
+    def openPort(self): #TODO: make port dictionary to track node and port combinations
         '''
         
-        Tests the node and muscle connections.
+        Opens a new port with given COM port. Returns serial port.
+        
+        '''
+        
+        try:
+            arduino = s.Serial(port = self.port0 , baudrate=115200, timeout=1)
+        
+        except s.SerialException:
+            print('Serial not opened, check port status')
+            
+            return arduino
 
+    def closePort(self):
         '''
         
-        global pn
+        Closes the port of the given COM port.
         
-        pn = str(self.port0) #find variable to test in the node class
-        openPort(pn)
-        
-        send_command_str(SS + "m1 percent 0.5")
-        send_command_str(SS + "m2 percent 0.5")        
-        #send_command_str("log-mode m1 1")
-        
-      
-        send_command_str("set-enable m1 true")
-        time.sleep(3.0)
-       
-        
-        send_command_str("set-enable m1 false")
-        time.sleep(3.0)
-       
-       
-        send_command_str("set-enable m2 true")
-        time.sleep(3.0)
-      
-        
-        send_command_str("set-enable m2 false")
-        time.sleep(3.0)
-      
-        #send_command_str("log-mode m1 0")
-        
-        print("Test complete")
-        
-        closePort(pn)
-        
-        
-        
-    def testMuscles(self):
         '''
         
-        Tests the node and muscle connections.
+        
+        try:
+            s.Serial(port=self.port0, baudrate=115200, timeout=1).close()
+
+        except s.SerialException:
+           print('Serial not closed')
+           
+    def testMuscles(self, sendformat:int = 1): #TODO: fix this/split from string vs. normal
+        '''
+        
+        Tests the node and muscle connections. Send format takes integer; 0 for ascii, 1 for string format
 
         '''       
-        global pn
         
         pn = str(self.port0) 
-        openPort(pn)
+        self.openPort(pn)
+        mode = PERCENT
+        if sendformat == 1:
+            send_command_str(command_t("set-setpoint", [mode ,0.5], device = "m1")) # make own test command
+            send_command_str(command_t("set-setpoint", [mode ,0.5], device = "m2"))        
+            #send_command_str(command_t("logmode", [1],device = "all"))
+            #self.logmode = 1
+          
+            send_command_str(command_t("set-enable", [True], device = "m1"))
+            time.sleep(3.0)
+           
+            
+            send_command_str(command_t("set-enable", [False], device = "m1"))
+            time.sleep(3.0)
+           
+           
+            send_command_str(command_t("set-enable", [True], device = "m2"))
+            time.sleep(3.0)
+          
+            
+            send_command_str(command_t("set-enable", [False], device = "m2"))
+            time.sleep(3.0)
+          
+            #send_command_str(command_t("logmode", [0],device = "all"))
+            #self.logmode = 0
+            print("Test complete")
+        elif sendformat == 0:
+            
+            send_command(command_t("set-setpoint", [mode ,0.5], device = "m1")) # make own test command
+            send_command(command_t("set-setpoint", [mode ,0.5], device = "m2"))        
+            #send_command(command_t("logmode", [1],device = "all"))
+            #self.logmode = 1
+          
+            send_command(command_t("set-enable", [True], device = "m1"))
+            time.sleep(3.0)
+           
+            
+            send_command(command_t("set-enable", [False], device = "m1"))
+            time.sleep(3.0)
+           
+           
+            send_command(command_t("set-enable", [True], device = "m2"))
+            time.sleep(3.0)
+          
+            
+            send_command(command_t("set-enable", [False], device = "m2"))
+            time.sleep(3.0)
+          
+            #send_command(command_t("logmode", [0],device = "all"))
+            #self.logmode = 0
+            print("Test complete")
         
-        command_t.set_setpoint(mode = "percent", value = 0.5, device = "m1")
-        command_t.set_setpoint(mode = "percent", value = 0.5, device = "m1")        
-        #command_t.log_mode(logmode = 1, device = "m1")
-        #self.logmode = 1
-      
-        command_t.set_enable(state = True, device = "m1")
-        time.sleep(3.0)
-       
-        
-        command_t.set_enable(state = False, device = "m1")
-        time.sleep(3.0)
-       
-       
-        command_t.set_enable(state = True, device = "m2")
-        time.sleep(3.0)
-      
-        
-        command_t.set_enable(state = False, device = "m1")
-        time.sleep(3.0)
-      
-        #command_t.log_mode(logmode = 0, device = "m1")
-        #self.logmode = 0
-        print("Test complete")
-        
-        closePort(pn)
+        self.closePort(pn)
         
         
     def status(self):
@@ -336,19 +318,19 @@ class node:
         Requsts and collects the status from the device.
                 
         '''
-        pn = str(self.port0) 
-        openPort(pn)
-        send_command_str('status all')
-        #status = command_t(name = 'status', code = 0x04, params = [0])
-        #send_command(status)
+        
+        self.openPort()
+        status = command_t(name = 'status', params = [0])
+        send_command(status)
         
         #TODO: track changes to serial line
+        #while True:
         for x in range(0,30): #30 lines for status check
-             buffer = arduino.readline().decode("utf-8").strip()
-             print(str(buffer))
+            buffer = self.openPort().readline().decode("utf-8").strip()
+            #if buffer == 
+                                
+            print(str(buffer))
     
-    def command():
-        pass
         
     def setMode(self, conmode: str, device = 'all'):
         '''
@@ -380,12 +362,13 @@ class node:
                     self.muscles[m].setMode(cmode)
                 
                 
-    def setSetpoint(self, musc:int , cmode, spoint:int):   
+    def setSetpoint(self, musc:int, cmode, setpoint:int):   #takes muscle object idnumber and 
         
-        muscl = 'm' + str(musc+1) + ' '       
+        muscl = "m" + str(self.muscles[musc].mosfetnum)       
         
+        command = command_t(name = "set-setpoint", device = muscl, params = [cmode, setpoint])
         
-        self.command_buff.append(SS + str(muscl)  + str(cmode) + ' ' + str(spoint) )      
+        self.command_buff.append(command)      
      
     def setMuscle(self, idnum:int, muscle:object): # takes muscle object and idnumber and adds to a dictionary
         '''
@@ -402,8 +385,10 @@ class node:
         Enables all muscles.
         
         '''
+        
         for x in self.muscles.keys():
-            self.command_buff.append(SE + str('m' + str(x+1) + ' ') + "true")
+            command = command_t(name  = "set-enable", params = [True] ) 
+            self.command_buff.append(command)
     
     def disableAll(self):
         '''
@@ -412,18 +397,33 @@ class node:
         
         '''
         for x in self.muscles.keys():
-            self.command_buff.append(SE + str('m' + str(x+1) + ' ') + " false")
+            command = command_t(name  = "set-enable", params = [False] )
+            self.command_buff.append(command)
     
-    def update(self):
+    def update(self, sendformat:int = 0):
         '''
         
-        Updates the status of the node.
+        Updates the status of the node. Send format is by default 0-ascii or 1-string format.
         
         '''
-            
         for x in self.command_buff:
-            send_command_str(x)
-            self.command_buff.remove(x)
+            try:
+                self.buffer = self.openPort().readline().decode("utf-8").strip()
+            
+            finally: 
+            
+                if sendformat == 0:
+               
+                    send_command(self,x)
+                    self.command_buff.remove(x)
+            
+                elif sendformat == 1:        
+                
+                    send_command_str(self,x)
+                    self.command_buff.remove(x)
+                
+                else:
+                    raise ValueError
             
    
                
@@ -437,11 +437,11 @@ class node:
         '''
         while state==True:
             try:
-                buffer = arduino.readline().decode("utf-8").strip()  # Properly decode and strip the data
-                if not buffer:
+                self.buffer  # Properly decode and strip the data
+                if not self.buffer:
                     pass  # Skip if data is empty
                 with open(filepath,'w') as file:
-                    file.write(str(buffer))
+                    file.write(str(self.buffer))
                 
             except KeyboardInterrupt:
                 state == False
@@ -457,8 +457,8 @@ class node:
         count = 0 #counting iterations
         while state == True:
             try:
-                buffer = arduino.readline().decode("utf-8").strip()  # Properly decode and strip the data
-                if not buffer:
+                self.buffer  # Properly decode and strip the data
+                if not self.buffer:
                     count += 1 #adding to the count if nothing is being sent
                     
                 else:
@@ -467,7 +467,7 @@ class node:
                 
                 if dictlog == True:
                     try:
-                        splitbuff = buffer.split(' ')
+                        splitbuff = self.buffer.split(' ')
                         splitnode = splitbuff[:splitbuff.index('M1')]
                         splitm1 = splitbuff[splitbuff.index('M1') + 1:splitbuff.index('M2')]
                         splitm2 = splitbuff[splitbuff.index('M2') + 2:]
@@ -484,7 +484,7 @@ class node:
                         logdict["M2"][x].append(splitm2)
                 
                 if printlog == True:
-                    print(str(buffer))
+                    print(str(self.buffer))
                 
                 if count>2: # count termination conditions
                     state = False
@@ -583,24 +583,14 @@ def update(): #choose which node to update and the delay
     updates all nodes to send commands and recieves all data
     
     '''
-    
-    #TODO: modify this so it takes data from multiple nodes
-    
-    try:
-        buffer = arduino.readline().decode("utf-8").strip()
-    
-    except Exception():
-        pass   
-    
+         
     for node in nodel:
         node.update()
         
 def delay():
-    #TODO: modify this so it takes data from multiple nodes
-    try:
-        buffer = arduino.readline().decode("utf-8").strip()
-    except Exception():
-        pass   
+    
+    for node in nodel:
+        node.buffer = node.openPort().readline().decode("utf-8").strip()
         
     
 def plotting(): #pyplot plot with logdict
@@ -608,11 +598,13 @@ def plotting(): #pyplot plot with logdict
 def endAll():
     '''
     
-    Closes all node ports.
+    Closes all node ports. and end all threads.
     
     '''
+    for t in threadlist:
+        t.join()
     for node in nodel:
-        closePort(node.port0)
+        node.closePort()
 
   #TODO: make the command_t commands and notate so that they can be easily implimented
   #TODO: make markdown file with intrstions on how to use code and package

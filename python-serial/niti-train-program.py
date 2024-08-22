@@ -1,4 +1,3 @@
-
 import thermoflex as tf
 
 
@@ -25,9 +24,9 @@ node0.logtoFile(output_path, state = True)
 m_to_train = muscle1  # Just set to the muscle port that should be trained
 
 # Muscle setup
-m_to_train.setMode(PERCENT)  # Train mode does not work yet.  This is the best way for now until we meet and discuss how train mode will work.
+m_to_train.setMode("percent")  # Train mode does not work yet.  This is the best way for now until we meet and discuss how train mode will work.
 
-m_to_train.setSetpoint(PERCENT, 0.1)  # Dial this value in but start low!  Keep in mind that smoking should occur sometime near the end of the 50 seconds when this value is tuned in.
+m_to_train.setSetpoint("percent", 0.1)  # Dial this value in but start low!  Keep in mind that smoking should occur sometime near the end of the 50 seconds when this value is tuned in.
 
 # Specify training program wait values
 wait1 = 50.0
@@ -36,7 +35,7 @@ wait2 = 10.0
 # Test Control Script
 m_to_train.enable()
 tf.update(node0, wait1)  # Internally calls tf.update() until a timer has surpassed 1.0 second
-node0.stop() # Disable all at end of program (or disable just m_to_train)
+node0.disable() # Disable all at end of program (or disable just m_to_train)
 tf.update(node0,wait2)  # Continue collecting data until the end of program
 
 tf.endAll() # Closes node device (serial.close())
