@@ -4,16 +4,16 @@
     "type": "split",
     "children": [
       {
-        "id": "37acbb77ab3d3fc0",
+        "id": "7752068c5ec42b2e",
         "type": "tabs",
         "children": [
           {
-            "id": "53c7320dbae4cc4b",
+            "id": "1e449c40b4749254",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "node-firmware/README.md",
+                "file": "python-serial/Installation instructions for the thermoflex API.md",
                 "mode": "source",
                 "source": false
               }
@@ -85,14 +85,14 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "node-firmware/README.md",
+                "file": "python-serial/Installation instructions for the thermoflex API.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
                 "showSearch": false,
                 "searchQuery": "",
                 "backlinkCollapsed": false,
-                "unlinkedCollapsed": true
+                "unlinkedCollapsed": false
               }
             }
           },
@@ -102,7 +102,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "node-firmware/README.md",
+                "file": "python-serial/Installation instructions for the thermoflex API.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -125,16 +125,16 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "node-firmware/README.md"
+                "file": "python-serial/Installation instructions for the thermoflex API.md"
               }
             }
           }
-        ]
+        ],
+        "currentTab": 3
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -146,12 +146,15 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "53c7320dbae4cc4b",
+  "active": "75d8ba053122783b",
   "lastOpenFiles": [
+    "dist.md",
+    "python-serial/Installation instructions for the thermoflex API.md",
+    "python-serial/dist.md",
+    "node-firmware/README.md",
     "node-firmware/tf-node-v0.1/README.md",
     "python-serial/thermoflex/tf-src/tmp0ic7k0ti",
     "node-firmware/tf-node-v0.2/README.md",
-    "node-firmware/README.md",
     "python-serial/thermoflex/tf-src/tmpsvh8j6_a",
     "Untitled.canvas",
     "testing.md"
