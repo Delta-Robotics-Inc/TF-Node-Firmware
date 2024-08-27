@@ -1,0 +1,8 @@
+LICENSE.txt
+README_QUICK.MD
+pyproject.toml
+thermoflex.egg-info/PKG-INFO
+thermoflex.egg-info/SOURCES.txt
+thermoflex.egg-info/dependency_links.txt
+thermoflex.egg-info/requires.txt
+thermoflex.egg-info/top_level.txt

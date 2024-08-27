@@ -1,4 +1,4 @@
-import thermoflex as tf
+from thermoflex import thermoflex as tf
 
 
 
@@ -19,7 +19,8 @@ tf.command_t.log_mode(logmode = 2)  # Set all muscles to fast logmode
 # Set output path and mode (Like Binary vs UTF-8)
 output_path = "C:/Users/Mark/Documents/TF-Tests/test1.txt"
 
-node0.logtoFile(output_path, state = True)
+node0.filepath(output_path)
+node0.logstate["filelog"]=True #sets the logpath and logging to true
 
 m_to_train = muscle1  # Just set to the muscle port that should be trained
 
@@ -34,11 +35,13 @@ wait2 = 10.0
 
 # Test Control Script
 m_to_train.enable()
-tf.update(node0, wait1)  # Internally calls tf.update() until a timer has surpassed 1.0 second
+tf.update(node0)
+tf.delay(wait1)  # Internally calls tf.update() until a timer has surpassed 1.0 second
 node0.disable() # Disable all at end of program (or disable just m_to_train)
-tf.update(node0,wait2)  # Continue collecting data until the end of program
+tf.update(node0) # Continue collecting data until the end of program
+tf.delay(wait2)  
 
-tf.endAll() # Closes node device (serial.close())
+tf.endAll() # Closes node devices (serial.close())
 
 
 # This is a new feature, but it would create a plot like I created in my niti-train-program.py based on the data stored to this text file.  You can parse it to create the sensor data arrays and then plot using the exact same method I used in my script
