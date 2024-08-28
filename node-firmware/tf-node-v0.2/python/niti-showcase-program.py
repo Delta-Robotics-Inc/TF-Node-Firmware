@@ -36,6 +36,7 @@ vld_data = []
 amps_data = []
 resist_data = []
 pwm_data = []
+    
 
 def send_command(x):
     arduino.write(bytes(x + '\n', 'utf-8'))
@@ -123,40 +124,40 @@ def update_plot(history):
         fig.tight_layout()
         plt.pause(0.001)
 
+def delay(wait_time):
+    start = default_timer()
+    while default_timer() - start < wait_time:
+        get_data()
+
 # Experiment setup
-wait1 = 1.0
-wait2 = 1.0
-wait3 = 1.0
-wait4 = 2.0
-wait5 = 5.0
+# Used with a 12.5 V battery @ 20 Hz
+wait1 = 2.0
+wait2 = 0.5
+wait3 = 0.5
+wait4 = 1.0
+wait5 = 2.0
 wait_total_ms = (wait1 + wait2) * 1000
 
-mode = "pecent"  # Set the mode, "train" to train or "percent" to test without stop
-setpoint = 0.75
 
 # Muscle 1 run test script
 send_command("set-enable all false")
-send_command("set-mode all " + mode)
-send_command("set-setpoint all " + mode + " " + str(setpoint))
+send_command("set-mode all percent")
+send_command("set-setpoint all percent 1.0")
 time.sleep(0.5)
 send_command("log-mode node 2")
 send_command("log-mode m1 2")
 send_command("log-mode m2 0")
 send_command("set-enable m1 true")
 
-start = default_timer()
-while default_timer() - start < wait1:
-    get_data()
-    
-start = default_timer()
-while default_timer() - start < wait1:
-    get_data()
-    
+delay(wait1)
+send_command("set-setpoint all percent 0.25")
+delay(wait2)
+send_command("set-setpoint all percent 0.15")
+delay(wait3)
+send_command("set-setpoint all percent 0.1")
+delay(wait4)
 send_command("set-enable all false")
-
-start = default_timer()
-while default_timer() - start < wait5:
-    get_data()
+delay(wait5)
 
 arduino.close()
 

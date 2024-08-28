@@ -208,6 +208,14 @@ class TF_Muscle {
 
       //#TODO: Handle pulse condition
 
+      measure(); // Update sensor values
+
+      // CURRENT OVERFLOW ERROR CONDITION
+      if(curr_val > MAX_CURRENT) {
+        errRaise(ERR_CURRENT_OF);
+        setEnable(false); //disable muscle
+      }
+
       // Write to muscle if enabled
       if(enabled) {
         // Handle behavior of each control mode
@@ -244,13 +252,6 @@ class TF_Muscle {
       }
 
       analogWrite(mosfet_pin, pwm_val);  // Write pwm to mosfet m
-      measure(); // Update sensor values
-
-      // CURRENT OVERFLOW ERROR CONDITION
-      if(curr_val > MAX_CURRENT) {
-        errRaise(ERR_CURRENT_OF);
-        setEnable(false); //disable muscle
-      }
     }
 
     void resetTraining() {

@@ -1,7 +1,7 @@
 #ifndef RESISTIVECONTROLLER_H
 #define RESISTIVECONTROLLER_H
 
-#include <QuickPID.h>
+#include "MiniPID.h"
 
 class ResistiveController {
 public:
@@ -16,7 +16,7 @@ private:
     float currentResistance;
     float targetResistance;
     float outputPWM_percent;
-    QuickPID* pid;
+    MiniPID* pid;
 };
 
 #endif // RESISTIVECONTROLLER_H
