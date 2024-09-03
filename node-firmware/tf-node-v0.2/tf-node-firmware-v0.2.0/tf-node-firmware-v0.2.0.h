@@ -181,7 +181,7 @@ class TF_Muscle {
 
     // For OHMS control mode, a PID controller will be used to control output PWM to minimize error to a setpoint resistance
     ResistiveController* resController;
-    const float KP_rc = -100.0, KI_rc = 0.0, KD_rc = 0.0;
+    const float KP_rc = 0.1, KI_rc = 0.0, KD_rc = 0.0;
 
     // CONTROL MODE
     bool enabled = false;

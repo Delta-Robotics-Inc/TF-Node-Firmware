@@ -20,7 +20,7 @@ void ResistiveController::update(float newResistance) {
 }
 
 void ResistiveController::Reset() {
-    //pid->Reset();
+    pid->Reset();
 }
 
 // Return output of PID constrained from 0.0->1.0
