@@ -62,7 +62,7 @@ void PWMSamplerDriver::setDutyCyclePercent(float percent) {
 
   //Serial.print("Setting duty cycle percent to: ");
   //Serial.println(percent);
-  if(percent == duty_cycle_percent && percent >= 0 && percent != 1.0) { // If percent is 0 or 1.0, then we need the code below to run
+  if(percent == duty_cycle_percent && percent > 0 && percent != 1.0) { // If percent is 0 or 1.0, then we need the code below to run
     return;
   }
 

@@ -134,7 +134,10 @@ float getPotVal() {
 
     float percent = raw / 1024.0;
     percent = percent > MANUAL_MODE_THRESHOLD ? percent : 0.0; // Limit lowest measurable value
-    return percent;
+    //return percent;
+    float temp_sensor_val = -0.0499 * (raw)*(raw) + 97.084 * (raw) - 47088;
+    return temp_sensor_val;
+    //return raw; //TODO Switch back to percent after running tests with this value
 }
 
 //=============================================================================
@@ -178,7 +181,7 @@ class TF_Muscle {
 
     // For OHMS control mode, a PID controller will be used to control output PWM to minimize error to a setpoint resistance
     ResistiveController* resController;
-    const float KP_rc = -100.0, KI_rc = 0.0, KD_rc = 0.0;
+    const float KP_rc = 0.1, KI_rc = 0.0, KD_rc = 0.0;
 
     // CONTROL MODE
     bool enabled = false;
@@ -292,7 +295,7 @@ class TF_Muscle {
       // CURRENT OVERFLOW ERROR CONDITION
       if(curr_val > MAX_CURRENT) {
         errRaise(ERR_CURRENT_OF);
-        setEnable(false); //disable muscle
+        //setEnable(false); //disable muscle
       }
     }
 
@@ -550,6 +553,7 @@ class TF_Muscle {
       //Serial.println("measure");
       m->measure();
     }
+
 
     void measure() {
       // ONLY MEASURE ON HIGH VALUE OF PWM
