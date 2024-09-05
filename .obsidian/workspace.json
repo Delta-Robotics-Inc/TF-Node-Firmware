@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "node-firmware/README.md",
+                "file": "python-serial/Installation instructions for the thermoflex API.md",
                 "mode": "source",
                 "source": false
               }
@@ -85,7 +85,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "node-firmware/README.md",
+                "file": "python-serial/Installation instructions for the thermoflex API.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -102,7 +102,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "node-firmware/README.md",
+                "file": "python-serial/Installation instructions for the thermoflex API.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -125,7 +125,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "node-firmware/README.md"
+                "file": "python-serial/Installation instructions for the thermoflex API.md"
               }
             }
           }
@@ -148,20 +148,25 @@
   },
   "active": "1e449c40b4749254",
   "lastOpenFiles": [
+    "node-firmware/README.md",
+    "python-serial/build/dist/thermoflex-0.0.1-py3-none-any.whl",
+    "python-serial/build/dist/thermoflex-0.0.1.tar.gz",
+    "python-serial/build/thermoflex-0.0.1/src/thermoflex.egg-info/top_level.txt",
+    "python-serial/build/thermoflex-0.0.1/src/thermoflex.egg-info/SOURCES.txt",
+    "python-serial/build/thermoflex-0.0.1/src/thermoflex.egg-info/requires.txt",
+    "python-serial/build/thermoflex-0.0.1/src/thermoflex.egg-info/PKG-INFO",
+    "python-serial/build/thermoflex-0.0.1/src/thermoflex.egg-info/dependency_links.txt",
+    "python-serial/build/thermoflex-0.0.1/src/thermoflex/__init__.py",
+    "python-serial/build/thermoflex-0.0.1/src/thermoflex/thermoflex.py",
+    "python-serial/build/thermoflex-0.0.1/src/thermoflex.egg-info",
+    "python-serial/build/thermoflex-0.0.1/README_QUICK.MD",
     "python-serial/build/README_QUICK.md",
     "node-firmware/tf-node-v0.2/README.md",
-    "node-firmware/README.md",
-    "python-serial/test/Log folder/test1.txt",
-    "python-serial/test/Log folder/New Text Document.txt",
-    "python-serial/test/Log folder",
-    "python-serial/test/New folder",
     "python-serial/thermoflex/README_QUICK.md",
     "python-serial/Installation instructions for the thermoflex API.md",
     "dist.md",
     "python-serial/dist.md",
     "node-firmware/tf-node-v0.1/README.md",
-    "python-serial/thermoflex/tf-src/tmp0ic7k0ti",
-    "python-serial/thermoflex/tf-src/tmpsvh8j6_a",
     "Untitled.canvas",
     "testing.md"
   ]

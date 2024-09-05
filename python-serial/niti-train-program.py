@@ -25,7 +25,7 @@ output_path = "C:/Users/School/Desktop/obsidian/ThermoFlex/python-serial/test/Lo
 
 node0.filepath = output_path
 node0.logstate["printlog"]=True #sets the logpath and logging to true
-tf.send_command_str(node0,logcmd)
+
 
 m_to_train = muscle1  # Just set to the muscle port that should be trained
 
@@ -35,17 +35,18 @@ m_to_train.setMode("percent")  # Train mode does not work yet.  This is the best
 m_to_train.setSetpoint(0.1)  # Dial this value in but start low!  Keep in mind that smoking should occur sometime near the end of the 50 seconds when this value is tuned in.
 
 # Specify training program wait values
-wait1 = 50.0
-wait2 = 10.0
+wait1 = 50
+wait2 = 10
 
 # Test Control Script
-m_to_train.enable()
-tf.update(node0)
+node0.sendLogmode(2)
+m_to_train.setEnable(True)
+tf.update()
 tf.delay(wait1)  # Internally calls tf.update() until a timer has surpassed 1.0 second
-node0.disable() # Disable all at end of program (or disable just m_to_train)
-tf.update(node0) # Continue collecting data until the end of program
-tf.delay(wait2)  
-
+node0.disableAll() # Disable all at end of program (or disable just m_to_train)
+tf.delay(wait2) # Continue collecting data until the end of program
+node0.sendLogmode(0)
+tf.update()
 tf.endAll() # Closes node devices (serial.close())
 
 

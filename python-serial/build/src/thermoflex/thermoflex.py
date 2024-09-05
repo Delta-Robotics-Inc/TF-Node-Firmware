@@ -1,6 +1,6 @@
 import serial.tools.list_ports as stl
 import serial as s
-import time
+import time as t
 import threading as thr
 
 
@@ -37,7 +37,14 @@ def threaded(func):
 
     return wrapper
    
-
+@threaded
+def timer(time):
+    global timeleft
+    timeleft = time
+    for x in range(time):
+        timeleft-=1
+        t.sleep(1)
+        
 def send_command_str(node:object, command): #construct string then send
     '''
     
@@ -59,7 +66,7 @@ def send_command_str(node:object, command): #construct string then send
              
         
         port.write(command_str + "\n".encode('utf-8'))       
-    time.sleep(0.05)
+    t.sleep(0.05)
 
 def send_command(node:object, command):
     '''
@@ -72,21 +79,21 @@ def send_command(node:object, command):
     
     if command.code == 0xFF or 0x04:
         port.write(command.code.encode('ascii')) #TODO: check if send
-        time.sleep(0.01)
+        t.sleep(0.01)
         
         port.write(command.devcode.encode('ascii'))
-        time.sleep(0.01)
+        t.sleep(0.01)
         
     else:    
         port.write(command.code.encode('ascii'))
-        time.sleep(0.01)
+        t.sleep(0.01)
         
         port.write(command.devcode.encode('ascii'))
-        time.sleep(0.01)
+        t.sleep(0.01)
         for p in command.params:
             port.write(p.encode('ascii'))  # Current string implementation
-            time.sleep(0.01)
-    time.sleep(0.05)      
+            t.sleep(0.01)
+    t.sleep(0.05)      
 
 def discover(proid = prod):  # Add to node list here
     '''
@@ -206,7 +213,8 @@ class command_t:
 #---------------------------------------------------------------------------------------
 
 class node:
-     #logging filepath
+    filepath = '' #logging filepath
+    
     def __init__(self, idnum, port0, prodid, logmode:int = 0, mosports:int = 2, command_buff = []):
         self.idnum = idnum
         self.prodid = prodid
@@ -220,7 +228,7 @@ class node:
         self.arduino = None
         
     
-    def openPort(self): #TODO: make port dictionary to track node and port combinations
+    def openPort(self): 
         '''
         
         Opens a new port with given COM port. Returns serial port.
@@ -238,11 +246,7 @@ class node:
                 self.arduino = s.Serial(port = self.port0 , baudrate=115200, timeout=1)
                 
             except s.SerialException:
-                print('Serial not opened, check port status')
-        
-            
-        
-        
+                print('Serial not opened, check port status')        
             
         
 #TODO redo with serial .is_open() and .open()
@@ -277,19 +281,19 @@ class node:
             #self.logmode = 1
           
             send_command_str(self, command_t("set-enable", [True], device = "m1"))
-            time.sleep(3.0)
+            t.sleep(3.0)
            
             
             send_command_str(self, command_t("set-enable", [False], device = "m1"))
-            time.sleep(3.0)
+            t.sleep(3.0)
            
            
             send_command_str(self, command_t("set-enable", [True], device = "m2"))
-            time.sleep(3.0)
+            t.sleep(3.0)
           
             
             send_command_str(self, command_t("set-enable", [False], device = "m2"))
-            time.sleep(3.0)
+            t.sleep(3.0)
           
             #send_command_str(self, command_t("log-mode", [0],device = "all"))
             #self.logmode = 0
@@ -303,19 +307,19 @@ class node:
             #self.logmode = 1
           
             send_command(self, command_t("set-enable", [True], device = "m1"))
-            time.sleep(3.0)
+            t.sleep(3.0)
            
             
             send_command(self, command_t("set-enable", [False], device = "m1"))
-            time.sleep(3.0)
+            t.sleep(3.0)
            
            
             send_command(self, command_t("set-enable", [True], device = "m2"))
-            time.sleep(3.0)
+            t.sleep(3.0)
           
             
             send_command(self, command_t("set-enable", [False], device = "m2"))
-            time.sleep(3.0)
+            t.sleep(3.0)
           
             #send_command(self, command_t("log-mode", [0],device = "all"))
             #self.logmode = 0
@@ -335,7 +339,7 @@ class node:
         status = command_t(name = 'status', params = [])
         #send_command(self, status)
         send_command_str(self, status)
-        #TODO: track changes to serial line
+        
         for x in range(0,37): #30 lines for status check
             buffer = self.arduino.readline().decode("utf-8").strip()
             
@@ -352,13 +356,26 @@ class node:
         reset = command_t(name = 'reset', params = [])
         #send_command(self, status)
         send_command_str(self, reset)
-        #TODO: track changes to serial line
         for x in range(0,10): #30 lines for status check
             buffer = self.arduino.readline().decode("utf-8").strip()
             
             print(str(buffer))
         
         self.arduino.close()
+    
+    def sendLogmode(self, mode:int):
+        '''
+        Sets the log staus of the node.
+        
+        Parameters
+        ----------
+        bool : TYPE
+       
+    
+        '''
+        
+        command = command_t(name = "log-mode", device = "all", params = [mode])
+        self.command_buff.append(command)
         
     def setMode(self, conmode, device = 'all'):
         '''
@@ -459,17 +476,14 @@ class node:
         
         '''
         self.openPort()
-        
-        for x in self.command_buff:
-            try:
-                buffer = self.arduino.readline()
-                if self.logstate['dictlog'] or self.logstate['printlog'] or self.logstate['filelog']== True:
-                    logTo(self,buffer)
-                else:
-                    pass
+        try:
+            buffer = self.arduino.readline()
+            if self.logstate['dictlog'] or self.logstate['printlog'] or self.logstate['filelog']== True:
+                logTo(self,buffer,filepath)
             
-            finally: 
-            
+        finally:
+            for x in self.command_buff:
+                             
                 if sendformat == 0:
                
                     send_command(self,x)
@@ -482,7 +496,7 @@ class node:
                 
                 else:
                     raise ValueError
-        self.arduino.close()                               
+                                       
 #---------------------------------------------------------------------------------------  
 
 class muscle:
@@ -560,13 +574,15 @@ def update(): #choose which node to update and the delay
     for node in nodel:
         node.update()
         
-def delay():
+def delay(time):
     
-    for node in nodel:
-        node.buffer = node.arduino.readline().decode("utf-8").strip()
+    timer(time)
+    while timeleft>0:
+        for node in nodel:
+            node.update()
         
 
-def endAll(nodel):
+def endAll():
     '''
     
     Closes all node ports. and end all threads.
@@ -621,9 +637,8 @@ def logTo(node:object, logdata ,filepath:str=filepath):
            
     
     finally:
-        print("logged")
+        pass
 
-  #TODO: make markdown file with intrstions on how to use code and package
 
-for t in threadlist:
-        t.join()
+for th in threadlist:
+        th.join()
