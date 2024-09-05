@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "python-serial/Installation instructions for the thermoflex API.md",
+                "file": "node-firmware/README.md",
                 "mode": "source",
                 "source": false
               }
@@ -85,7 +85,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "python-serial/Installation instructions for the thermoflex API.md",
+                "file": "node-firmware/README.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -102,7 +102,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "python-serial/Installation instructions for the thermoflex API.md",
+                "file": "node-firmware/README.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -125,7 +125,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "python-serial/Installation instructions for the thermoflex API.md"
+                "file": "node-firmware/README.md"
               }
             }
           }
@@ -146,15 +146,21 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "75d8ba053122783b",
+  "active": "1e449c40b4749254",
   "lastOpenFiles": [
-    "dist.md",
-    "python-serial/Installation instructions for the thermoflex API.md",
-    "python-serial/dist.md",
+    "python-serial/build/README_QUICK.md",
+    "node-firmware/tf-node-v0.2/README.md",
     "node-firmware/README.md",
+    "python-serial/test/Log folder/test1.txt",
+    "python-serial/test/Log folder/New Text Document.txt",
+    "python-serial/test/Log folder",
+    "python-serial/test/New folder",
+    "python-serial/thermoflex/README_QUICK.md",
+    "python-serial/Installation instructions for the thermoflex API.md",
+    "dist.md",
+    "python-serial/dist.md",
     "node-firmware/tf-node-v0.1/README.md",
     "python-serial/thermoflex/tf-src/tmp0ic7k0ti",
-    "node-firmware/tf-node-v0.2/README.md",
     "python-serial/thermoflex/tf-src/tmpsvh8j6_a",
     "Untitled.canvas",
     "testing.md"
