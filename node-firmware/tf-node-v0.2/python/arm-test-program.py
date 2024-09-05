@@ -23,7 +23,7 @@ import time
 from timeit import default_timer
 import matplotlib.pyplot as plt
 
-arduino = serial.Serial(port='COM8', baudrate=115200, timeout=1)
+arduino = serial.Serial(port='COM6', baudrate=115200, timeout=1)
 
 
 def send_command(x):
