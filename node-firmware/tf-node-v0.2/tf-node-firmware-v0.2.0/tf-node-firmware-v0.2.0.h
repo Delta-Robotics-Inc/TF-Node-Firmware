@@ -11,7 +11,7 @@
 enum ctrl_modes { PERCENT, VOLTS, AMPS, DEGREES, OHMS, TRAIN, MANUAL };  // TODO add Length and Force
 const String ctrl_modes_str[CTRL_MODE_CNT] = { "percent", "volts", "amps", "degrees", "ohms", "train", "manual" };
 #define SIGNAL_TIMEOUT 2000  // Amount of time (ms) between receiving master commands before auto-disable
-const unsigned long LOG_MS = 20;  // Time between log frames (ms)
+const unsigned long LOG_MS = 500;  // Time between log frames (ms)
 
 // TF Node Commands
 #define COMMAND_CNT 8  // Number of commands
