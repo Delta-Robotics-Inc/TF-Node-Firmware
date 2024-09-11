@@ -7,7 +7,7 @@ ResistiveController::ResistiveController(float targetResistance, float kp, float
 
     pid = new MiniPID(kp, ki, kd);
 
-    pid->setOutputLimits(0.0, 1.0);
+    pid->setOutputLimits(0.01, 1.0);
     pid->setOutputRampRate(10);
     // ... add any other configuration options for the PID here. 
 }
@@ -20,15 +20,15 @@ void ResistiveController::update(float newResistance) {
 }
 
 void ResistiveController::Reset() {
-    pid->Reset();
+    pid->reset();
 }
 
 // Return output of PID constrained from 0.0->1.0
 float ResistiveController::getOutput() {
     float result = outputPWM_percent;
 
-    result = result < 0.0 ? 0.0 :
-             result > 1.0 ? 1.0 : result;
+    /*result = result < 0.0 ? 0.0 :
+             result > 1.0 ? 1.0 : result;*/
 
     return result;
 }

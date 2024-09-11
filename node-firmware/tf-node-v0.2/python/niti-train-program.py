@@ -124,15 +124,15 @@ def update_plot(history):
         plt.pause(0.001)
 
 # Experiment setup
-wait1 = 1.0
+wait1 = 10.0
 wait2 = 1.0
 wait3 = 1.0
 wait4 = 2.0
 wait5 = 5.0
 wait_total_ms = (wait1 + wait2) * 1000
 
-mode = "pecent"  # Set the mode, "train" to train or "percent" to test without stop
-setpoint = 0.75
+mode = "ohms"  # Set the mode, "train" to train or "percent" to test without stop
+setpoint = 110
 
 # Muscle 1 run test script
 send_command("set-enable all false")
@@ -140,14 +140,10 @@ send_command("set-mode all " + mode)
 send_command("set-setpoint all " + mode + " " + str(setpoint))
 time.sleep(0.5)
 send_command("log-mode node 2")
-send_command("log-mode m1 2")
-send_command("log-mode m2 0")
-send_command("set-enable m1 true")
+send_command("log-mode m2 2")
+send_command("log-mode m1 0")
+send_command("set-enable m2 true")
 
-start = default_timer()
-while default_timer() - start < wait1:
-    get_data()
-    
 start = default_timer()
 while default_timer() - start < wait1:
     get_data()
