@@ -17,7 +17,7 @@ tf.command_t.log_mode(logmode = 2)  # Set all muscles to fast logmode
 
 
 # Set output path and mode (Like Binary vs UTF-8)
-output_path = "C:/Users/Mark/Documents/TF-Tests/test1.txt"
+output_path = "./TF-Tests/test1.txt"
 
 node0.logtoFile(output_path, state = True)
 
