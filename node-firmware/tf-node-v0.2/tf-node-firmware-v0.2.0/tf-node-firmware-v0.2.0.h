@@ -181,7 +181,7 @@ class TF_Muscle {
 
     // For OHMS control mode, a PID controller will be used to control output PWM to minimize error to a setpoint resistance
     ResistiveController* resController;
-    const float KP_rc = 0.1, KI_rc = 0.0, KD_rc = 0.0;
+    const float KP_rc = 0.05, KI_rc = 0.0, KD_rc = 0.0;
 
     // CONTROL MODE
     bool enabled = false;
@@ -515,7 +515,7 @@ class TF_Muscle {
       raw = Samples / 1.0;  // Taking Average of Samples
 
       // For some unknown reason, there is an offset current of 5 amps...
-      float amps = raw * VCC / (1023 * AMP_GAIN * R_SNS) - 5; // Formula derived from voltage drop across sense resistor amplified and read from 0-1023
+      float amps = raw * VCC / (1023 * AMP_GAIN * R_SNS); //- 5; // Formula derived from voltage drop across sense resistor amplified and read from 0-1023
 
       if(amps < 0.0 && amps > -6.0f)
         return 0.0f;  // Return 0 if close to 0 (prevent negative resistance)

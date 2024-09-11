@@ -16,7 +16,7 @@ private:
     float currentResistance;
     float targetResistance;
     float outputPWM_percent;
-    MiniPID* pid;
+    MiniPID *pid;
 };
 
 #endif // RESISTIVECONTROLLER_H
