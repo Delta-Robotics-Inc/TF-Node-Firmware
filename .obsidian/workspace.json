@@ -4,15 +4,19 @@
     "type": "split",
     "children": [
       {
-        "id": "37acbb77ab3d3fc0",
+        "id": "7752068c5ec42b2e",
         "type": "tabs",
         "children": [
           {
-            "id": "53c7320dbae4cc4b",
+            "id": "1e449c40b4749254",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {}
+              "type": "markdown",
+              "state": {
+                "file": "python-serial/thermoflex/README_QUICK.md",
+                "mode": "source",
+                "source": false
+              }
             }
           }
         ]
@@ -81,13 +85,14 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "python-serial/thermoflex/README_QUICK.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
                 "showSearch": false,
                 "searchQuery": "",
                 "backlinkCollapsed": false,
-                "unlinkedCollapsed": true
+                "unlinkedCollapsed": false
               }
             }
           },
@@ -97,7 +102,8 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "linksCollapsed": false,
+                "file": "python-serial/thermoflex/README_QUICK.md",
+                "linksCollapsed": true,
                 "unlinkedCollapsed": true
               }
             }
@@ -109,7 +115,7 @@
               "type": "tag",
               "state": {
                 "sortOrder": "frequency",
-                "useHierarchy": true
+                "useHierarchy": false
               }
             }
           },
@@ -118,15 +124,17 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {}
+              "state": {
+                "file": "python-serial/thermoflex/README_QUICK.md"
+              }
             }
           }
-        ]
+        ],
+        "currentTab": 2
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -138,8 +146,29 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "79c40f96eaa5078a",
+  "active": "1e449c40b4749254",
   "lastOpenFiles": [
+    "node-firmware/tf-node-v0.2/tf-node-firmware-v0.2.0/MiniPID.h",
+    "node-firmware/tf-node-v0.2/tf-node-firmware-v0.2.0/MiniPID.cpp",
+    "node-firmware/tf-node-v0.2/python/niti-showcase-program.py",
+    "node-firmware/tf-node-v0.2/python/muscle-test.py",
+    "C-internode communication/Arduino serial communication/out/build/x64-debug/Testing/Temporary/LastTest.log",
+    "C-internode communication/Arduino serial communication/out/build/x64-debug/Testing/Temporary",
+    "C-internode communication/Arduino serial communication/out/build/x64-debug/Testing",
+    "C-internode communication/Arduino serial communication/out/build/x64-debug/CMakeFiles/ShowIncludes/main.obj",
+    "C-internode communication/Arduino serial communication/out/build/x64-debug/CMakeFiles/ShowIncludes/main.c",
+    "C-internode communication/Arduino serial communication/out/build/x64-debug/CMakeFiles/ShowIncludes/foo.h",
+    "C-internode communication/Arduino serial communication/out/build/x64-debug/CMakeFiles/ShowIncludes",
+    "Untitled.canvas",
+    "node-firmware/README.md",
+    "python-serial/Installation instructions for the thermoflex API.md",
+    "python-serial/build/thermoflex-0.0.1/README_QUICK.MD",
+    "python-serial/build/README_QUICK.md",
+    "node-firmware/tf-node-v0.2/README.md",
+    "python-serial/thermoflex/README_QUICK.md",
+    "dist.md",
+    "python-serial/dist.md",
+    "node-firmware/tf-node-v0.1/README.md",
     "testing.md"
   ]
 }
