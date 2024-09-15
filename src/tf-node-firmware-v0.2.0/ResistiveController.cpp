@@ -1,13 +1,13 @@
 #include "ResistiveController.h"
 
-//#TODO Add delta_time update for system to update itself with correct timings
+// TODO Add delta_time update for system to update itself with correct timings
 
 ResistiveController::ResistiveController(float targetResistance, float kp, float ki, float kd)
   : targetResistance(targetResistance), currentResistance(0.0), outputPWM_percent(0.0) {
 
     pid = new MiniPID(kp, ki, kd);
 
-    pid->setOutputLimits(0.01, 1.0);
+    pid->setOutputLimits(0.005, 0.5);
     pid->setOutputRampRate(10);
     // ... add any other configuration options for the PID here. 
 }

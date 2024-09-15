@@ -11,7 +11,7 @@
 enum ctrl_modes { PERCENT, VOLTS, AMPS, DEGREES, OHMS, TRAIN, MANUAL };  // TODO add Length and Force
 const String ctrl_modes_str[CTRL_MODE_CNT] = { "percent", "volts", "amps", "degrees", "ohms", "train", "manual" };
 #define SIGNAL_TIMEOUT 2000  // Amount of time (ms) between receiving master commands before auto-disable
-const unsigned long LOG_MS = 500;  // Time between log frames (ms)
+const unsigned long LOG_MS = 20;  // Time between log frames (ms)
 
 // TF Node Commands
 #define COMMAND_CNT 8  // Number of commands
@@ -165,8 +165,9 @@ class TF_Muscle {
     uint8_t vld_pin;
 
     // PWM and Measurement Delay during PWM while High
-    const float PWM_FREQUENCY = 20;  // PWM Frequency
+    const float PWM_FREQUENCY = 100;  // PWM Frequency
     const float PWM_MEASURE_DELAY_US = 300;  // PWMSamplerDriver will wait this long before taking a measurement after PWM goes high
+    const float PWM_MEASURE_CYCLE_THRESH = 50;  // During low PWM while enabled, drive signal high after this many cycles to take current measurement
     PWMSamplerDriver* driver;
     
     // Scaling Params
@@ -240,7 +241,7 @@ class TF_Muscle {
       resController = new ResistiveController(0.0, KP_rc, KI_rc, KD_rc);
 
       // Initialize pwm driver which will handle pwm on the mosfet pin and sampling the sensors
-      driver = new PWMSamplerDriver(PWM_FREQUENCY, 0.0f, mosfet_pin, PWM_MEASURE_DELAY_US, static_measure, this);
+      driver = new PWMSamplerDriver(PWM_FREQUENCY, 0.0f, mosfet_pin, PWM_MEASURE_DELAY_US, PWM_MEASURE_CYCLE_THRESH, static_measure, this);
     }
 
     void update() {
@@ -290,7 +291,10 @@ class TF_Muscle {
 
       //analogWrite(mosfet_pin, pwm_val);  // Write pwm to mosfet m
       //measure(); // Update sensor values
-      driver->setDutyCyclePercent(pwm_duty_percent);  // The PWMDriver will hande analogWrite() and measuring sensors
+      driver->setDutyCyclePercent(pwm_duty_percent, enabled);  // The PWMDriver will hande analogWrite() and measuring sensors
+      //Serial.println(driver->min_duty_percent);
+      //Serial.println(driver->cycle_threshold);
+      //Serial.println(driver->pulse_cycle_count);
 
       // CURRENT OVERFLOW ERROR CONDITION
       if(curr_val > MAX_CURRENT) {
@@ -507,12 +511,12 @@ class TF_Muscle {
     float getMuscleAmps() {
       float AcsValue=0.0,Samples=0.0,AvgAcs=0.0,raw=0.0;
     
-      for (int x = 0; x < 1; x++){       // Get 10 samples
+      for (int x = 0; x < 10; x++){       // Get 10 samples
         //waitForPWMHigh();
         AcsValue = analogRead(curr_pin);  // Read current amp sensor values   
         Samples = Samples + AcsValue;     // Add samples together
       }
-      raw = Samples / 1.0;  // Taking Average of Samples
+      raw = Samples / 10.0;  // Taking Average of Samples
 
       // For some unknown reason, there is an offset current of 5 amps...
       float amps = raw * VCC / (1023 * AMP_GAIN * R_SNS); //- 5; // Formula derived from voltage drop across sense resistor amplified and read from 0-1023
@@ -526,13 +530,13 @@ class TF_Muscle {
     float getLoadVoltage() {
       float value=0.0,samples=0.0,avg_value=0.0,raw=0.0;
     
-      for (int x = 0; x < 1; x++){   // Get 10 samples
+      for (int x = 0; x < 10; x++){   // Get 10 samples
         //waitForPWMHigh();
         //delayMicroseconds((1.0/490.0*1000000) * pwm_val/255.0 - 10); // Delay until almost the end of the pulse (10 microseconds before)
-        value = analogRead(vld_pin);  // Read current sensor values   
+        value = analogRead(vld_pin);  // Read voltage divider values   
         samples += value;          // Add samples together
       }
-      raw = samples / 1.0;  // Taking Average of Samples
+      raw = samples / 10.0;  // Taking Average of Samples
 
       float volts = raw * vld_scaleFactor + vld_offset; // Values are attained experimentally with known input voltages
       if(volts < 0.0 && volts > -2.0)

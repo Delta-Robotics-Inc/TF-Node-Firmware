@@ -30,14 +30,19 @@ using TF_Muscle_Callback = void(*)(TF_Muscle *);
 
 class PWMSamplerDriver {
     public:
-        PWMSamplerDriver(float frequency, float startDuty, int _pwm_pin, int _measure_delay, TF_Muscle_Callback _measureFunc, TF_Muscle *_instance);
+        PWMSamplerDriver(float frequency, float startDuty, int _pwm_pin, int _measure_delay, int _cycle_threshold, TF_Muscle_Callback _measureFunc, TF_Muscle *_instance);
         ~PWMSamplerDriver();
-        void setDutyCyclePercent(float percent);
-        enum PWM_STATE { LOW_PWM, HIGH_PWM, HIGH_PWM_MEASURE };
-        PWM_STATE state = LOW_PWM;
+        void setDutyCyclePercent(float percent, bool _enabled);
+        enum PWM_STATE { PWM_LOW, PWM_HIGH_PREMEASURE, PWM_HIGH_POSTMEASURE };
+        PWM_STATE state = PWM_LOW;
         bool startTimer();
         bool stopTimer();
         bool resetTimer();
+        bool enabled;  // Track whether device is enabled (will take current measurement)
+
+        float min_duty_percent;
+        int cycle_threshold;
+        int pulse_cycle_count;  // Used during low duty cycles to take a measurement every so often
 
         static void static_timer_callback(timer_callback_args_t* p_args) {
           //Serial.println("Hit");
@@ -56,7 +61,6 @@ class PWMSamplerDriver {
         TF_Muscle *instance;
         //void (*measureFunc)();
         float duty_cycle_percent = -1.0; // Different so that first call @ 0% will work
-        float min_duty_percent;
         void timer_callback(timer_callback_args_t __attribute((unused)) *p_args);
         float dutyPercentToFrequency(float duty);
         bool begintimer();
