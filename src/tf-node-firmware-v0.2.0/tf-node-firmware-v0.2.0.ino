@@ -13,7 +13,7 @@
 //=============================================================================
 
 TF_Muscle* TF_Muscle::muscles[MUSCLE_CNT] = { &m_1, &m_2 };
-Command* Command::c_commands[COMMAND_CNT] = { &c_default, &c_reset, &c_setEnable, &c_setMode, &c_setSetpoint, &c_status, &c_stop, &c_logMode};
+Command* Command::c_commands[COMMAND_CNT] = { &c_default, &c_reset, &c_setEnable, &c_setMode, &c_setSetpoint, &c_status, &c_stop, &c_logMode };
 
 
 //=============================================================================

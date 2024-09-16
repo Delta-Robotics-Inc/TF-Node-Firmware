@@ -19,7 +19,7 @@ import time
 from timeit import default_timer
 import matplotlib.pyplot as plt
 
-arduino = serial.Serial(port='COM8', baudrate=115200, timeout=1)
+arduino = serial.Serial(port='COM7', baudrate=115200, timeout=1)
 buffer = []
 
 # This experiment setup will log the arduino clock, MX enabled data, and power dissipation per frame
@@ -125,11 +125,11 @@ def delay(wait_time):
 
 # Experiment setup
 # Used with a 12.5 V battery @ 20 Hz
-wait1 = 1800.0
+wait1 = 300.0
 wait2 = 5.0
 
 control_mode = "ohms"
-setpoint1 = "135"
+setpoint1 = "145"
 m_port = "m1"
 
 # Muscle run in resistance mode
