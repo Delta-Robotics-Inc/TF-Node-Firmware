@@ -112,8 +112,8 @@ def update_plot(history):
     if len(time_data) > 0:
         plot_data(ax1, 'VBatt Data', 'Log Time (ms)', 'Voltage (V)', time_data, vbatt_data, 24, history)
         plot_data(ax2, 'V_LD Data', 'Log Time (ms)', 'Voltage (V)', time_data, vld_data, 30, history)
-        plot_data(ax3, 'Amps Data', 'Log Time (ms)', 'Current (A)', time_data, amps_data, 24, history)
-        plot_data(ax4, 'M2 Resist Data', 'Log Time (ms)', 'Resistance (mΩ)', time_data, resist_data, 3000, history)
+        plot_data(ax3, 'Amps Data', 'Log Time (ms)', 'Current (A)', time_data, amps_data, 100, history)
+        plot_data(ax4, 'M2 Resist Data', 'Log Time (ms)', 'Resistance (mΩ)', time_data, resist_data, 1000, history)
 
         fig.tight_layout()
         plt.pause(0.001)
@@ -125,11 +125,11 @@ def delay(wait_time):
 
 # Experiment setup
 # Used with a 12.5 V battery @ 20 Hz
-wait1 = 20.0
+wait1 = 1800.0
 wait2 = 5.0
 
 control_mode = "ohms"
-setpoint1 = "130"
+setpoint1 = "135"
 m_port = "m1"
 
 # Muscle run in resistance mode
