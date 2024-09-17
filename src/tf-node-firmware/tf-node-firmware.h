@@ -23,8 +23,8 @@ const unsigned long LOG_MS = 20;  // Time between log frames (ms)
 //=============================================================================
 
 #define MUSCLE_CNT 2
-#define SHIELD_VERSION "0.2-DEV"
-#define FIRMWARE_VERSION "0.2.1"
+#define SHIELD_VERSION "1.0"
+#define FIRMWARE_VERSION "1.0.0"
 
 #define VCC 5.0  // [V] Maximum readable value.  Should be 5.0 V but will vary slightly with the voltage regulator output
 
@@ -90,7 +90,7 @@ String devStatusQuick();
 String log();
 void optButtonStopFunc();
 
-// RAISE ERROR BY ANDING CURRENT ERROR AND 0 BITSHIFTED INTO INDEX
+// Raise Error by anding current error val with 0 bitshifted by index
 void errRaise(int index) {
   n_error = n_error & (0b11111111 ^ (1<<index));
   digitalWrite(STATUS_SOLID_LED, HIGH);
