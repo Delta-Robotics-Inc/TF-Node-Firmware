@@ -24,7 +24,7 @@ const unsigned long LOG_MS = 20;  // Time between log frames (ms)
 
 #define MUSCLE_CNT 2
 #define SHIELD_VERSION "0.2-DEV"
-#define FIRMWARE_VERSION "0.2.0"
+#define FIRMWARE_VERSION "0.2.1"
 
 #define VCC 5.0  // [V] Maximum readable value.  Should be 5.0 V but will vary slightly with the voltage regulator output
 
