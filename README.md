@@ -4,10 +4,12 @@ Welcome to the Delta Robotics ThermoFlex repository.  Here contains the developm
 
 This folder contains the development of firmware for the muscle controller.  Currently, this software is deployed to an Arduino Minima.  The microcontroller is configured to utilize our ThermoFlex Node PCB Shield.
 
-## `Branch Version: v1.0.0`
+## `Branch Firmware Version: v1.0.0`
+
+### Instructions for Push
+- Make sure to update firmware version above and in the `src/main/config` file.
 
 ---
-
 
 # Node Commands
 
