@@ -11,3 +11,11 @@
 - Rewrite command system to align with Python Serial API
    - Switch from ascii implementation of commands to binary implementation
 - Implement bridge between serial comms and CAN comms
+
+
+### Next TODO
+- Encapsulate node functions within node class
+- Handle global variables within class, struct, or namespace
+- Define and implement SMAController
+- Determine how to define command structure
+   - Ideally, this is language agnostic or is an easily translatable format system-system
