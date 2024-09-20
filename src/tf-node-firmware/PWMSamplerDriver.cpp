@@ -1,5 +1,7 @@
 #include "PWMSamplerDriver.h"
 
+volatile bool callback_in_progress = false;
+
 // Initialize new object, configure pwm vars, and start timer
 PWMSamplerDriver::PWMSamplerDriver(float frequency, float startDuty, int _pwm_pin, int _measure_delay, int _cycle_threshold, TF_Muscle_Callback _measureFunc, TF_Muscle *_instance) {
     pwm_freq_hz = frequency;
@@ -24,9 +26,18 @@ PWMSamplerDriver::PWMSamplerDriver(float frequency, float startDuty, int _pwm_pi
 }
 
 void PWMSamplerDriver::timer_callback(timer_callback_args_t __attribute((unused)) *p_args) {
+    if (callback_in_progress) {
+        // Skip if a previous callback is still in progress
+        return;
+    }
+
+    callback_in_progress = true;
+
+
     if (!enabled) {
         digitalWrite(pwm_pin, LOW);
         timer.stop();
+        callback_in_progress = false;
         return;
     }
 
@@ -47,6 +58,7 @@ void PWMSamplerDriver::timer_callback(timer_callback_args_t __attribute((unused)
             timer.set_period_us(1000000.0 / pwm_freq_hz);  // Set the timer for the next full cycle at 0% duty
             timer.reset();
         }
+        callback_in_progress = false;
         return;
     }
 
@@ -101,6 +113,8 @@ void PWMSamplerDriver::timer_callback(timer_callback_args_t __attribute((unused)
         timer.set_period_us(1000000.0 / pwm_freq_hz * (1.0 - duty_cycle_percent));  // Set the timer for the off period
         timer.reset();
     }
+
+    callback_in_progress = false;
 }
 
 
@@ -114,6 +128,7 @@ void PWMSamplerDriver::setDutyCyclePercent(float percent, bool _enabled) {
     if (!enabled) {
         digitalWrite(pwm_pin, LOW);
         timer.stop();
+        measureFunc(instance);
         return;
     }
 

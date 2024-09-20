@@ -129,7 +129,7 @@ wait1 = 300.0
 wait2 = 5.0
 
 control_mode = "ohms"
-setpoint1 = "145"
+setpoint1 = "170"
 m_port = "m1"
 
 # Muscle run in resistance mode

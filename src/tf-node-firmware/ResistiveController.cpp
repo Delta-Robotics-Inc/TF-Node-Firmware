@@ -7,7 +7,7 @@ ResistiveController::ResistiveController(float targetResistance, float kp, float
 
     pid = new MiniPID(kp, ki, kd);
 
-    pid->setOutputLimits(0.005, 0.5);
+    pid->setOutputLimits(0.0, 0.75);
     pid->setOutputRampRate(10);
     // ... add any other configuration options for the PID here. 
 }
