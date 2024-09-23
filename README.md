@@ -38,15 +38,15 @@ The below commands that specify `<device> .. (default all)` will work without pa
 
 Here are some example commands to display the syntax:
 
-```
+```bash
 
-> set-mode m1 volts      //sets muscle 1 mode to volts
-> set-setpoint all volts 5.0 //sets all muscles
-> set-enable m2 true      //enables m2
-> status         //status for all devices
-> status m1      //status for just m1
-> reset all      //resets all devices
-> reset          //resets all devices
-> reset m3       //resets just m3
+> set-mode m1 volts           # sets muscle 1 mode to volts
+> set-setpoint all volts 5.0  # sets all muscles
+> set-enable m2 true          # enables m2
+> status                      # status for all devices
+> status m1                   # status for just m1
+> reset all                   # resets all devices
+> reset                       # resets all devices
+> reset m3                    # resets just m3
 
 ```
