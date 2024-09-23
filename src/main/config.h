@@ -13,4 +13,5 @@ const int SIGNAL_TIMEOUT = 2000;    // Amount of time (ms) between receiving mas
 const unsigned long LOG_MS = 20;    // Time between log frames (ms)
 
 
+
 #endif // CONFIG_H

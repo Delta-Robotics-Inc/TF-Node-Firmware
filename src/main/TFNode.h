@@ -38,7 +38,7 @@ public:
     String log();
     void optButtonStopFunc();
 
-    void checkErrs();
+    void checkErrs;
     void errRaise(NodeError err_code);
     void errClear(NodeError err_code);
     void errClear();

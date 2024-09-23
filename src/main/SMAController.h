@@ -8,7 +8,8 @@ public:
     SMAController(uint8_t portNumber, uint8_t pwmPin, uint8_t feedbackPin);
     void begin();
     void update();
-    void executeCommand(uint8_t functionCode, const uint8_t* params, size_t paramLength);
+    // Do I put executeCommand here or implement in a separate class/interface?
+    //void executeCommand(uint8_t functionCode, const uint8_t* params, size_t paramLength);
 
 private:
     uint8_t portNumber;
