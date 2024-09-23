@@ -1,4 +1,4 @@
-#include "command-processor.h"
+#include "CommandProcessor.h"
 #include "tf-node.h" // For access to controllers
 
 void CommandProcessor::begin() {
@@ -15,12 +15,6 @@ void CommandProcessor::update() {
 void CommandProcessor::processSerial() {
     if (Serial.available()) {
         // Read and parse command
-        uint8_t deviceId = Serial.read();
-        uint8_t functionCode = Serial.read();
-        uint8_t params[10];
-        size_t paramLength = Serial.readBytes(params, sizeof(params));
-
-        dispatchCommand(deviceId, functionCode, params, paramLength);
     }
 }
 
@@ -41,7 +35,5 @@ void CommandProcessor::dispatchCommand(uint8_t deviceId, uint8_t functionCode, c
 
 void CommandProcessor::sendAcknowledgement(uint8_t deviceId, uint8_t statusCode) {
     // Send acknowledgement back over the same interface
-    Serial.write(deviceId);
-    Serial.write(statusCode);
 }
 

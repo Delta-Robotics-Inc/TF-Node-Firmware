@@ -10,8 +10,8 @@
 #define CTRL_MODE_CNT 7
 enum ctrl_modes { PERCENT, VOLTS, AMPS, DEGREES, OHMS, TRAIN, MANUAL };  // TODO add Length and Force
 const String ctrl_modes_str[CTRL_MODE_CNT] = { "percent", "volts", "amps", "degrees", "ohms", "train", "manual" };
-#define SIGNAL_TIMEOUT 2000  // Amount of time (ms) between receiving master commands before auto-disable
-const unsigned long LOG_MS = 20;  // Time between log frames (ms)
+//#define SIGNAL_TIMEOUT 2000  // Amount of time (ms) between receiving master commands before auto-disable
+//const unsigned long LOG_MS = 20;  // Time between log frames (ms)
 
 // TF Node Commands
 #define COMMAND_CNT 8  // Number of commands
@@ -22,73 +22,73 @@ const unsigned long LOG_MS = 20;  // Time between log frames (ms)
 // TF Node Board Configuration
 //=============================================================================
 
-#define MUSCLE_CNT 2
-#define SHIELD_VERSION "1.0"
-#define FIRMWARE_VERSION "1.0.0"
+// #define MUSCLE_CNT 2
+// #define SHIELD_VERSION "1.0"
+// #define FIRMWARE_VERSION "1.0.0"
 
-#define VCC 5.0  // [V] Maximum readable value.  Should be 5.0 V but will vary slightly with the voltage regulator output
+// #define VCC 5.0  // [V] Maximum readable value.  Should be 5.0 V but will vary slightly with the voltage regulator output
 
 // Voltage Read Conversion Equations
-#define VRD_SCALE_FACTOR 11 * VCC/1023.0  // Derived from resistor divider circuit with R1=10k and R2=1k
-#define VRD_OFFSET 0
-#define VLD_SCALE_FACTOR_M1 11 * VCC/1023.0
-#define VLD_SCALE_FACTOR_M2 11 * VCC/1023.0
-#define VLD_OFFSET_M1 0
-#define VLD_OFFSET_M2 0
+// #define VRD_SCALE_FACTOR 11 * VCC/1023.0  // Derived from resistor divider circuit with R1=10k and R2=1k
+// #define VRD_OFFSET 0
+// #define VLD_SCALE_FACTOR_M1 11 * VCC/1023.0
+// #define VLD_SCALE_FACTOR_M2 11 * VCC/1023.0
+// #define VLD_OFFSET_M1 0
+// #define VLD_OFFSET_M2 0
 
 // Current Sense Amplifier -> TI INA301
-#define R_SNS 0.0005  // [ohms]
-#define AMP_GAIN 100  // [V/V] Vin/Vout gain of amplifier
+// #define R_SNS 0.0005  // [ohms]
+// #define AMP_GAIN 100  // [V/V] Vin/Vout gain of amplifier
 
 // Pinout - make sure to match with physical board
-#define VRD_PIN A4
-#define STATUS_SOLID_LED 8
-#define STATUS_RGB_RED 9
-#define STATUS_RGB_GREEN 10
-#define STATUS_RGB_BLUE 11
+// #define VRD_PIN A4
+// #define STATUS_SOLID_LED 8
+// #define STATUS_RGB_RED 9
+// #define STATUS_RGB_GREEN 10
+// #define STATUS_RGB_BLUE 11
 
-#define M1_MOS_TRIG 3
-#define M1_CURR_RD A0
-#define M1_VLD_RD A2
-#define M1_ALERT 12
+// #define M1_MOS_TRIG 3
+// #define M1_CURR_RD A0
+// #define M1_VLD_RD A2
+// #define M1_ALERT 12
 
-#define M2_MOS_TRIG 6
-#define M2_CURR_RD A1
-#define M2_VLD_RD A3
-#define M2_ALERT 13
+// #define M2_MOS_TRIG 6
+// #define M2_CURR_RD A1
+// #define M2_VLD_RD A3
+// #define M2_ALERT 13
 
-#define AUX_BUTTON 7
-#define MANUAL_MODE_POT A5
-#define MANUAL_MODE_THRESHOLD 0.02
+// #define AUX_BUTTON 7
+// #define MANUAL_MODE_POT A5
+// #define MANUAL_MODE_THRESHOLD 0.02
 
 // Device Limits
-#define MAX_CURRENT 80.0  // [A] Maximum current through muscle in amps
-#define MIN_VSUPPLY 7.0  // [V] Minimum battery voltage
-#define IGNORE_SUPPLY 3.0 // [V] Treat levels below this as if the battery is disconnected
+// #define MAX_CURRENT 80.0  // [A] Maximum current through muscle in amps
+// #define MIN_VSUPPLY 7.0  // [V] Minimum battery voltage
+// #define IGNORE_SUPPLY 3.0 // [V] Treat levels below this as if the battery is disconnected
 
 //=============================================================================
 // Diagnostics
 //=============================================================================
 
 // ERROR INDECES
-#define ERR_LOW_VOLT 0  // Low battery error
-#define ERR_CURRENT_OF 1  // Current overflow error
-#define ERR_EXTERNAL_INTERRUPT 2
-byte n_error = 0b11111111;  // Error byte transmitted when requested by API call
+// #define ERR_LOW_VOLT 0  // Low battery error
+// #define ERR_CURRENT_OF 1  // Current overflow error
+// #define ERR_EXTERNAL_INTERRUPT 2
+// byte n_error = 0b11111111;  // Error byte transmitted when requested by API call
 
-unsigned long timeout_timer;
-unsigned long log_timer;  // Logs every x ms based on logMode
-unsigned long log_start;  // Time of start of log
-int nodeLogMode = 0;  //0=No log; 1=Device log
+// unsigned long timeout_timer;
+// unsigned long log_timer;  // Logs every x ms based on logMode
+// unsigned long log_start;  // Time of start of log
+// int nodeLogMode = 0;  //0=No log; 1=Device log
 
-float n_vSupply; // Current value of measured battery voltage.
-float pot_val;  // Current value of the potentiometer 
+// float n_vSupply; // Current value of measured battery voltage.
+// float pot_val;  // Current value of the potentiometer 
 
-void nodeUpdate();
-String devStatusFormatted();
-String devStatusQuick();
-String log();
-void optButtonStopFunc();
+// void nodeUpdate();
+// String devStatusFormatted();
+// String devStatusQuick();
+// String log();
+// void optButtonStopFunc();
 
 // Raise Error by anding current error val with 0 bitshifted by index
 void errRaise(int index) {

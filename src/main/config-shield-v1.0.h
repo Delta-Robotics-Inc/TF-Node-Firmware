@@ -12,9 +12,10 @@
 
 #define MUSCLE_CNT 2
 #define SHIELD_VERSION "1.0"
-#define FIRMWARE_VERSION "1.0.0"
 
-#define VCC 5.0  // [V] Maximum readable value.  Should be 5.0 V but will vary slightly with the voltage regulator output
+const uint8_t MUSCLE_CNT = 2;
+const float VCC = 5.0;              // [V] Maximum readable value.  Should be 5.0 V but will vary slightly with the voltage regulator output
+
 
 // Voltage Read Conversion Equations
 #define VRD_SCALE_FACTOR 11 * VCC/1023.0  // Derived from resistor divider circuit with R1=10k and R2=1k
@@ -22,7 +23,7 @@
 #define VLD_SCALE_FACTOR_M1 11 * VCC/1023.0
 #define VLD_SCALE_FACTOR_M2 11 * VCC/1023.0
 #define VLD_OFFSET_M1 0
-#define VLD_OFFSET_M2 0
+#define VLD_OFFSET_M2 0  // Todo separate into muscleconfig struct
 
 // Current Sense Amplifier -> TI INA301
 #define R_SNS 0.0005  // [ohms]
