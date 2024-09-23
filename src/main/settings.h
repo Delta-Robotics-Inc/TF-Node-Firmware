@@ -4,13 +4,27 @@
 
 #include <EEPROM.h>
 
-struct Settings {
+struct NodeSettings {
     uint8_t nodeId;
+    // Add other settings as needed
+
+    // Method to load settings from EEPROM
+    void load() {
+        EEPROM.get(0, *this);
+    }
+
+    // Method to save settings to EEPROM
+    void save() const {
+        EEPROM.put(0, *this);
+    }
+};
+
+struct SMASettings {
+    // Controller-specific
     float pidKp;
     float pidKi;
     float pidKd;
     uint8_t controlMode;
-    // Add other settings as needed
 
     // Method to load settings from EEPROM
     void load() {

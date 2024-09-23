@@ -23,7 +23,6 @@ enum FunctionCode {
   // Add more function codes as needed
 }
 
-
 // Map of possible responses/acknowledgements to sent commands
 enum ResponseCode {
   RESPONSE_SUCCESS = 0;
@@ -33,7 +32,6 @@ enum ResponseCode {
   RESPONSE_ERROR = 4;
   // Add more response codes as needed
 }
-
 
 // Device identifiers (There is one Node device and multiple SMAController devices)
 enum Device {
