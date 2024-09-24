@@ -14,8 +14,9 @@
 
 
 ### Next TODO
-- Encapsulate node functions within node class
-- Handle global variables within class, struct, or namespace
-- Define and implement SMAController
+**- Encapsulate node functions within node class
+**- Handle global variables within class, struct, or namespace
+**- Define and implement SMAController
 - Determine how to define command structure
    - Ideally, this is language agnostic or is an easily translatable format system-system
+- Build Settings system to encapsulate, save, and load settings for the Node and SMAController
