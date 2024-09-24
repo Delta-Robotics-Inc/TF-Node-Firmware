@@ -1,4 +1,5 @@
 #include "SMAController.hpp"
+#include "drivers/PWMSamplerDriver.h"
 
 extern TFNode tfNode;
 

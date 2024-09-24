@@ -1,9 +1,11 @@
 #ifndef TF_NODE_H
 #define TF_NODE_H
 
-#include "SMAController.hpp"
+//#include "SMAController.hpp"
 #include "CommandProcessor.hpp"
 #include "Settings.hpp"
+
+class SMAController;  // Forward Declaration TODO remove the need for this...
 
 //=============================================================================
 // Diagnostics
@@ -59,8 +61,8 @@ public:
 
 private:
     // TODO make array of SMAController
-    SMAController smaController0;
-    SMAController smaController1;
+    SMAController* smaController0;
+    SMAController* smaController1;
     CommandProcessor commandProcessor;
     NodeSettings settings;
 };

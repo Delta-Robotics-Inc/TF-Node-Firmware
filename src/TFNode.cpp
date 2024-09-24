@@ -1,9 +1,11 @@
 #include "TFNode.hpp"
 #include "config.hpp"
+#include "SMAController.hpp"
 
-TFNode::TFNode()
-    : smaController0("M1", M1_MOS_TRIG, M1_CURR_RD, M1_VLD_RD, VLD_SCALE_FACTOR_M1, VLD_OFFSET_M1),
-      smaController1("M2", M2_MOS_TRIG, M2_CURR_RD, M2_VLD_RD, VLD_SCALE_FACTOR_M2, VLD_OFFSET_M2) {}
+TFNode::TFNode() {
+    smaController0 = new SMAController("M1", M1_MOS_TRIG, M1_CURR_RD, M1_VLD_RD, VLD_SCALE_FACTOR_M1, VLD_OFFSET_M1);
+    smaController1 = new SMAController("M2", M2_MOS_TRIG, M2_CURR_RD, M2_VLD_RD, VLD_SCALE_FACTOR_M2, VLD_OFFSET_M2);
+}
 
 void TFNode::begin() {
     // TODO Initialize settings
@@ -17,8 +19,8 @@ void TFNode::begin() {
     pinMode(AUX_BUTTON, INPUT_PULLUP); // Set button pin as input with internal pull-up resistor
 
     // Initialize controllers
-    smaController0.begin();
-    smaController1.begin();
+    smaController0->begin();
+    smaController1->begin();
 
     // Initialize command processor
     commandProcessor.begin();
@@ -57,14 +59,49 @@ void TFNode::update() {
 }
 
 
+//=============================================================================
+// Node Status Functions
+//=============================================================================
+
+void TFNode::CMD_setStatusMode(int _mode)
+{
+}
+
+String TFNode::status()
+{
+    return String();
+}
+
+String TFNode::statusCompact()
+{
+    return String();
+}
+
+String TFNode::statusDump()
+{
+    return String();
+}
+
+// Returns a readable string of the status dump.
+// This is a large amount of data but useful when other side does not understand the TF Node messaging system
+String TFNode::statusReadable()
+{
+    String stat_str = "========================================\nLOG TIME: " + String(millis() - log_start) + "\n"; // Display time since log start
+    stat_str += "Battery Volts: " + String(n_vSupply, 6) + " V\n";
+    stat_str += "Error State: " + String(n_error, BIN) + "\n";
+    stat_str += "Pot Val: " + String(pot_val, 6) + "\n";
+    return stat_str;
+}
+
+
 
 //=============================================================================
 // Error Handling
 //=============================================================================
 
 void TFNode::optButtonStopFunc() {
-  smaController0.CMD_setEnable(false);
-  smaController1.CMD_setEnable(false);
+  smaController0->CMD_setEnable(false);
+  smaController1->CMD_setEnable(false);
   errRaise(ERR_EXTERNAL_INTERRUPT);
 }
 
@@ -128,13 +165,3 @@ float TFNode::getPotVal() {
     //return raw; //TODO Switch back to percent after running tests with this value
 }
 
-// Returns a readable string of the status dump.
-// This is a large amount of data but useful when other side does not understand the TF Node messaging system
-String TFNode::statusReadable()
-{
-    String stat_str = "========================================\nLOG TIME: " + String(millis() - log_start) + "\n"; // Display time since log start
-    stat_str += "Battery Volts: " + String(n_vSupply, 6) + " V\n";
-    stat_str += "Error State: " + String(n_error, BIN) + "\n";
-    stat_str += "Pot Val: " + String(pot_val, 6) + "\n";
-    return stat_str;
-}

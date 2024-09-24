@@ -5,9 +5,10 @@
 #include "TFNode.hpp"
 #include "Settings.hpp"
 
-#include "drivers/PWMSamplerDriver.h"
 #include "drivers/ResistiveController.h"
 #include "drivers/GradientTracker.hpp"
+
+class PWMSamplerDriver;  // Forward Declaration
 
 class SMAController {
 public:
