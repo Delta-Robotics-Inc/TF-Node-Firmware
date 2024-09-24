@@ -20,31 +20,31 @@ Command* Command::c_commands[COMMAND_CNT] = { &c_default, &c_reset, &c_setEnable
 // TF Node Arduino Operation Functions
 //=============================================================================
 
-void initMuscles() {
-  // Initialize muscles with params and I/O pins
-  TF_Muscle::muscles[0]->init("M1", M1_MOS_TRIG, M1_CURR_RD, M1_VLD_RD, VLD_SCALE_FACTOR_M1, VLD_OFFSET_M1);  // BICEP
-  TF_Muscle::muscles[1]->init("M2", M2_MOS_TRIG, M2_CURR_RD, M2_VLD_RD, VLD_SCALE_FACTOR_M2, VLD_OFFSET_M2);  // TRICEP
+// void initMuscles() {
+//   // Initialize muscles with params and I/O pins
+//   TF_Muscle::muscles[0]->init("M1", M1_MOS_TRIG, M1_CURR_RD, M1_VLD_RD, VLD_SCALE_FACTOR_M1, VLD_OFFSET_M1);  // BICEP
+//   TF_Muscle::muscles[1]->init("M2", M2_MOS_TRIG, M2_CURR_RD, M2_VLD_RD, VLD_SCALE_FACTOR_M2, VLD_OFFSET_M2);  // TRICEP
 
-  m_1.setEnable(false);
-  m_2.setEnable(false);
-}
+//   m_1.setEnable(false);
+//   m_2.setEnable(false);
+// }
 
-void setup() {
-  // Serial.begin(115200);
-  // pinMode(STATUS_SOLID_LED, OUTPUT);
-  // digitalWrite(STATUS_SOLID_LED, LOW);  // This pin currently goes high on errors
+// void setup() {
+//   // Serial.begin(115200);
+//   // pinMode(STATUS_SOLID_LED, OUTPUT);
+//   // digitalWrite(STATUS_SOLID_LED, LOW);  // This pin currently goes high on errors
 
-  // pinMode(AUX_BUTTON, INPUT_PULLUP); // Set button pin as input with internal pull-up resistor
-  /*while(!Serial.available()) { }
-  Serial.println("TF-Node Device initializing...");
-  Serial.print("Node shield version: ");
-  Serial.println(SHIELD_VERSION);
-  Serial.print("Node firmware version: ");
-  Serial.println(FIRMWARE_VERSION);*/
+//   // pinMode(AUX_BUTTON, INPUT_PULLUP); // Set button pin as input with internal pull-up resistor
+//   /*while(!Serial.available()) { }
+//   Serial.println("TF-Node Device initializing...");
+//   Serial.print("Node shield version: ");
+//   Serial.println(SHIELD_VERSION);
+//   Serial.print("Node firmware version: ");
+//   Serial.println(FIRMWARE_VERSION);*/
 
-  initMuscles();
-  //log_timer = millis();
-}
+//   initMuscles();
+//   //log_timer = millis();
+// }
 
 String command_str; //for processing serial command
 
@@ -75,15 +75,15 @@ void loop() {
   }
 }
 
-void nodeUpdate() {
-  n_vSupply = getSupplyVolts();
-  pot_val = getPotVal();
+// void nodeUpdate() {
+//   n_vSupply = getSupplyVolts();
+//   pot_val = getPotVal();
 
-  // Only allow control when PC is in the loop
-  // TODO: add option for 
-  if(!Serial) {
-    TF_Muscle::setEnableAll(false);
-  }
+//   // Only allow control when PC is in the loop
+//   // TODO: add option for 
+//   if(!Serial) {
+//     TF_Muscle::setEnableAll(false);
+//   }
 
   // // Low Power Condition
   // if(n_vSupply < MIN_VSUPPLY && n_vSupply > IGNORE_SUPPLY) {

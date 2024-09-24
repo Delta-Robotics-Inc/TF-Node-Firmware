@@ -33,24 +33,30 @@ public:
     float n_vSupply;    // Current value of measured battery voltage.
     float pot_val;      // Current value of the potentiometer
 
-    String devStatusFormatted();
-    String devStatusQuick();
-    String log();
-    void optButtonStopFunc();
 
+    // Status Logging functions
+    void CMD_setStatusMode(int _mode);
+    String status();
+    String statusCompact();  // TODO change return type to .proto def
+    String statusDump();
+    String statusReadable();
+
+
+    // Error handling
     void checkErrs;
     void errRaise(NodeError err_code);
     void errClear(NodeError err_code);
     void errClear();
 
+
+    // Sensor Measurements
     float getSupplyVolts();
     float getPotVal();
 
 private:
     // TODO make array of SMAController
-    //SMAController SMAController::muscles[SMA_CONTROLLER_CNT];
-    //SMAController smaController0;
-    //SMAController smaController1;
+    SMAController smaController0;
+    SMAController smaController1;
     CommandProcessor commandProcessor;
     Settings settings;
 };

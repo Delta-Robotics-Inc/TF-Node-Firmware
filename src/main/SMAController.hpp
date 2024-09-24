@@ -23,12 +23,14 @@ public:
     void begin();
     void update();
     
+    
     // SMAController Commands
     void CMD_setEnable(bool state);
     void CMD_setMode(ctrl_modes _mode);
     void CMD_setSetpoint(ctrl_modes _mode, float val);
     void CMD_reset();
     
+    // Status Logging functions
     void CMD_setStatusMode(int _mode);
     String status();
     String statusCompact();  // TODO change return type to .proto def

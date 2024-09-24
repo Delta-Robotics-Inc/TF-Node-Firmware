@@ -2,8 +2,8 @@
 #include "config.hpp"
 
 TFNode::TFNode()
-    : smaController0(0, SMA_CONTROLLER_0_PWM_PIN, SMA_CONTROLLER_0_FEEDBACK_PIN),
-      smaController1(1, SMA_CONTROLLER_1_PWM_PIN, SMA_CONTROLLER_1_FEEDBACK_PIN) {}
+    : smaController0("M1", M1_MOS_TRIG, M1_CURR_RD, M1_VLD_RD, VLD_SCALE_FACTOR_M1, VLD_OFFSET_M1),
+      smaController1("M2", M2_MOS_TRIG, M2_CURR_RD, M2_VLD_RD, VLD_SCALE_FACTOR_M2, VLD_OFFSET_M2) {}
 
 void TFNode::begin() {
     // Initialize settings
@@ -17,8 +17,8 @@ void TFNode::begin() {
     pinMode(AUX_BUTTON, INPUT_PULLUP); // Set button pin as input with internal pull-up resistor
 
     // Initialize controllers
-    //smaController0.begin();
-    //smaController1.begin();
+    smaController0.begin();
+    smaController1.begin();
 
     // Initialize command processor
     commandProcessor.begin();
@@ -56,6 +56,13 @@ void TFNode::update() {
     }
 }
 
+
+
+//=============================================================================
+// Error Handling
+//=============================================================================
+
+
 void TFNode::checkErrs() {
       // Low Power Condition
     if(n_vSupply < MIN_VSUPPLY && n_vSupply > IGNORE_SUPPLY) {
@@ -64,7 +71,6 @@ void TFNode::checkErrs() {
         //light up a low battery LED
     }
 }
-
 
 // Raise Error by anding current error val with 0 bitshifted by index
 void TFNode::errRaise(int index) {
@@ -115,4 +121,15 @@ float TFNode::getPotVal() {
     //float temp_sensor_val = -0.0499 * (raw)*(raw) + 97.084 * (raw) - 47088;
     //return temp_sensor_val;
     //return raw; //TODO Switch back to percent after running tests with this value
+}
+
+// Returns a readable string of the status dump.
+// This is a large amount of data but useful when other side does not understand the TF Node messaging system
+String TFNode::statusReadable()
+{
+    String stat_str = "========================================\nLOG TIME: " + String(millis() - log_start) + "\n"; // Display time since log start
+    stat_str += "Battery Volts: " + String(n_vSupply, 6) + " V\n";
+    stat_str += "Error State: " + String(n_error, BIN) + "\n";
+    stat_str += "Pot Val: " + String(pot_val, 6) + "\n";
+    return stat_str;
 }
