@@ -10,6 +10,10 @@ syntax = "proto3";
 
 package tfnode;
 
+// Packet Structure
+// [Start Byte][Packet Length][Protocol Version][Sender ID Type][Destination ID Type][Sender ID][Destination ID][Data][Checksum][End Byte]
+//         1               2                 1                  1                             3              3    x           1          1   | Total = 13 + x
+
 // Map of Command Function Codes
 enum FunctionCode {
   FUNCTION_RESET = 0;               // Reset the device

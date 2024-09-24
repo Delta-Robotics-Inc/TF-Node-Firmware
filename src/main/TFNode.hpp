@@ -48,7 +48,7 @@ public:
 
 private:
     // TODO make array of SMAController
-    //SMAController SMAController::muscles[MUSCLE_CNT];
+    //SMAController SMAController::muscles[SMA_CONTROLLER_CNT];
     //SMAController smaController0;
     //SMAController smaController1;
     CommandProcessor commandProcessor;

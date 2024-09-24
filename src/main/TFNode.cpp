@@ -64,3 +64,55 @@ void TFNode::checkErrs() {
         //light up a low battery LED
     }
 }
+
+
+// Raise Error by anding current error val with 0 bitshifted by index
+void TFNode::errRaise(int index) {
+    n_error = n_error & (0b11111111 ^ (1<<index));
+    digitalWrite(STATUS_SOLID_LED, HIGH);
+}
+void TFNode::errClear() {
+    n_error = 0b11111111;
+    digitalWrite(STATUS_SOLID_LED, LOW);
+}
+void TFNode::errClear(int index) {
+    n_error = n_error | (1<<index);
+    digitalWrite(STATUS_SOLID_LED, LOW);
+}
+
+
+//=============================================================================
+// Sensor Read Functions
+//=============================================================================
+
+float TFNode::getSupplyVolts() {
+  float value=0.0,samples=0.0,avg_value=0.0,raw=0.0;
+    
+    for (int x = 0; x < 30; x++){   // Get 30 samples
+      value = analogRead(VRD_PIN);  // Read voltage divider value   
+      samples += value;          // Add samples together
+    }
+    raw=samples/30.0;  // Taking Average of Samples
+
+    float volts = raw * VRD_SCALE_FACTOR + VRD_OFFSET;
+    return volts;
+    //return raw;
+}
+
+// Returns a value (0.0->1.0) based on pot value
+float TFNode::getPotVal() {
+    float value=0.0,samples=0.0,avg_value=0.0,raw=0.0;
+    
+    for (int x = 0; x < 3; x++){   // Get 30 samples
+      value = analogRead(MANUAL_MODE_POT);  // Read potentiometer
+      samples += value;          // Add samples together
+    }
+    raw=samples/3.0;  // Taking Average of Samples
+
+    float percent = raw / 1024.0;
+    percent = percent > MANUAL_MODE_THRESHOLD ? percent : 0.0; // Limit lowest measurable value
+    return percent;
+    //float temp_sensor_val = -0.0499 * (raw)*(raw) + 97.084 * (raw) - 47088;
+    //return temp_sensor_val;
+    //return raw; //TODO Switch back to percent after running tests with this value
+}
