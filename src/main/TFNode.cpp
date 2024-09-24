@@ -1,5 +1,5 @@
-#include "TFNode.h"
-#include "config.h"
+#include "TFNode.hpp"
+#include "config.hpp"
 
 TFNode::TFNode()
     : smaController0(0, SMA_CONTROLLER_0_PWM_PIN, SMA_CONTROLLER_0_FEEDBACK_PIN),

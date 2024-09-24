@@ -1,5 +1,5 @@
-#include "CommandProcessor.h"
-#include "tf-node.h" // For access to controllers
+#include "CommandProcessor.hpp"
+#include "TFNode.hpp" // For access to controllers
 
 void CommandProcessor::begin() {
     Serial.begin(115200);

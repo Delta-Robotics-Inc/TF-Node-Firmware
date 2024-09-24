@@ -1,7 +1,7 @@
 #ifndef SMA_CONTROLLER_H
 #define SMA_CONTROLLER_H
 
-#include "PWMSamplerDriver.h"
+#include "PWMSamplerDriver.hpp"
 
 class SMAController {
 public:

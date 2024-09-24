@@ -3,7 +3,7 @@
 #define CONFIG_H
 
 // Select the shield version
-#include "config-shield-v1.0.h"
+#include "config-shield-v1.0.hpp"
 
 // Common configuration parameters
 const char FIRMWARE_VERSION[] = "1.0.0";
