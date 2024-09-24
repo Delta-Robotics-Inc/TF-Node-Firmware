@@ -1,8 +1,8 @@
 //=============================================================================
-// Commands Protocol Buffer file
-// - This file contains ThermoFlex Node command definitions in the protobuf language
+// TF Node Messages - Protocol Buffer file
+// - This file contains ThermoFlex Node command/response definitions in the protobuf language
 // - TF Node devices will only accept command instructions given in this format
-// - In order to utilize the tfnode-commands format, this .proto file needs to be compiled into your system's respective language
+// - In order to utilize the tfnode-messages format, this .proto file needs to be compiled into your system's respective language
 // - For more information, visit https://protobuf.dev/
 //=============================================================================
 
