@@ -79,7 +79,7 @@ message NodeCommand {
     DisableCommand disable = 3;
     SetModeCommand set_mode = 4;
     SetSetpointCommand set_setpoint = 5;
-    ConfigureCommand configure = 6;
+    ConfigureSettingsCommand configure_settings = 6;
     StatusCommand status = 7;
     SilenceNodeCommand silence_node = 8;
     // Add more commands as needed
@@ -115,13 +115,13 @@ message SetSetpointCommand {
 }
 
 // Fully configures a device's default and current settings
-message ConfigureCommand {
+message ConfigureSettingsCommand {
   Device device = 1; // Target device for configuration
 
-  // In the "Confugration Definitions" section, define specific settings to pass
+  // In the "Configuration Definitions" section, define specific settings to pass
   oneof device_config {
-    NodeConfig node_config = 1;
-    SMAControllerConfig sma_controller_config = 2;
+    NodeSettings node_config = 1;
+    SMAControllerSettings sma_controller_config = 2;
     // Add more device-specific configs if needed
   }
 }
@@ -173,17 +173,17 @@ message StatusResponse {
 
 
 //=============================================================================
-// Device-Specific Configuration Definitions
+// Device-Specific Settings/Configuration Definitions
 //=============================================================================
 
-// Configuration settings for the Node device
-message NodeConfig {
+// Settings Configuration for the Node device
+message NodeSettings {
   uint32 can_id = 1;
   // Add other node-specific configuration settings
 }
 
-// Configuration settings for an SMAController device
-message SMAControllerConfig {
+// Settings Configuration for an SMAController device
+message SMAControllerSettings {
   SMAControlMode default_mode = 1;
   float default_setpoint = 2;
   // Add other SMAController-specific configuration settings
@@ -196,28 +196,56 @@ message SMAControllerConfig {
 
 // Compact Status information for the Node device
 message NodeStatusCompact {
-  string firmware_version = 1;
   uint32 uptime = 2; // Uptime in seconds
   uint32 error_code = 3;
+  float v_supply;
+  float pot_val;
   // Add other node-specific status fields
 }
 
 // Detailed Status information dump for the Node device
 message NodeStatusDump {
   NodeStatusCompact compact_status = 1;
-  // TODO Include additional detailed fields
+  NodeSettings loaded_settings = 2;
+
+  // Make sure the following values are not included already in settings
+  string firmware_version = 3;
+  string board_version = 4;
+  uint32 muscle_cnt;
+  uint32 log_interval_ms;
+  float vrd_scalar;
+  float vrd_offset;
+  float max_current;
+  float min_v_supply;
 }
 
 
 // Compact status for SMAController
 message SMAStatusCompact {
-  SMAControlMode current_mode = 1;
-  float current_setpoint = 2;
+  Device device_port;
+  bool enabled;
+  SMAControlMode mode;
+  float setpoint;
+  float output;
+  float load_amps;
+  float load_vdrop;
+  float load_mohms;
+  // TODO include pin assignments
 }
 
 // Detailed status dump for SMAController (includes most settings and variables within firmware)
 message SMAStatusDump {
   SMAStatusCompact compact_status = 1;
+  SMAControllerSettings loaded_settings = 2;
+
+  // Make sure the following values are not included already in settings
+  float vld_scalar;
+  float vld_offset;
+  float r_sns_ohms;
+  float amp_gain;
+  float af_mohms;
+  float delta_mohms;
+  uint32 trainState;
   // TODO Include additional detailed fields
   // Fields will include pin definitions, all configured modes and setpoints, and important internal variables
 }

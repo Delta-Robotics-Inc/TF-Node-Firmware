@@ -128,8 +128,11 @@ def delay(wait_time):
 wait1 = 300.0
 wait2 = 5.0
 
+# Setpoint in mOhms.  Calibrated based on 16" Nitinol wire
+# Requires calibration with thermocouple to determine ohms at training temp (400-550 C)
+# Recommend calibration when hardware changes (new board/circuit)
 control_mode = "ohms"
-setpoint1 = "170"
+setpoint1 = "160"
 m_port = "m1"
 
 # Muscle run in resistance mode
