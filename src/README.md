@@ -23,3 +23,11 @@
 - [ ] Implement command execution
 - [ ] Implement command forwarding
 - [ ] Implement command responses by Node
+
+---
+
+
+## Building ProtoBuf Files in C++
+
+In order to update protobuf definitions for the firmware, based on the `tfnode-messages.proto`, please follow this tutorial:
+**TODO find working solution
