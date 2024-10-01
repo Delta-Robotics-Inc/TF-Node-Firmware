@@ -186,6 +186,9 @@ message NodeSettings {
 message SMAControllerSettings {
   SMAControlMode default_mode = 1;
   float default_setpoint = 2;
+  float rctrl_kp;
+  float rctrl_ki;
+  float rctrl_kd;
   // Add other SMAController-specific configuration settings
 }
 
@@ -208,28 +211,31 @@ message NodeStatusDump {
   NodeStatusCompact compact_status = 1;
   NodeSettings loaded_settings = 2;
 
-  // Make sure the following values are not included already in settings
+  // Make sure the following values are not included already in compact status
   string firmware_version = 3;
   string board_version = 4;
-  uint32 muscle_cnt;
-  uint32 log_interval_ms;
-  float vrd_scalar;
-  float vrd_offset;
-  float max_current;
-  float min_v_supply;
+  uint32 muscle_cnt = 5;
+  uint32 log_interval_ms = 6;
+  float vrd_scalar = 7;
+  float vrd_offset = 8;
+  float max_current = 9;
+  float min_v_supply = 10;
+  float rctrl_kp = 11;  // PID configuration
+  float rctrl_ki = 12;
+  float rctrl_kd = 13;
 }
 
 
 // Compact status for SMAController
 message SMAStatusCompact {
-  Device device_port;
-  bool enabled;
-  SMAControlMode mode;
-  float setpoint;
-  float output;
-  float load_amps;
-  float load_vdrop;
-  float load_mohms;
+  Device device_port = 1;
+  bool enabled = 2;
+  SMAControlMode mode = 3;
+  float setpoint = 4;
+  float output_pwm = 5;
+  float load_amps = 6;
+  float load_vdrop = 7;
+  float load_mohms = 8;
   // TODO include pin assignments
 }
 
@@ -238,14 +244,14 @@ message SMAStatusDump {
   SMAStatusCompact compact_status = 1;
   SMAControllerSettings loaded_settings = 2;
 
-  // Make sure the following values are not included already in settings
-  float vld_scalar;
-  float vld_offset;
-  float r_sns_ohms;
-  float amp_gain;
-  float af_mohms;
-  float delta_mohms;
-  uint32 trainState;
+  // Make sure the following values are not included already in compact status
+  float vld_scalar = 3;
+  float vld_offset = 4;
+  float r_sns_ohms = 5;
+  float amp_gain = 6;
+  float af_mohms = 7;
+  float delta_mohms = 8;
+  uint32 trainState = 9;
   // TODO Include additional detailed fields
   // Fields will include pin definitions, all configured modes and setpoints, and important internal variables
 }
