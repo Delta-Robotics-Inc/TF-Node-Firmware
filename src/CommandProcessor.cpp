@@ -10,7 +10,7 @@ void CommandProcessor::begin() {
 
 void CommandProcessor::update() {
     processSerial();
-    // processCAN();
+    processCAN();
     // processSPI();
 }
 
@@ -18,6 +18,10 @@ void CommandProcessor::processSerial() {
     if (Serial.available()) {
         // Read and parse command
     }
+}
+
+void CommandProcessor::processCAN() {
+    // TODO check bus for incoming command
 }
 
 void CommandProcessor::dispatchCommand(uint8_t deviceId, uint8_t functionCode, const uint8_t* params, size_t paramLength) {
@@ -31,11 +35,11 @@ void CommandProcessor::dispatchCommand(uint8_t deviceId, uint8_t functionCode, c
         //tfNode.smaController1.executeCommand(functionCode, params, paramLength);
     } else {
         // Unknown device
-        sendAcknowledgement(deviceId, 0xFF); // Error code
+        sendResponse(deviceId, 0xFF); // Error code
     }
 }
 
-void CommandProcessor::sendAcknowledgement(uint8_t deviceId, uint8_t statusCode) {
+void CommandProcessor::sendResponse(uint8_t deviceId, uint8_t statusCode) {
     // Send acknowledgement back over the same interface
 }
 

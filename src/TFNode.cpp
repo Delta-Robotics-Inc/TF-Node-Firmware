@@ -33,8 +33,8 @@ void TFNode::update() {
     pot_val = getPotVal();
 
     // Update controllers
-    // smaController0.update();
-    // smaController1.update();
+    smaController0->update();
+    smaController1->update();
 
     checkErrs();
 

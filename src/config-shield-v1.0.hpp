@@ -34,19 +34,21 @@ const float VCC = 5.0;              // [V] Maximum readable value.  Should be 5.
 // Pinout - make sure to match with physical board
 #define VRD_PIN A4
 #define STATUS_SOLID_LED 8
-#define STATUS_RGB_RED 9
-#define STATUS_RGB_GREEN 10
-#define STATUS_RGB_BLUE 11
+#define STATUS_RGB_RED 10
+#define STATUS_RGB_GREEN 11
+#define STATUS_RGB_BLUE 12
 
-#define M1_MOS_TRIG 3
+//SMAController0
+#define M1_MOS_TRIG 9
 #define M1_CURR_RD A0
 #define M1_VLD_RD A2
-#define M1_ALERT 12
+#define M1_ALERT 2
 
+//SMAController1
 #define M2_MOS_TRIG 6
 #define M2_CURR_RD A1
 #define M2_VLD_RD A3
-#define M2_ALERT 13
+#define M2_ALERT 3
 
 #define AUX_BUTTON 7
 #define MANUAL_MODE_POT A5

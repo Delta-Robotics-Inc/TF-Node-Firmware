@@ -126,21 +126,25 @@ void SMAController::CMD_setStatusMode(int _mode)
 
 String SMAController::status()
 {
+    // TODO Queue outbound response message
     return String();
 }
 
 String SMAController::statusCompact()
 {
+    // TODO Queue outbound response message
     return String();
 }
 
 String SMAController::statusDump()
 {
+    // TODO Queue outbound response message
     return String();
 }
 
 String SMAController::statusReadable()
 {
+    // TODO Queue outbound response message
     return String();
 }
 

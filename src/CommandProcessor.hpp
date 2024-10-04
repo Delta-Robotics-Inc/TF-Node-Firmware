@@ -13,7 +13,7 @@ private:
     void processCAN();
     void processSPI();
     void dispatchCommand(uint8_t deviceId, uint8_t functionCode, const uint8_t* params, size_t paramLength);
-    void sendAcknowledgement(uint8_t deviceId, uint8_t statusCode);
+    void sendResponse(uint8_t deviceId, uint8_t statusCode);
 };
 
 #endif // COMMAND_PROCESSOR_H
