@@ -19,8 +19,10 @@
 - [x] Define and implement SMAController
 - [x] Determine how to define command structure
    - Ideally, this is language agnostic or is an easily translatable format system-system
+- [x] Install EmbeddedProto and build `tfnode-messages.proto` file 
 - [ ] Build Settings system to encapsulate, save, and load settings for the Node and SMAController
 - [ ] Implement command execution
+- [ ] Implement status response by Node
 - [ ] Implement command forwarding
 - [ ] Implement command responses by Node
 

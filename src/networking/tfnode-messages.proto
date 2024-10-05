@@ -120,8 +120,8 @@ message ConfigureSettingsCommand {
 
   // In the "Configuration Definitions" section, define specific settings to pass
   oneof device_config {
-    NodeSettings node_config = 1;
-    SMAControllerSettings sma_controller_config = 2;
+    NodeSettings node_config = 2;
+    SMAControllerSettings sma_controller_config = 3;
     // Add more device-specific configs if needed
   }
 }
@@ -164,10 +164,10 @@ message StatusResponse {
   Device device = 1; // Device reporting status
 
   oneof status_response {
-      NodeStatusCompact node_status_compact = 1;
-      NodeStatusDump node_status_dump = 2;
-      SMAStatusCompact sma_status_compact = 3;
-      SMAStatusDump sma_status_dump = 4;
+      NodeStatusCompact node_status_compact = 2;
+      NodeStatusDump node_status_dump = 3;
+      SMAStatusCompact sma_status_compact = 4;
+      SMAStatusDump sma_status_dump = 5;
   }
 }
 
@@ -186,9 +186,9 @@ message NodeSettings {
 message SMAControllerSettings {
   SMAControlMode default_mode = 1;
   float default_setpoint = 2;
-  float rctrl_kp;
-  float rctrl_ki;
-  float rctrl_kd;
+  float rctrl_kp = 3;
+  float rctrl_ki = 4;
+  float rctrl_kd = 5;
   // Add other SMAController-specific configuration settings
 }
 
@@ -201,8 +201,8 @@ message SMAControllerSettings {
 message NodeStatusCompact {
   uint32 uptime = 2; // Uptime in seconds
   uint32 error_code = 3;
-  float v_supply;
-  float pot_val;
+  float v_supply = 4;
+  float pot_val = 5;
   // Add other node-specific status fields
 }
 
@@ -220,9 +220,6 @@ message NodeStatusDump {
   float vrd_offset = 8;
   float max_current = 9;
   float min_v_supply = 10;
-  float rctrl_kp = 11;  // PID configuration
-  float rctrl_ki = 12;
-  float rctrl_kd = 13;
 }
 
 
@@ -252,6 +249,9 @@ message SMAStatusDump {
   float af_mohms = 7;
   float delta_mohms = 8;
   uint32 trainState = 9;
+  float rctrl_kp = 10;  // PID configuration
+  float rctrl_ki = 11;
+  float rctrl_kd = 12;
   // TODO Include additional detailed fields
   // Fields will include pin definitions, all configured modes and setpoints, and important internal variables
 }
