@@ -2,8 +2,9 @@
 #define TF_NODE_H
 
 //#include "SMAController.hpp"
-#include "CommandProcessor.hpp"
+#include "networking/CommandProcessor.hpp"
 #include "Settings.hpp"
+#include "networking/tfnode-messages.h"
 
 class SMAController;  // Forward Declaration TODO remove the need for this...
 
@@ -21,10 +22,13 @@ enum NodeError {
 
 class TFNode {
 public:
-    TFNode();
+    TFNode(const NodeAddress& address);
     void begin();
     void update();
 
+    NodeAddress getAddress() const;
+
+    TFNode(const NodeAddress& address);
     byte n_error = 0b11111111;  // Error byte transmitted when requested by API call
 
     unsigned long timeout_timer;
@@ -36,17 +40,21 @@ public:
     float pot_val;      // Current value of the potentiometer
 
 
+    // Command handlers
     // Status Logging functions
     void CMD_setStatusMode(int _mode);
+    void CMD_resetDevice(tfnode::Device device);
+    void CMD_enableDevice(tfnode::Device device);
+    // Add other command handlers
+
+
     String status();
     String statusCompact();  // TODO change return type to .proto def
     String statusDump();
     String statusReadable();
 
-
     // Callbacks
     void optButtonStopFunc();
-
 
     // Error handling
     void checkErrs();
@@ -54,16 +62,17 @@ public:
     void errClear(NodeError err_code);
     void errClear();
 
-
     // Sensor Measurements
     float getSupplyVolts();
     float getPotVal();
 
 private:
     // TODO make array of SMAController
-    SMAController* smaController0;
-    SMAController* smaController1;
-    CommandProcessor commandProcessor;
+    NodeAddress address;
+    std::vector<SMAController> smaControllers;
+    //SMAController* smaController0;
+    //SMAController* smaController1;
+    //CommandProcessor commandProcessor;
     NodeSettings settings;
 };
 

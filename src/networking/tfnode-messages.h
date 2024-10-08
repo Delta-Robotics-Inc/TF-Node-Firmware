@@ -67,7 +67,8 @@ enum class SMAControlMode : uint32_t
   MODE_AMPS = 1,
   MODE_VOLTS = 2,
   MODE_OHMS = 3,
-  MODE_TRAIN = 4
+  MODE_TRAIN = 4,
+  MODE_CNT
 };
 
 class DisableCommand final: public ::EmbeddedProto::MessageInterface

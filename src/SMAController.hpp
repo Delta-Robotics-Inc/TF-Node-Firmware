@@ -12,7 +12,7 @@ class PWMSamplerDriver;  // Forward Declaration
 
 class SMAController {
 public:
-    SMAController(String _name, uint8_t _m, uint8_t _currPin, uint8_t _vLdPin, float _scaleFactor, float _offset);
+    SMAController(tfnode::Device _devicePort, String _name, uint8_t _m, uint8_t _currPin, uint8_t _vLdPin, float _scaleFactor, float _offset);
 
     String name = "none";
     // I/O
@@ -32,12 +32,12 @@ public:
     
     // SMAController Commands
     void CMD_setEnable(bool state);
-    void CMD_setMode(ctrl_modes _mode);
-    void CMD_setSetpoint(ctrl_modes _mode, float val);
+    void CMD_setMode(tfnode::SMAControlMode _mode);
+    void CMD_setSetpoint(tfnode::SMAControlMode _mode, float val);
     void CMD_reset();
-    
-    // Status Logging functions
     void CMD_setStatusMode(int _mode);
+
+    // Status Logging functions
     String status();
     String statusCompact();  // TODO change return type to .proto def
     String statusDump();
@@ -55,6 +55,7 @@ public:
     //void executeCommand(uint8_t functionCode, const uint8_t* params, size_t paramLength);
 
 private:
+    tfnode::Device devicePort;
     SMASettings settings;  // TODO place modifiable fields within this settings handle
 
     // PWM and Measurement Delay during PWM while High
@@ -79,8 +80,8 @@ private:
 
     // Control Settings
     bool enabled = false;
-    ctrl_modes mode = PERCENT;
-    float setpoint[CTRL_MODE_CNT];
+    tfnode::SMAControlMode currentMode;
+    float setpoint[(int)tfnode::SMAControlMode::MODE_CNT];
     float pwm_duty_percent = 0;  // From 0.0->0.1
 
     // Resistance Training Settings

@@ -1,10 +1,10 @@
 #include "SMAController.hpp"
 #include "drivers/PWMSamplerDriver.h"
 
-extern TFNode tfNode;
+extern TFNode master_tfNode;
 
-SMAController::SMAController(String _name, uint8_t _m, uint8_t _currPin, uint8_t _vLdPin, float _scaleFactor, float _offset)
-    : name(_name), mosfet_pin(_m), curr_pin(_currPin), vld_pin(_vLdPin), vld_scaleFactor(_scaleFactor), vld_offset(_offset) {}
+SMAController::SMAController(tfnode::Device _devicePort, String _name, uint8_t _m, uint8_t _currPin, uint8_t _vLdPin, float _scaleFactor, float _offset)
+    : devicePort(_devicePort), name(_name), mosfet_pin(_m), curr_pin(_currPin), vld_pin(_vLdPin), vld_scaleFactor(_scaleFactor), vld_offset(_offset) {}
 
 void SMAController::begin()
 {
@@ -21,33 +21,34 @@ void SMAController::update()
     if (enabled)
     {
         // Handle behavior of each control mode
-        switch (mode)
+        switch (currentMode)
         {
-        case PERCENT:
-            pwm_duty_percent = setpoint[PERCENT];
+        case tfnode::SMAControlMode::MODE_PERCENT:
+            pwm_duty_percent = setpoint[(int)tfnode::SMAControlMode::MODE_PERCENT];
             break;
-        case VOLTS:
-            pwm_duty_percent = setpoint[VOLTS] / tfNode.n_vSupply; // When controlling for volts, the ratio of setpoint/supply will be percentage of power to deliver
+        case tfnode::SMAControlMode::MODE_VOLTS:
+            pwm_duty_percent = setpoint[(int)tfnode::SMAControlMode::MODE_VOLTS] / master_tfNode.n_vSupply; // When controlling for volts, the ratio of setpoint/supply will be percentage of power to deliver
             break;
         // TODO: Implement other control modes
-        case AMPS:                                        // Need to implement PID loop
-            pwm_duty_percent = setpoint[AMPS] / curr_val; // Simplest current control is just pulsing the peak current at a rate which matches setpoint current
+        case tfnode::SMAControlMode::MODE_AMPS:                                        // Need to implement PID loop
+            pwm_duty_percent = setpoint[(int)tfnode::SMAControlMode::MODE_AMPS] / curr_val; // Simplest current control is just pulsing the peak current at a rate which matches setpoint current
             break;
         // case DEGREES:  // Need to implement equation to track/return muscle temp (temp will behave different based on 2 conditions: below/above Af)
-        case OHMS: // Need to implement PID loop (but how to implement with hysterisis curve?)
+        case tfnode::SMAControlMode::MODE_OHMS: // Need to implement PID loop (but how to implement with hysterisis curve?)
         {
-            resController->setSetpoint(setpoint[OHMS]); // Update setpoint of pid to setpoint of this device for OHMS mode
+            resController->setSetpoint(setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]); // Update setpoint of pid to setpoint of this device for OHMS mode
             resController->update(rld_val);             // Update pid controller
             pwm_duty_percent = resController->getOutput();
         }
         break;
         // Eventually add position control (requires force to be known)
-        case TRAIN:
+        case tfnode::SMAControlMode::MODE_TRAIN:
             pwm_duty_percent = updateTraining(rld_val); // Convert to mohms
             break;
-        case MANUAL:
-            pwm_duty_percent = tfNode.pot_val; // Manual mode uses the potentiometer if connected
-            break;
+        // Deprecating mode manual for now (not included in .proto)
+        // case tfnode::SMAControlMode::MODE_MANUAL:
+        //     pwm_duty_percent = master_tfNode.pot_val; // Manual mode uses the potentiometer if connected
+        //     break;
         default:
             pwm_duty_percent = 0;
             break;
@@ -70,7 +71,7 @@ void SMAController::update()
     // CURRENT OVERFLOW ERROR CONDITION
     if (curr_val > MAX_CURRENT)
     {
-        tfNode.errRaise(ERR_CURRENT_OF);
+        master_tfNode.errRaise(ERR_CURRENT_OF);
         // setEnable(false); //disable muscle
     }
 }
@@ -81,48 +82,50 @@ void SMAController::CMD_setEnable(bool state)
 
       // Clear the external disable error
       if(enabled)
-        tfNode.errClear(ERR_EXTERNAL_INTERRUPT);
+        master_tfNode.errClear(ERR_EXTERNAL_INTERRUPT);
 
-      if((mode == TRAIN || mode == OHMS) && enabled)
+      if((currentMode == tfnode::SMAControlMode::MODE_TRAIN || 
+          currentMode == tfnode::SMAControlMode::MODE_OHMS) && enabled) {
         resetTraining();
         resController->Reset();
+      }
 }
 
-void SMAController::CMD_setMode(ctrl_modes _mode)
+void SMAController::CMD_setMode(tfnode::SMAControlMode _mode)
 {
-    mode = _mode;
+    currentMode = _mode;
 
-    if(mode == TRAIN) {
-    trainState = MARTENSITE;
+    if(currentMode == tfnode::SMAControlMode::MODE_TRAIN) {
+      trainState = MARTENSITE;
     }
 }
 
-void SMAController::CMD_setSetpoint(ctrl_modes _mode, float val)
+void SMAController::CMD_setSetpoint(tfnode::SMAControlMode _mode, float val)
 {
-    setpoint[_mode] = val;
+    setpoint[(int)_mode] = val;
 
     // Update delta milliohms for training mode
-    if(_mode == TRAIN)
+    if(_mode == tfnode::SMAControlMode::MODE_TRAIN)
         delta_mohms = ((At - Af) * L_nitinol / (PI * pow(D_nitinol / 2, 2)) * resistivity_per_c_nitinol) * 0.001; //results in milliohms
 }
 
 void SMAController::CMD_reset()
 {
     CMD_setEnable(false);
-    CMD_setMode(PERCENT);
+    CMD_setMode(tfnode::SMAControlMode::MODE_PERCENT);
     // Reset timer and pulse vals*****************************************
 }
-
-
-//=============================================================================
-// SMAController Status Functions
-//=============================================================================
 
 // TODO Change "mode" to represent status message type and implement a "repeating" var
 void SMAController::CMD_setStatusMode(int _mode)
 {
     statusMode = _mode;
 }
+
+
+//=============================================================================
+// SMAController Status Functions
+//=============================================================================
 
 String SMAController::status()
 {
@@ -161,7 +164,7 @@ void SMAController::measure()
     //Serial.println(name);
     vld_val = getLoadVoltage();    
     curr_val = getMuscleAmps();
-    rld_val = calcResistance(tfNode.n_vSupply, vld_val, curr_val);
+    rld_val = calcResistance(master_tfNode.n_vSupply, vld_val, curr_val);
 }
 
 // Callable by PWMSamplerDriver with a reference to a TF_Muscle
@@ -259,7 +262,7 @@ float SMAController::updateTraining(float rld_mohms)
             }
           }
           //return setpoint pwm value
-          return setpoint[TRAIN];
+          return setpoint[(int)tfnode::SMAControlMode::MODE_TRAIN];
         }
         case PHASE_TRANSITION: {  // STATE: Heating (Pre Austenite Finished Temp)
           // The same thing with a rolling average; wait until it has been increasing for a few cycles and find bottom of dip (set bottom to Af_mohms)
@@ -286,7 +289,7 @@ float SMAController::updateTraining(float rld_mohms)
             }
           }
           // Return setpoint pwm value
-          return setpoint[TRAIN];
+          return setpoint[(int)tfnode::SMAControlMode::MODE_TRAIN];
         }
         case POST_AF: {  // STATE: Heating (Post Austenite finished Temp)
           // Compare change in ohms to desired delta_mohms

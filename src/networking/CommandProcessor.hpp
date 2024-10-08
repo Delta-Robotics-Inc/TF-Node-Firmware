@@ -1,10 +1,27 @@
+// CommandProcessor.h
+
 #ifndef COMMAND_PROCESSOR_H
 #define COMMAND_PROCESSOR_H
 
-#include <Arduino.h>
+#include <vector>
+#include "NetworkInterface.h"
+#include "TFNode.hpp"
+#include "Packet.h"
 
 class CommandProcessor {
+public:
+    CommandProcessor(TFNode& node);
 
+    void addNetworkInterface(NetworkInterface* netInterface);
+    void process();
 
-}
+private:
+    TFNode& node;
+    std::vector<NetworkInterface*> interfaces;
+
+    void handlePacket(Packet& packet, NetworkInterface* sourceInterface);
+    void executeCommand(const Packet& packet);
+    void forwardPacket(const Packet& packet, NetworkInterface* excludeInterface = nullptr);
+};
+
 #endif // COMMAND_PROCESSOR_H

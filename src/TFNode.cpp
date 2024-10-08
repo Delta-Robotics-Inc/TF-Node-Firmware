@@ -2,9 +2,14 @@
 #include "config.hpp"
 #include "SMAController.hpp"
 
-TFNode::TFNode() {
-    smaController0 = new SMAController("M1", M1_MOS_TRIG, M1_CURR_RD, M1_VLD_RD, VLD_SCALE_FACTOR_M1, VLD_OFFSET_M1);
-    smaController1 = new SMAController("M2", M2_MOS_TRIG, M2_CURR_RD, M2_VLD_RD, VLD_SCALE_FACTOR_M2, VLD_OFFSET_M2);
+TFNode::TFNode(const NodeAddress& addr)
+    : address(addr) {
+    //smaController0 = new SMAController("M1", M1_MOS_TRIG, M1_CURR_RD, M1_VLD_RD, VLD_SCALE_FACTOR_M1, VLD_OFFSET_M1);
+    //smaController1 = new SMAController("M2", M2_MOS_TRIG, M2_CURR_RD, M2_VLD_RD, VLD_SCALE_FACTOR_M2, VLD_OFFSET_M2);
+}
+
+NodeAddress TFNode::getAddress() const {
+    return address;
 }
 
 void TFNode::begin() {
@@ -12,18 +17,19 @@ void TFNode::begin() {
     //EEPROM.begin(sizeof(NodeSettings));
     //settings.load();
 
-    Serial.begin(115200);
+    //Serial.begin(115200);
     pinMode(STATUS_SOLID_LED, OUTPUT);
     digitalWrite(STATUS_SOLID_LED, LOW);  // This pin currently goes high on errors
 
     pinMode(AUX_BUTTON, INPUT_PULLUP); // Set button pin as input with internal pull-up resistor
 
     // Initialize controllers
-    smaController0->begin();
-    smaController1->begin();
+    //******************************************************** */
+    smaControllers[0].begin();
+    smaControllers[1].begin();
 
     // Initialize command processor
-    commandProcessor.begin();
+    //commandProcessor.begin();
     log_timer = millis();
 }
 
@@ -33,8 +39,9 @@ void TFNode::update() {
     pot_val = getPotVal();
 
     // Update controllers
-    smaController0->update();
-    smaController1->update();
+    //******************************************************** */
+    smaControllers[0].update();
+    smaControllers[1].update();
 
     checkErrs();
 
@@ -45,7 +52,7 @@ void TFNode::update() {
     }
 
     // Process commands
-    commandProcessor.update();
+    //commandProcessor.update();
 
     // TODO implement logger (should it be encapsulate within class or external function?)
     // Every certain interval (LOG_MS), log/report data to console
@@ -60,12 +67,42 @@ void TFNode::update() {
 
 
 //=============================================================================
-// Node Status Functions
+// Command Handlers
 //=============================================================================
 
 void TFNode::CMD_setStatusMode(int _mode)
 {
+
 }
+
+void TFNode::CMD_resetDevice(tfnode::Device device) {
+    if (device == tfnode::Device::DEVICE_NODE || device == tfnode::Device::DEVICE_ALL) {
+        // Reset node-specific settings
+    }
+    if (device == tfnode::Device::DEVICE_PORT1 || device == tfnode::Device::DEVICE_ALL) {
+        smaControllers[0].CMD_reset();
+    }
+    if (device == tfnode::Device::DEVICE_PORT2 || device == tfnode::Device::DEVICE_ALL) {
+        smaControllers[1].CMD_reset();
+    }
+}
+
+void TFNode::CMD_enableDevice(tfnode::Device device) {
+    if (device == tfnode::Device::DEVICE_PORT1) {
+        smaControllers[0].CMD_setEnable(true);
+    } else if (device == tfnode::Device::DEVICE_PORT2) {
+        smaControllers[1].CMD_setEnable(true);
+    }
+    // Handle DEVICE_ALL and DEVICE_PORTALL as needed
+}
+
+// Implement other command handlers similarly
+
+
+
+//=============================================================================
+// Node Status Functions
+//=============================================================================
 
 String TFNode::status()
 {
@@ -100,8 +137,9 @@ String TFNode::statusReadable()
 //=============================================================================
 
 void TFNode::optButtonStopFunc() {
-  smaController0->CMD_setEnable(false);
-  smaController1->CMD_setEnable(false);
+    //******************************************************** */
+  smaControllers[0].CMD_setEnable(false);
+  smaControllers[1].CMD_setEnable(false);
   errRaise(ERR_EXTERNAL_INTERRUPT);
 }
 
