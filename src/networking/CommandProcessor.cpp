@@ -1,7 +1,8 @@
 // CommandProcessor.cpp
 
 #include "CommandProcessor.hpp"
-#include "tfnode-messages.h" // Protobuf generated header
+#include "ReadBuffer.h"
+#include "WriteBuffer.h"
 
 CommandProcessor::CommandProcessor(TFNode& node)
     : node(node) {}
@@ -35,13 +36,17 @@ void CommandProcessor::handlePacket(Packet& packet, NetworkInterface* sourceInte
 }
 
 void CommandProcessor::executeCommand(const Packet& packet) {
-    // Deserialize the Data field using Protobuf
+    // Create a ReadBuffer from the packet data
+    ReadBuffer buffer(packet.data.data(), packet.data.size());
+
+    // Deserialize the NodeCommand message
     tfnode::NodeCommand command;
-    if (!command.ParseFromArray(packet.data.data(), packet.data.size())) {
+    ::EmbeddedProto::Error err = command.deserialize(buffer);
+
+    if (err != ::EmbeddedProto::Error::NO_ERRORS) {
         // Failed to parse command
         return;
     }
-
     // Determine which command is set using the oneof field
     switch (command.get_which_command()) {
         case tfnode::NodeCommand::FieldNumber::RESET:
@@ -55,6 +60,21 @@ void CommandProcessor::executeCommand(const Packet& packet) {
             break;
         case tfnode::NodeCommand::FieldNumber::SET_MODE:
             // TODO implement
+            switch(command.set_mode().device()) {
+                case(tfnode::Device::DEVICE_PORT1):
+                    node.smaControllers[0].CMD_setMode(command.set_mode().device());
+                break;
+                case(tfnode::Device::DEVICE_PORT2):
+
+                break;
+                case(tfnode::Device::DEVICE_ALL):
+                case(tfnode::Device::DEVICE_PORTALL):
+
+                break;
+                default:
+                    // TODO Throw error
+                break;
+            }
             break;
         case tfnode::NodeCommand::FieldNumber::SET_SETPOINT:
             // TODO implement
@@ -80,5 +100,23 @@ void CommandProcessor::forwardPacket(const Packet& packet, NetworkInterface* exc
             // Implement logic based on your network addressing
             iface->sendPacket(packet);
         }
+    }
+}
+
+// Called by Device to send back a response packet
+void sendResponse(const tfnode::Response& response, NetworkInterface* iface) {
+    uint8_t bufferData[256]; // Adjust size as needed
+    WriteBuffer buffer(bufferData, sizeof(bufferData));
+
+    ::EmbeddedProto::Error err = response.serialize(buffer);
+    if (err == ::EmbeddedProto::Error::NO_ERRORS) {
+        // Create a Packet with the serialized data
+        Packet packet;
+        // Set packet fields...
+        packet.data.assign(bufferData, bufferData + buffer.get_size());
+        // Send the packet
+        iface->sendPacket(packet);
+    } else {
+        // Handle serialization error
     }
 }

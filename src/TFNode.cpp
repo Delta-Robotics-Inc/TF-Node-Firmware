@@ -3,9 +3,10 @@
 #include "SMAController.hpp"
 
 TFNode::TFNode(const NodeAddress& addr)
-    : address(addr) {
-    //smaController0 = new SMAController("M1", M1_MOS_TRIG, M1_CURR_RD, M1_VLD_RD, VLD_SCALE_FACTOR_M1, VLD_OFFSET_M1);
-    //smaController1 = new SMAController("M2", M2_MOS_TRIG, M2_CURR_RD, M2_VLD_RD, VLD_SCALE_FACTOR_M2, VLD_OFFSET_M2);
+    : address(addr),
+    smaControllers{ SMAController(tfnode::Device::DEVICE_PORT1, "M1", M1_MOS_TRIG, M1_CURR_RD, M1_VLD_RD, VLD_SCALE_FACTOR_M1, VLD_OFFSET_M1),
+                    SMAController(tfnode::Device::DEVICE_PORT1, "M2", M2_MOS_TRIG, M2_CURR_RD, M2_VLD_RD, VLD_SCALE_FACTOR_M2, VLD_OFFSET_M2)} {
+    // Vector is initialized with two SMAController objects
 }
 
 NodeAddress TFNode::getAddress() const {

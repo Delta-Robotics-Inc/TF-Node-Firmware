@@ -1,0 +1,66 @@
+/*
+ *  Copyright (C) 2020-2024 Embedded AMS B.V. - All Rights Reserved
+ *
+ *  This file is part of Embedded Proto.
+ *
+ *  Embedded Proto is open source software: you can redistribute it and/or 
+ *  modify it under the terms of the GNU General Public License as published 
+ *  by the Free Software Foundation, version 3 of the license.
+ *
+ *  Embedded Proto  is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with Embedded Proto. If not, see <https://www.gnu.org/licenses/>.
+ *
+ *  For commercial and closed source application please visit:
+ *  <https://EmbeddedProto.com/license/>.
+ *
+ *  Embedded AMS B.V.
+ *  Info:
+ *    info at EmbeddedProto dot com
+ *
+ *  Postal address:
+ *    Atoomweg 2
+ *    1627 LE, Hoorn
+ *    the Netherlands
+ */
+
+syntax = "proto3";
+
+import "embedded_proto_options.proto";
+
+package Options;
+
+enum SomeEnum {
+  SE_A = 0;
+  SE_B = 1;
+  SE_C = 2;
+}
+
+message ConfigUpdate {
+  repeated uint32 a = 1 [(EmbeddedProto.options).maxLength = 10];
+  repeated uint32 b = 2;
+  repeated SomeEnum enum_values = 3 [(EmbeddedProto.options).maxLength = 3];
+}
+
+message NestedConfigUpdate {
+  ConfigUpdate update = 1;
+}
+
+message BytesMaxLength {
+  bytes b = 1 [(EmbeddedProto.options).maxLength = 100];
+}
+
+message StringMaxLength {
+  string s = 1 [(EmbeddedProto.options).maxLength = 256];
+}
+
+message OneofWithMaxLength {
+  oneof content {
+    bytes b = 1 [(EmbeddedProto.options).maxLength = 100];
+    string s = 2 [(EmbeddedProto.options).maxLength = 256];
+  }
+}

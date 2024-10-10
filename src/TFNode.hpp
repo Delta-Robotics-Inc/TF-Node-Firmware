@@ -39,6 +39,8 @@ public:
     float n_vSupply;    // Current value of measured battery voltage.
     float pot_val;      // Current value of the potentiometer
 
+    std::vector<SMAController> smaControllers;
+
 
     // Command handlers
     // Status Logging functions
@@ -66,10 +68,12 @@ public:
     float getSupplyVolts();
     float getPotVal();
 
+        
+
+
 private:
     // TODO make array of SMAController
     NodeAddress address;
-    std::vector<SMAController> smaControllers;
     //SMAController* smaController0;
     //SMAController* smaController1;
     //CommandProcessor commandProcessor;
