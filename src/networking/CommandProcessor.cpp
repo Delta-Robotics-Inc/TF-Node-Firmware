@@ -37,7 +37,7 @@ void CommandProcessor::sendResponse(const tfnode::Response& response, NetworkInt
 
         // Set destination ID as needed
         // For simplicity, set destination ID to zero
-        packet.destinationId.id = 0;
+        packet.destinationId.id = {0x0, 0x0, 0x0};
         packet.destinationId.idType = NodeAddress::IDType::NodeID;
         packet.destinationId.id.clear();
 

@@ -75,11 +75,11 @@ Packet SerialInterface::getNextPacket() {
     return packet;
 }
 
+// Override method utilizing hasPacket() and getNextPacket()
 bool SerialInterface::receivePacket(Packet& packet) {
     // This method can be optional if using receiveData(), hasPacket(), and getNextPacket()
-    if (!packetQueue.empty()) {
-        packet = packetQueue.front();
-        packetQueue.pop();
+    if (hasPacket()) {
+        packet = getNextPacket();
         return true;
     }
     return false;
