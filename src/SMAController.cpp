@@ -133,19 +133,19 @@ String SMAController::status()
     return String();
 }
 
-String SMAController::statusCompact()
+String SMAController::getStatusCompact()
 {
     // TODO Queue outbound response message
     return String();
 }
 
-String SMAController::statusDump()
+String SMAController::getStatusDump()
 {
     // TODO Queue outbound response message
     return String();
 }
 
-String SMAController::statusReadable()
+String SMAController::getStatusReadable()
 {
     // TODO Queue outbound response message
     return String();

@@ -15,16 +15,16 @@ public:
 
     void addNetworkInterface(NetworkInterface* netInterface);
     void process();
+    void sendResponse(const tfnode::Response response, NetworkInterface* iface);
+    void sendSerialString(String message);
 
 private:
     TFNode& node;
     std::vector<NetworkInterface*> interfaces;
 
     void handlePacket(Packet& packet, NetworkInterface* sourceInterface);
-    void executeCommand(const Packet& packet);
+    void executeCommand(const Packet& packet, NetworkInterface* sourceInterface);
     void forwardPacket(const Packet& packet, NetworkInterface* excludeInterface = nullptr);
-
-    void sendResponse(const tfnode::Response response, NetworkInterface* iface);
 };
 
 #endif // COMMAND_PROCESSOR_H

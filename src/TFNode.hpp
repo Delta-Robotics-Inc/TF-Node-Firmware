@@ -26,6 +26,9 @@ public:
     void begin();
     void update();
 
+    // Setter for CommandProcessor
+    void setCommandProcessor(CommandProcessor* cp);
+
     NodeAddress getAddress() const;
 
     TFNode(const NodeAddress& address);
@@ -44,21 +47,21 @@ public:
 
     // Command handlers
     // Status Logging functions
-    void CMD_setStatusMode(int _mode);
+    void CMD_setStatusMode(tfnode::Device device, tfnode::DeviceStatusMode mode, NetworkInterface* iface);
     void CMD_resetDevice(tfnode::Device device);
     void CMD_enableDevice(tfnode::Device device);
     // Add other command handlers
 
-
-    String status();
-    String statusCompact();  // TODO change return type to .proto def
-    String statusDump();
-    String statusReadable();
+    void sendStatusResponse();  // Sends status response based on status mode
+    tfnode::NodeStatusCompact getStatusCompact();  // TODO change return type to .proto def
+    tfnode::NodeStatusDump getStatusDump();
+    String getStatusReadable();
 
     // Callbacks
     void optButtonStopFunc();
 
     // Error handling
+    // TODO implement better error processing
     void checkErrs();
     void errRaise(NodeError err_code);
     void errClear(NodeError err_code);
@@ -73,10 +76,9 @@ public:
 
 private:
     // TODO make array of SMAController
+    tfnode::DeviceStatusMode statusMode;
     NodeAddress address;
-    //SMAController* smaController0;
-    //SMAController* smaController1;
-    //CommandProcessor commandProcessor;
+    CommandProcessor* commandProcessor; // Reference to CommandProcessor
     NodeSettings settings;
 };
 

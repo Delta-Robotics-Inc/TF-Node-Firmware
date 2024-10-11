@@ -9,7 +9,10 @@
 #include "tfnode-messages.h" // Generated Protobuf header
 
 struct NodeAddress {
-    uint8_t idType;
+
+    enum IDType { NodeID, CANID };
+
+    IDType idType;
     std::vector<uint8_t> id;
 
     bool operator==(const NodeAddress& other) const {
@@ -35,20 +38,21 @@ public:
     bool isForThisNode(const NodeAddress& nodeAddress) const;
 
     // Packet fields
-    uint8_t startByte;
+    const uint8_t startByte = 0x7E;
     uint16_t packetLength;
-    uint8_t protocolVersion;
+    const uint8_t protocolVersion = 0x01;
     uint8_t senderIdType;
     uint8_t destinationIdType;
     NodeAddress senderId;
     NodeAddress destinationId;
     std::vector<uint8_t> data; // Serialized Protobuf message
     uint8_t checksum;
-    uint8_t endByte;
+    const uint8_t endByte = 0xE7;
 
-private:
     // Helper methods
     uint8_t calculateChecksum() const;
+    uint16_t calculatePacketLength() const;
+
 };
 
 #endif // PACKET_H

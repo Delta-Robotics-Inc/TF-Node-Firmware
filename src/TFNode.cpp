@@ -4,6 +4,9 @@
 
 TFNode::TFNode(const NodeAddress& addr)
     : address(addr),
+    commandProcessor(nullptr), // Initialize to nullptr
+    statusMode(tfnode::STATUS_NONE),
+    statusInterface(nullptr),
     smaControllers{ SMAController(tfnode::Device::DEVICE_PORT1, "M1", M1_MOS_TRIG, M1_CURR_RD, M1_VLD_RD, VLD_SCALE_FACTOR_M1, VLD_OFFSET_M1),
                     SMAController(tfnode::Device::DEVICE_PORT1, "M2", M2_MOS_TRIG, M2_CURR_RD, M2_VLD_RD, VLD_SCALE_FACTOR_M2, VLD_OFFSET_M2)} {
     // Vector is initialized with two SMAController objects
@@ -66,14 +69,27 @@ void TFNode::update() {
     }
 }
 
+void TFNode::setCommandProcessor(CommandProcessor* cp) {
+    commandProcessor = cp;
+}
+
 
 //=============================================================================
 // Command Handlers
 //=============================================================================
 
-void TFNode::CMD_setStatusMode(int _mode)
-{
+void TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::DeviceStatusMode mode, NetworkInterface* iface) {
+    // For now, we assume device is DEVICE_NODE or DEVICE_ALL
+    if (device == tfnode::Device::DEVICE_NODE || device == tfnode::Device::DEVICE_ALL) {
+        statusMode = mode;
+        statusInterface = iface; // Keep track of the interface
+    }
 
+    // Optionally, handle status mode for SMAControllers
+    if (device == tfnode::Device::DEVICE_PORT1 || device == tfnode::Device::DEVICE_PORT2) {
+        // Set status mode on the specific SMAController
+        // Not implemented in this example
+    }
 }
 
 void TFNode::CMD_resetDevice(tfnode::Device device) {
@@ -105,26 +121,94 @@ void TFNode::CMD_enableDevice(tfnode::Device device) {
 // Node Status Functions
 //=============================================================================
 
-String TFNode::status()
-{
-    return String();
+// Send Status Response based on current Status Mode
+void TFNode::sendStatusResponse() {
+    if (statusMode == tfnode::DeviceStatusMode::STATUS_NONE || !commandProcessor || !statusInterface) {
+        // No status to send or no interface to send on
+        return;
+    }
+
+    tfnode::Response response;
+    response.set_device(tfnode::Device::DEVICE_NODE); // Set the device sending the response
+
+    tfnode::StatusResponse& statusResponse = response.mutable_status_response();
+
+    switch (statusMode) {
+        case tfnode::DeviceStatusMode::STATUS_COMPACT: {
+            tfnode::NodeStatusCompact compactStatus = getStatusCompact();
+            statusResponse.mutable_node_status_compact() = compactStatus;
+            break;
+        }
+        case tfnode::DeviceStatusMode::STATUS_DUMP: {
+            tfnode::NodeStatusDump dumpStatus = getStatusDump();
+            statusResponse.mutable_node_status_dump() = dumpStatus;
+            break;
+        }
+        case tfnode::DeviceStatusMode::STATUS_DUMP_READABLE: {
+            // Special case to send status straight to serial
+            String readableStatus = getStatusReadable();
+            commandProcessor->sendSerialString(readableStatus);
+            return;
+        }
+        default:
+            // Handle other status modes
+            return;
+    }
+
+    // Send the response via the command processor
+    if (commandProcessor && statusInterface) {
+        commandProcessor->sendResponse(response, statusInterface);
+    }
 }
 
-String TFNode::statusCompact()
-{
-    return String();
+tfnode::NodeStatusCompact TFNode::getStatusCompact() {
+    tfnode::NodeStatusCompact status;
+
+    status.set_uptime(millis() / 1000); // Uptime in seconds
+    status.set_error_code(n_error);
+    status.set_v_supply(n_vSupply);
+    status.set_pot_val(pot_val);
+
+    // Add other fields as necessary
+
+    return status;
 }
 
-String TFNode::statusDump()
-{
-    return String();
+
+// Returns a NodeStatusDump, which details extensively the configuration and variables of this node
+tfnode::NodeStatusDump TFNode::getStatusDump() {
+    tfnode::NodeStatusDump status;
+
+    // Set compact status
+    tfnode::NodeStatusCompact compactStatus = getStatusCompact();
+    *status.mutable_compact_status() = compactStatus;
+
+    // Get loaded settings (if any)
+    *status.mutable_loaded_settings() = settings;
+
+    // Set other detailed fields
+    status.set_firmware_version(FIRMWARE_VERSION);
+    status.set_board_version(SHIELD_VERSION);
+    status.set_muscle_cnt(SMA_CONTROLLER_CNT); // Number of SMAControllers
+    status.set_log_interval_ms(LOG_MS);
+    status.set_vrd_scalar(VRD_SCALE_FACTOR);
+    status.set_vrd_offset(VRD_OFFSET);
+    status.set_max_current(MAX_CURRENT);
+    status.set_min_v_supply(MIN_VSUPPLY);
+
+    // Add other fields as needed
+
+    return status;
 }
+
 
 // Returns a readable string of the status dump.
 // This is a large amount of data but useful when other side does not understand the TF Node messaging system
-String TFNode::statusReadable()
+String TFNode::getStatusReadable()
 {
-    String stat_str = "========================================\nLOG TIME: " + String(millis() - log_start) + "\n"; // Display time since log start
+    String stat_str = 
+                "========================================\n";
+    stat_str += "LOG TIME: " + String(millis() - log_start) + "\n"; // Display time since log start
     stat_str += "Battery Volts: " + String(n_vSupply, 6) + " V\n";
     stat_str += "Error State: " + String(n_error, BIN) + "\n";
     stat_str += "Pot Val: " + String(pot_val, 6) + "\n";

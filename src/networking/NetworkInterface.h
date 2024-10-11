@@ -11,6 +11,10 @@ public:
     virtual void sendPacket(const Packet& packet) = 0;
     virtual bool receivePacket(Packet& packet) = 0;
     virtual std::string getName() const = 0;
+
+    // TODO implement these on Serial and CAN interfaces
+    virtual bool isConnected() = 0;
+    virtual void attemptConnection() = 0;
 };
 
 #endif // NETWORK_INTERFACE_H

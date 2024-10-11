@@ -1,6 +1,7 @@
 // CommandProcessor.cpp
 
 #include "CommandProcessor.hpp"
+#include "SMAController.hpp"
 #include "ReadBuffer.h"
 #include "WriteBuffer.h"
 
@@ -20,6 +21,34 @@ void CommandProcessor::process() {
     }
 }
 
+void CommandProcessor::sendResponse(const tfnode::Response& response, NetworkInterface* iface) {
+    uint8_t bufferData[256]; // Adjust size as needed
+    WriteBuffer buffer(bufferData, sizeof(bufferData));
+
+    ::EmbeddedProto::Error err = response.serialize(buffer);
+    if (err == ::EmbeddedProto::Error::NO_ERRORS) {
+        // Create a Packet with the serialized data
+        Packet packet;
+
+        // Set sender and destination IDs
+        packet.senderId = node.getAddress(); // Node's address
+        // Set destination ID as needed
+
+        // Set data
+        packet.data.assign(bufferData, bufferData + buffer.get_size());
+
+        // Calculate packet length and checksum
+        packet.packetLength = packet.calculatePacketLength();
+        packet.checksum = packet.calculateChecksum();
+
+        // Send the packet
+        iface->sendPacket(packet);
+    } else {
+        // Handle serialization error
+    }
+}
+
+
 void CommandProcessor::handlePacket(Packet& packet, NetworkInterface* sourceInterface) {
     if (!packet.isValid()) {
         // Invalid packet, discard or log error
@@ -28,14 +57,14 @@ void CommandProcessor::handlePacket(Packet& packet, NetworkInterface* sourceInte
 
     if (packet.isForThisNode(node.getAddress())) {
         // Packet is intended for this node
-        executeCommand(packet);
+        executeCommand(packet, sourceInterface);
     } else {
         // Packet is not for this node, forward it
         forwardPacket(packet, sourceInterface);
     }
 }
 
-void CommandProcessor::executeCommand(const Packet& packet) {
+void CommandProcessor::executeCommand(const Packet& packet, NetworkInterface* sourceInterface) {
     // Create a ReadBuffer from the packet data
     ReadBuffer buffer(packet.data.data(), packet.data.size());
 
@@ -62,14 +91,16 @@ void CommandProcessor::executeCommand(const Packet& packet) {
             // TODO implement
             switch(command.set_mode().device()) {
                 case(tfnode::Device::DEVICE_PORT1):
-                    node.smaControllers[0].CMD_setMode(command.set_mode().device());
+                    node.smaControllers[0].CMD_setMode(command.set_mode().mode());
                 break;
                 case(tfnode::Device::DEVICE_PORT2):
 
                 break;
                 case(tfnode::Device::DEVICE_ALL):
                 case(tfnode::Device::DEVICE_PORTALL):
-
+                    for (auto& controller : node.smaControllers) {
+                        controller.CMD_setMode(command.set_mode().mode());
+                    }
                 break;
                 default:
                     // TODO Throw error
@@ -85,7 +116,13 @@ void CommandProcessor::executeCommand(const Packet& packet) {
         case tfnode::NodeCommand::FieldNumber::CONFIGURE_SETTINGS:
             // TODO implement
             break;
-        
+        case tfnode::NodeCommand::FieldNumber::STATUS:
+            node.CMD_setStatusMode(
+                command.status().device(),
+                command.status().mode(),
+                sourceInterface // Pass the interface
+            );
+            break;
         // Handle other commands similarly
         default:
             // Unknown command

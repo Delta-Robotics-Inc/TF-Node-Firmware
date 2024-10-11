@@ -39,9 +39,9 @@ public:
 
     // Status Logging functions
     String status();
-    String statusCompact();  // TODO change return type to .proto def
-    String statusDump();
-    String statusReadable();
+    String getStatusCompact();  // TODO change return type to .proto def
+    String getStatusDump();
+    String getStatusReadable();
 
 
     // Sensor Measurements
