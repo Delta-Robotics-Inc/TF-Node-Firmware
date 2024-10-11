@@ -3,7 +3,8 @@
 #include "Packet.h"
 
 Packet::Packet()
-    : startByte(0x7E), endByte(0x7E) {}
+    : packetLength(0), senderIdType(0),
+      destinationIdType(0), checksum(0) {}
 
 bool Packet::parse(const std::vector<uint8_t>& rawData) {
     if (rawData.size() < 13) {
@@ -13,8 +14,8 @@ bool Packet::parse(const std::vector<uint8_t>& rawData) {
 
     size_t index = 0;
 
-    startByte = rawData[index++];
-    if (startByte != 0x7E) {
+    uint8_t incoming_startByte = rawData[index++];
+    if (incoming_startByte != startByte) {
         // Invalid start byte
         return false;
     }
@@ -22,7 +23,13 @@ bool Packet::parse(const std::vector<uint8_t>& rawData) {
     packetLength = (rawData[index++] << 8);
     packetLength |= rawData[index++];
 
-    protocolVersion = rawData[index++];
+    uint8_t incoming_protocolVersion = rawData[index++];
+    if(incoming_protocolVersion != protocolVersion) {
+        // Throw error for incompatible version
+        // FUTURE implement all acceptable versions
+        return false;
+    }
+
     senderIdType = rawData[index++];
     destinationIdType = rawData[index++];
 
@@ -47,17 +54,13 @@ bool Packet::parse(const std::vector<uint8_t>& rawData) {
 
     checksum = rawData[index++];
 
-    endByte = rawData[index++];
-    if (endByte != 0x7E) {
-        // Invalid end byte
-        return false;
-    }
-
     // Validate checksum
     if (checksum != calculateChecksum()) {
         // Checksum mismatch
         return false;
     }
+
+    // Ignore the rest of data
 
     return true;
 }
@@ -122,4 +125,31 @@ uint8_t Packet::calculateChecksum() const {
     }
 
     return sum;
+}
+
+uint16_t Packet::calculatePacketLength() const {
+    // Packet length includes:
+    // - protocolVersion (1 byte)
+    // - senderIdType (1 byte)
+    // - destinationIdType (1 byte)
+    // - senderId.id (idLength bytes)
+    // - destinationId.id (idLength bytes)
+    // - data (variable length)
+    // - checksum (1 byte)
+
+    size_t protocolVersionSize = 1;
+    size_t senderIdTypeSize = 1;
+    size_t destinationIdTypeSize = 1;
+    size_t idLength = senderId.id.size(); // Assuming sender and destination IDs are the same length
+    size_t checksumSize = 1;
+
+    size_t packetLength = protocolVersionSize
+                        + senderIdTypeSize
+                        + destinationIdTypeSize
+                        + idLength // senderId.id
+                        + idLength // destinationId.id
+                        + data.size()
+                        + checksumSize;
+
+    return static_cast<uint16_t>(packetLength);
 }

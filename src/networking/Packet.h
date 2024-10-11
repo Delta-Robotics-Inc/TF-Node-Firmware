@@ -38,16 +38,15 @@ public:
     bool isForThisNode(const NodeAddress& nodeAddress) const;
 
     // Packet fields
-    const uint8_t startByte = 0x7E;
+    static const uint8_t startByte = 0x7E;
+    static const uint8_t protocolVersion = 0x01;
     uint16_t packetLength;
-    const uint8_t protocolVersion = 0x01;
-    uint8_t senderIdType;
-    uint8_t destinationIdType;
+    IDType senderIdType;
+    IDType destinationIdType;
     NodeAddress senderId;
     NodeAddress destinationId;
     std::vector<uint8_t> data; // Serialized Protobuf message
     uint8_t checksum;
-    const uint8_t endByte = 0xE7;
 
     // Helper methods
     uint8_t calculateChecksum() const;

@@ -47,9 +47,9 @@ public:
 
     // Command handlers
     // Status Logging functions
-    void CMD_setStatusMode(tfnode::Device device, tfnode::DeviceStatusMode mode, NetworkInterface* iface);
-    void CMD_resetDevice(tfnode::Device device);
-    void CMD_enableDevice(tfnode::Device device);
+    tfnode::ResponseCode CMD_setStatusMode(tfnode::Device device, tfnode::DeviceStatusMode mode, NetworkInterface* iface);
+    tfnode::ResponseCode CMD_resetDevice(tfnode::Device device);
+    tfnode::ResponseCode CMD_enableDevice(tfnode::Device device);
     // Add other command handlers
 
     void sendStatusResponse();  // Sends status response based on status mode
@@ -80,6 +80,7 @@ private:
     NodeAddress address;
     CommandProcessor* commandProcessor; // Reference to CommandProcessor
     NodeSettings settings;
+    NetworkInterface* statusInterface;
 };
 
 #endif // TF_NODE_H

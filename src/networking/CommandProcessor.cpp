@@ -15,6 +15,7 @@ void CommandProcessor::addNetworkInterface(NetworkInterface* netInterface) {
 void CommandProcessor::process() {
     for (auto iface : interfaces) {
         Packet packet;
+
         if (iface->receivePacket(packet)) {
             handlePacket(packet, iface);
         }
@@ -32,7 +33,13 @@ void CommandProcessor::sendResponse(const tfnode::Response& response, NetworkInt
 
         // Set sender and destination IDs
         packet.senderId = node.getAddress(); // Node's address
+        packet.senderId.idType = node.getAddress().idType;
+
         // Set destination ID as needed
+        // For simplicity, set destination ID to zero
+        packet.destinationId.id = 0;
+        packet.destinationId.idType = NodeAddress::IDType::NodeID;
+        packet.destinationId.id.clear();
 
         // Set data
         packet.data.assign(bufferData, bufferData + buffer.get_size());
@@ -137,23 +144,5 @@ void CommandProcessor::forwardPacket(const Packet& packet, NetworkInterface* exc
             // Implement logic based on your network addressing
             iface->sendPacket(packet);
         }
-    }
-}
-
-// Called by Device to send back a response packet
-void sendResponse(const tfnode::Response& response, NetworkInterface* iface) {
-    uint8_t bufferData[256]; // Adjust size as needed
-    WriteBuffer buffer(bufferData, sizeof(bufferData));
-
-    ::EmbeddedProto::Error err = response.serialize(buffer);
-    if (err == ::EmbeddedProto::Error::NO_ERRORS) {
-        // Create a Packet with the serialized data
-        Packet packet;
-        // Set packet fields...
-        packet.data.assign(bufferData, bufferData + buffer.get_size());
-        // Send the packet
-        iface->sendPacket(packet);
-    } else {
-        // Handle serialization error
     }
 }

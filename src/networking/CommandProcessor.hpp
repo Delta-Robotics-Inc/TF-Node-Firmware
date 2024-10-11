@@ -4,10 +4,12 @@
 #define COMMAND_PROCESSOR_H
 
 #include <vector>
+#include <Arduino.h>
 #include "NetworkInterface.h"
 #include "TFNode.hpp"
 #include "Packet.h"
 #include "tfnode-messages.h" // Protobuf generated header
+
 
 class CommandProcessor {
 public:

@@ -1,25 +1,90 @@
-// SerialInterface.cpp
-
 #include "SerialInterface.h"
-
-SerialInterface::SerialInterface(HardwareSerial& serialPort)
-    : serial(serialPort) {}
+#include "Arduino.h"
 
 void SerialInterface::sendPacket(const Packet& packet) {
     std::vector<uint8_t> rawData = packet.serialize();
-    serial.write(rawData.data(), rawData.size());
+    Serial.write(rawData.data(), rawData.size());
+}
+
+void SerialInterface::receiveData() {
+    // Read available bytes and append to rxBuffer
+    while (Serial.available()) {
+        uint8_t byte = Serial.read();
+        rxBuffer.push_back(byte);
+    }
+
+    // Attempt to parse packets from rxBuffer
+    while (true) {
+        if (rxBuffer.size() < 4) {
+            // Not enough data for even the smallest packet
+            break;
+        }
+
+        size_t index = 0;
+
+        // Find the startByte
+        while (index < rxBuffer.size() && rxBuffer[index] != Packet::startByte) {
+            index++;
+        }
+
+        if (index > 0) {
+            // Remove bytes before the startByte
+            rxBuffer.erase(rxBuffer.begin(), rxBuffer.begin() + index);
+        }
+
+        if (rxBuffer.size() < 4) {
+            // Not enough data to read packetLength
+            break;
+        }
+
+        // Read packetLength
+        uint16_t packetLength = (rxBuffer[1] << 8) | rxBuffer[2];
+
+        // Calculate total packet size
+        size_t totalPacketSize = 1 + 2 + packetLength;
+
+        if (rxBuffer.size() < totalPacketSize) {
+            // Not enough data yet
+            break;
+        }
+
+        // Extract the packet bytes
+        std::vector<uint8_t> packetData(rxBuffer.begin(), rxBuffer.begin() + totalPacketSize);
+
+        // Attempt to parse the packet
+        Packet packet;
+        if (packet.parse(packetData)) {
+            // Successfully parsed packet
+            packetQueue.push(packet);
+            // Remove parsed bytes
+            rxBuffer.erase(rxBuffer.begin(), rxBuffer.begin() + totalPacketSize);
+        } else {
+            // Invalid packet, discard the first byte and try again
+            rxBuffer.erase(rxBuffer.begin());
+        }
+    }
+}
+
+bool SerialInterface::hasPacket() {
+    return !packetQueue.empty();
+}
+
+Packet SerialInterface::getNextPacket() {
+    Packet packet = packetQueue.front();
+    packetQueue.pop();
+    return packet;
 }
 
 bool SerialInterface::receivePacket(Packet& packet) {
-    if (serial.available()) {
-        // Read data from serial and attempt to parse a packet
-        // Implement buffering and parsing logic as needed
-        // For simplicity, assume we read a complete packet into rawData
-        std::vector<uint8_t> rawData;
-        while (serial.available()) {
-            rawData.push_back(serial.read());
-        }
-        return packet.parse(rawData);
+    // This method can be optional if using receiveData(), hasPacket(), and getNextPacket()
+    if (!packetQueue.empty()) {
+        packet = packetQueue.front();
+        packetQueue.pop();
+        return true;
     }
     return false;
+}
+
+std::string SerialInterface::getName() const {
+    return "SerialInterface";
 }

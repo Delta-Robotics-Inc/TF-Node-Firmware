@@ -5,12 +5,16 @@
 TFNode::TFNode(const NodeAddress& addr)
     : address(addr),
     commandProcessor(nullptr), // Initialize to nullptr
-    statusMode(tfnode::STATUS_NONE),
+    statusMode(tfnode::DeviceStatusMode::STATUS_NONE),
     statusInterface(nullptr),
     smaControllers{ SMAController(tfnode::Device::DEVICE_PORT1, "M1", M1_MOS_TRIG, M1_CURR_RD, M1_VLD_RD, VLD_SCALE_FACTOR_M1, VLD_OFFSET_M1),
-                    SMAController(tfnode::Device::DEVICE_PORT1, "M2", M2_MOS_TRIG, M2_CURR_RD, M2_VLD_RD, VLD_SCALE_FACTOR_M2, VLD_OFFSET_M2)} {
-    // Vector is initialized with two SMAController objects
-}
+                    SMAController(tfnode::Device::DEVICE_PORT1, "M2", M2_MOS_TRIG, M2_CURR_RD, M2_VLD_RD, VLD_SCALE_FACTOR_M2, VLD_OFFSET_M2)},   // Vector is initialized with two SMAController objects
+    n_error(0xFF), // Assuming all errors are cleared at start
+    n_vSupply(0.0f),
+    pot_val(0.0f),
+    log_start(millis()),
+    log_timer(millis()) 
+    { }
 
 NodeAddress TFNode::getAddress() const {
     return address;
@@ -28,7 +32,7 @@ void TFNode::begin() {
     pinMode(AUX_BUTTON, INPUT_PULLUP); // Set button pin as input with internal pull-up resistor
 
     // Initialize controllers
-    //******************************************************** */
+    //*********************************************************/
     smaControllers[0].begin();
     smaControllers[1].begin();
 
@@ -43,7 +47,7 @@ void TFNode::update() {
     pot_val = getPotVal();
 
     // Update controllers
-    //******************************************************** */
+    //*********************************************************/
     smaControllers[0].update();
     smaControllers[1].update();
 
@@ -61,11 +65,7 @@ void TFNode::update() {
     // TODO implement logger (should it be encapsulate within class or external function?)
     // Every certain interval (LOG_MS), log/report data to console
     if(millis() - log_timer > LOG_MS) {
-        String status_str = status();
-        // Only print if there is something to log
-        if(status_str != " ") // Make sure that log data exceeds 90, otherwise it will never print
-        Serial.print(status_str);
-        log_timer = millis();
+        sendStatusResponse();
     }
 }
 
@@ -78,7 +78,7 @@ void TFNode::setCommandProcessor(CommandProcessor* cp) {
 // Command Handlers
 //=============================================================================
 
-void TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::DeviceStatusMode mode, NetworkInterface* iface) {
+tfnode::ResponseCode TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::DeviceStatusMode mode, NetworkInterface* iface) {
     // For now, we assume device is DEVICE_NODE or DEVICE_ALL
     if (device == tfnode::Device::DEVICE_NODE || device == tfnode::Device::DEVICE_ALL) {
         statusMode = mode;
@@ -90,9 +90,11 @@ void TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::DeviceStatusMode m
         // Set status mode on the specific SMAController
         // Not implemented in this example
     }
+
+    return tfnode::ResponseCode::RESPONSE_SUCCESS;
 }
 
-void TFNode::CMD_resetDevice(tfnode::Device device) {
+tfnode::ResponseCode TFNode::CMD_resetDevice(tfnode::Device device) {
     if (device == tfnode::Device::DEVICE_NODE || device == tfnode::Device::DEVICE_ALL) {
         // Reset node-specific settings
     }
@@ -102,15 +104,19 @@ void TFNode::CMD_resetDevice(tfnode::Device device) {
     if (device == tfnode::Device::DEVICE_PORT2 || device == tfnode::Device::DEVICE_ALL) {
         smaControllers[1].CMD_reset();
     }
+
+    return tfnode::ResponseCode::RESPONSE_SUCCESS;
 }
 
-void TFNode::CMD_enableDevice(tfnode::Device device) {
+tfnode::ResponseCode TFNode::CMD_enableDevice(tfnode::Device device) {
     if (device == tfnode::Device::DEVICE_PORT1) {
         smaControllers[0].CMD_setEnable(true);
     } else if (device == tfnode::Device::DEVICE_PORT2) {
         smaControllers[1].CMD_setEnable(true);
     }
     // Handle DEVICE_ALL and DEVICE_PORTALL as needed
+
+    return tfnode::ResponseCode::RESPONSE_SUCCESS;
 }
 
 // Implement other command handlers similarly
