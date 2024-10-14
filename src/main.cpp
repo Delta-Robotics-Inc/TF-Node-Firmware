@@ -12,8 +12,7 @@
 #include "networking/CommandProcessor.hpp"
 
 // Create instances of network interfaces
-HardwareSerial& serialPort = Serial;
-SerialInterface serialInterface(serialPort);
+SerialInterface serialInterface();
 
 // Assume CANInterface and SPIInterface are implemented similarly
 // CANInterface canInterface;
@@ -23,7 +22,7 @@ TFNode* master_tfNode;
 CommandProcessor* commandProcessor;
 
 void setup() {
-    serialPort.begin(115200);
+    Serial.begin(115200);
     
 
     // Initialize node with its address
@@ -34,7 +33,7 @@ void setup() {
     nodeAddress.id = {0x01, 0x02, 0x03};               // Node's unique ID
 
     master_tfNode = new TFNode(nodeAddress);
-    commandProcessor = new CommandProcessor(*master_tfNode);
+    commandProcessor = new CommandProcessor(master_tfNode);
     master_tfNode->setCommandProcessor(commandProcessor);
 
     // Add network interfaces to the command processor

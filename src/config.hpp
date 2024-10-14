@@ -6,7 +6,7 @@
 #include <Arduino.h>
 
 // Common configuration parameters
-const char FIRMWARE_VERSION[] = "1.0.0";
+const char CFG_FIRMWARE_VERSION[] = "1.0.0";
 constexpr uint8_t NODE_ID = 1;
 
 const int SIGNAL_TIMEOUT = 2000;            // Amount of time (ms) between receiving master commands before auto-disable

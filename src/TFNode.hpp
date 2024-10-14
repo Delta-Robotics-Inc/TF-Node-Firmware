@@ -31,7 +31,6 @@ public:
 
     NodeAddress getAddress() const;
 
-    TFNode(const NodeAddress& address);
     byte n_error = 0b11111111;  // Error byte transmitted when requested by API call
 
     unsigned long timeout_timer;

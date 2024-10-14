@@ -8,6 +8,8 @@
 #include <string>
 #include "tfnode-messages.h" // Generated Protobuf header
 
+// [Start Byte][Packet Length][Protocol Version][Sender ID Type][Destination ID Type][Sender ID][Destination ID][Data][Checksum]
+
 struct NodeAddress {
 
     enum IDType { NodeID, CANID };
@@ -41,8 +43,6 @@ public:
     static const uint8_t startByte = 0x7E;
     static const uint8_t protocolVersion = 0x01;
     uint16_t packetLength;
-    IDType senderIdType;
-    IDType destinationIdType;
     NodeAddress senderId;
     NodeAddress destinationId;
     std::vector<uint8_t> data; // Serialized Protobuf message

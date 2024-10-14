@@ -193,7 +193,7 @@ tfnode::NodeStatusDump TFNode::getStatusDump() {
     *status.mutable_loaded_settings() = settings;
 
     // Set other detailed fields
-    status.set_firmware_version(FIRMWARE_VERSION);
+    status.set_firmware_version(CFG_FIRMWARE_VERSION);
     status.set_board_version(SHIELD_VERSION);
     status.set_muscle_cnt(SMA_CONTROLLER_CNT); // Number of SMAControllers
     status.set_log_interval_ms(LOG_MS);

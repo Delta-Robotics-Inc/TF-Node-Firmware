@@ -3,8 +3,7 @@
 #include "Packet.h"
 
 Packet::Packet()
-    : packetLength(0), senderIdType(0),
-      destinationIdType(0), checksum(0) {}
+    : packetLength(0), checksum(0) {}
 
 bool Packet::parse(const std::vector<uint8_t>& rawData) {
     if (rawData.size() < 13) {
@@ -30,16 +29,14 @@ bool Packet::parse(const std::vector<uint8_t>& rawData) {
         return false;
     }
 
-    senderIdType = rawData[index++];
-    destinationIdType = rawData[index++];
+    senderId.idType = (NodeAddress::IDType)rawData[index++];
+    destinationId.idType = (NodeAddress::IDType)rawData[index++];
 
     size_t idLength = 3; // Assuming ID length is 3 bytes
 
-    senderId.idType = senderIdType;
     senderId.id.assign(rawData.begin() + index, rawData.begin() + index + idLength);
     index += idLength;
 
-    destinationId.idType = destinationIdType;
     destinationId.id.assign(rawData.begin() + index, rawData.begin() + index + idLength);
     index += idLength;
 
@@ -74,8 +71,8 @@ std::vector<uint8_t> Packet::serialize() const {
     rawData.push_back(0);
 
     rawData.push_back(protocolVersion);
-    rawData.push_back(senderIdType);
-    rawData.push_back(destinationIdType);
+    rawData.push_back(senderId.idType);
+    rawData.push_back(destinationId.idType);
 
     rawData.insert(rawData.end(), senderId.id.begin(), senderId.id.end());
     rawData.insert(rawData.end(), destinationId.id.begin(), destinationId.id.end());
@@ -90,8 +87,6 @@ std::vector<uint8_t> Packet::serialize() const {
     // Calculate checksum
     uint8_t checksum = calculateChecksum();
     rawData.push_back(checksum);
-
-    rawData.push_back(endByte);
 
     return rawData;
 }
@@ -109,8 +104,8 @@ uint8_t Packet::calculateChecksum() const {
     // Simple checksum calculation (e.g., XOR of all bytes except start and end bytes)
     uint8_t sum = 0;
     sum ^= protocolVersion;
-    sum ^= senderIdType;
-    sum ^= destinationIdType;
+    sum ^= senderId.idType;
+    sum ^= destinationId.idType;
 
     for (auto byte : senderId.id) {
         sum ^= byte;

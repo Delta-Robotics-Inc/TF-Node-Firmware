@@ -3,21 +3,27 @@
 #ifndef COMMAND_PROCESSOR_H
 #define COMMAND_PROCESSOR_H
 
+#ifdef Response
+#error "'Response' is defined as a macro"
+#endif
+
+
 #include <vector>
 #include <Arduino.h>
 #include "NetworkInterface.h"
-#include "TFNode.hpp"
 #include "Packet.h"
 #include "tfnode-messages.h" // Protobuf generated header
 
+class TFNode;
 
 class CommandProcessor {
 public:
     CommandProcessor(TFNode& node);
 
     void addNetworkInterface(NetworkInterface* netInterface);
+    std::vector<NetworkInterface*> getInterfaces();
     void process();
-    void sendResponse(const tfnode::Response response, NetworkInterface* iface);
+    void sendResponse(const (tfnode::Response)& response, NetworkInterface* iface);
     void sendSerialString(String message);
 
 private:

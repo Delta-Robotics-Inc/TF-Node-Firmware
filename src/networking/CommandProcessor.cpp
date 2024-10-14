@@ -2,6 +2,7 @@
 
 #include "CommandProcessor.hpp"
 #include "SMAController.hpp"
+#include "TFNode.hpp" // Include the full definition of TFNode
 #include "ReadBuffer.h"
 #include "WriteBuffer.h"
 
@@ -22,7 +23,7 @@ void CommandProcessor::process() {
     }
 }
 
-void CommandProcessor::sendResponse(const tfnode::Response& response, NetworkInterface* iface) {
+void CommandProcessor::sendResponse(const (tfnode::Response)& response, NetworkInterface* iface) {
     uint8_t bufferData[256]; // Adjust size as needed
     WriteBuffer buffer(bufferData, sizeof(bufferData));
 
@@ -55,6 +56,9 @@ void CommandProcessor::sendResponse(const tfnode::Response& response, NetworkInt
     }
 }
 
+std::vector<NetworkInterface*> CommandProcessor::getInterfaces() {
+    return interfaces;
+}
 
 void CommandProcessor::handlePacket(Packet& packet, NetworkInterface* sourceInterface) {
     if (!packet.isValid()) {
