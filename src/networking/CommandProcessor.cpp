@@ -23,7 +23,7 @@ void CommandProcessor::process() {
     }
 }
 
-void CommandProcessor::sendResponse(const (tfnode::Response)& response, NetworkInterface* iface) {
+void CommandProcessor::sendResponse(const tfnode::Response& response, NetworkInterface* iface) {
     uint8_t bufferData[256]; // Adjust size as needed
     WriteBuffer buffer(bufferData, sizeof(bufferData));
 
