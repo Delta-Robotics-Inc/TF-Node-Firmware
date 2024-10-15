@@ -66,6 +66,7 @@ void TFNode::update() {
     // Every certain interval (LOG_MS), log/report data to console
     if(millis() - log_timer > LOG_MS) {
         sendStatusResponse();
+        digitalWrite(STATUS_SOLID_LED, !digitalRead(STATUS_SOLID_LED));
     }
 }
 

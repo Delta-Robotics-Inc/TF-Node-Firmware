@@ -6,6 +6,7 @@
 #include <vector>
 #include <cstdint>
 #include <string>
+#include <Arduino.h>
 #include "tfnode-messages.h" // Generated Protobuf header
 
 // [Start Byte][Packet Length][Protocol Version][Sender ID Type][Destination ID Type][Sender ID][Destination ID][Data][Checksum]
@@ -32,6 +33,9 @@ public:
 
     // Serialize the packet into raw data
     std::vector<uint8_t> serialize() const;
+
+    // Convert packet to string representation
+    String toString() const;
 
     // Check if the packet is valid
     bool isValid() const;

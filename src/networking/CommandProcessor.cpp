@@ -18,9 +18,10 @@ void CommandProcessor::process() {
         Packet packet;
 
         if (iface->receivePacket(packet)) {
-            #ifdef DEBUG
+            //#ifdef DEBUG
             Serial.println("\nReceived Packet: ");
-            #endif
+            //#endif
+            Serial.println(packet.toString());  // Debug display incoming packet
             handlePacket(packet, iface);
         }
     }
@@ -28,7 +29,7 @@ void CommandProcessor::process() {
 
 void CommandProcessor::sendResponse(const tfnode::NodeResponse& response, NetworkInterface* iface) {
     //#ifdef DEBUG
-    Serial.print("\nNode Response: ");
+    Serial.print("\nNode Status: ");
     //#endif
     uint8_t bufferData[256]; // Adjust size as needed
     WriteBuffer buffer(bufferData, sizeof(bufferData));
@@ -36,10 +37,10 @@ void CommandProcessor::sendResponse(const tfnode::NodeResponse& response, Networ
     ::EmbeddedProto::Error err = response.serialize(buffer);
 
     // Debug
-    Serial.print(" Data: ");
-    for(int i = 0; i < buffer.get_size(); i++)
-        Serial.print((char)buffer.get_data()[i]);
-    Serial.print(" ");
+    //Serial.print(" Data: ");
+    //for(int i = 0; i < buffer.get_size(); i++)
+        //Serial.print((char)buffer.get_data()[i]);
+    //Serial.print(" ");
 
     if (err == ::EmbeddedProto::Error::NO_ERRORS) {
         // Create a Packet with the serialized data
@@ -64,6 +65,10 @@ void CommandProcessor::sendResponse(const tfnode::NodeResponse& response, Networ
 
         // Send the packet
         iface->sendPacket(packet);
+
+        // Debug to console the full readable contents of packet
+        Serial.println("\nSent Packet: ");
+        Serial.println(packet.toString());  // Debug display outgoing packet
     } else {
         // Handle serialization error
     }

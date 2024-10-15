@@ -3,12 +3,13 @@
 
 void SerialInterface::sendPacket(const Packet& packet) {
     std::vector<uint8_t> rawData = packet.serialize();
-    //Serial.write(rawData.data(), rawData.size());
+    Serial.write(rawData.data(), rawData.size());
 
-    for(int i = 0; i < rawData.size(); i++) {
+    // Debug
+    /*for(int i = 0; i < rawData.size(); i++) {
         Serial.print(rawData[i]);
         Serial.print(" ");
-    }
+    }*/
 }
 
 void SerialInterface::receiveData() {
@@ -62,6 +63,7 @@ void SerialInterface::receiveData() {
             // Successfully parsed packet
             packetQueue.push(packet);
             // Remove parsed bytes
+            //Serial.println("Packet received");
             rxBuffer.erase(rxBuffer.begin(), rxBuffer.begin() + totalPacketSize);
         } else {
             // Invalid packet, discard the first byte and try again
@@ -82,6 +84,7 @@ Packet SerialInterface::getNextPacket() {
 
 // Override method utilizing hasPacket() and getNextPacket()
 bool SerialInterface::receivePacket(Packet& packet) {
+    receiveData();
     // This method can be optional if using receiveData(), hasPacket(), and getNextPacket()
     if (hasPacket()) {
         packet = getNextPacket();

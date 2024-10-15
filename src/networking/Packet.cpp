@@ -1,6 +1,7 @@
 // Packet.cpp
 
 #include "Packet.h"
+#include<Arduino.h>
 
 Packet::Packet()
     : packetLength(0), checksum(0) {}
@@ -8,6 +9,7 @@ Packet::Packet()
 bool Packet::parse(const std::vector<uint8_t>& rawData) {
     if (rawData.size() < 13) {
         // Packet too short
+        Serial.println("Error: Packet too short.");
         return false;
     }
 
@@ -26,6 +28,7 @@ bool Packet::parse(const std::vector<uint8_t>& rawData) {
     if(incoming_protocolVersion != protocolVersion) {
         // Throw error for incompatible version
         // FUTURE implement all acceptable versions
+        Serial.println("Error: Invalid Protocol version.");
         return false;
     }
 
@@ -44,6 +47,7 @@ bool Packet::parse(const std::vector<uint8_t>& rawData) {
     size_t dataLength = packetLength - (1 + 1 + 1 + idLength + idLength + 1); // Exclude checksum
     if (index + dataLength + 1 > rawData.size()) {
         // Not enough data
+        Serial.println("Error: Not enough data.");
         return false;
     }
 
@@ -52,12 +56,17 @@ bool Packet::parse(const std::vector<uint8_t>& rawData) {
 
     checksum = rawData[index++];
 
+    uint8_t calculated_checksum = calculateChecksum();
+
     // Validate checksum
-    if (checksum != calculateChecksum()) {
+    if (checksum != calculated_checksum) {
         // Checksum mismatch
-        #ifdef DEBUG
-        Serial.println("Invalid Checksum");
-        #endif
+        //#ifdef DEBUG
+        Serial.print("Error: Invalid Checksum: ");
+        Serial.print(checksum);
+        Serial.print(" != ");
+        Serial.println(calculated_checksum);
+        //#endif
         return false;
     }
 
@@ -151,4 +160,40 @@ uint16_t Packet::calculatePacketLength() const {
                         + checksumSize;
 
     return static_cast<uint16_t>(packetLength);
+}
+
+// Returns a verbose string representation of packet and fields
+String Packet::toString() const {
+    String result;
+
+    result += "Packet {\n";
+    result += "  startByte: 0x" + String(startByte, HEX) + "\n";
+    result += "  packetLength: " + String(packetLength) + "\n";
+    result += "  protocolVersion: 0x" + String(protocolVersion, HEX) + "\n";
+    result += "  senderIdType: " + String(senderId.idType == NodeAddress::NodeID ? "NodeID" : "CANID") + "\n";
+    result += "  senderId: ";
+    for (auto byte : senderId.id) {
+        if (byte < 16) result += "0";
+        result += String(byte, HEX) + " ";
+    }
+    result += "\n";
+    result += "  destinationIdType: " + String(destinationId.idType == NodeAddress::NodeID ? "NodeID" : "CANID") + "\n";
+    result += "  destinationId: ";
+    for (auto byte : destinationId.id) {
+        if (byte < 16) result += "0";
+        result += String(byte, HEX) + " ";
+    }
+    result += "\n";
+    result += "  data: ";
+    for (auto byte : data) {
+        if (byte < 16) result += "0";
+        result += String(byte, HEX) + " ";
+    }
+    result += "\n";
+    result += "  checksum: 0x";
+    if (checksum < 16) result += "0";
+    result += String(checksum, HEX) + "\n";
+    result += "}";
+
+    return result;
 }
