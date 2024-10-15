@@ -1,2 +1,0 @@
-[console_scripts]
-protoc-gen-eams = EmbeddedProto.main:main_plugin
