@@ -40,8 +40,8 @@ public:
     bool isForThisNode(const NodeAddress& nodeAddress) const;
 
     // Packet fields
-    static const uint8_t startByte = 0x7E;
-    static const uint8_t protocolVersion = 0x01;
+    static constexpr uint8_t startByte = 0x7E;
+    static constexpr uint8_t protocolVersion = 0x01;
     uint16_t packetLength;
     NodeAddress senderId;
     NodeAddress destinationId;

@@ -18,16 +18,29 @@ void CommandProcessor::process() {
         Packet packet;
 
         if (iface->receivePacket(packet)) {
+            #ifdef DEBUG
+            Serial.println("\nReceived Packet: ");
+            #endif
             handlePacket(packet, iface);
         }
     }
 }
 
-void CommandProcessor::sendResponse(const tfnode::Response& response, NetworkInterface* iface) {
+void CommandProcessor::sendResponse(const tfnode::NodeResponse& response, NetworkInterface* iface) {
+    //#ifdef DEBUG
+    Serial.print("\nNode Response: ");
+    //#endif
     uint8_t bufferData[256]; // Adjust size as needed
     WriteBuffer buffer(bufferData, sizeof(bufferData));
 
     ::EmbeddedProto::Error err = response.serialize(buffer);
+
+    // Debug
+    Serial.print(" Data: ");
+    for(int i = 0; i < buffer.get_size(); i++)
+        Serial.print((char)buffer.get_data()[i]);
+    Serial.print(" ");
+
     if (err == ::EmbeddedProto::Error::NO_ERRORS) {
         // Create a Packet with the serialized data
         Packet packet;
@@ -149,4 +162,9 @@ void CommandProcessor::forwardPacket(const Packet& packet, NetworkInterface* exc
             iface->sendPacket(packet);
         }
     }
+}
+
+// Simply print message over serial
+void CommandProcessor::sendSerialString(String message) {
+    Serial.println(message);
 }

@@ -1,4 +1,4 @@
-#include <EEPROM.h>
+/*#include <EEPROM.h>
 #include "Settings.hpp"
 
 class NodeSettingsManager {
@@ -79,4 +79,4 @@ public:
         *smaSettings = newSettings;
         saveCurrentSettings();  // Automatically save to EEPROM after change
     }
-};
+};*/

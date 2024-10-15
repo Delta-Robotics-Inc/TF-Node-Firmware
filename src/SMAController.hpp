@@ -3,7 +3,6 @@
 
 #include "config.hpp"
 #include "TFNode.hpp"
-#include "Settings.hpp"
 
 #include "drivers/ResistiveController.h"
 #include "drivers/GradientTracker.hpp"
@@ -56,7 +55,7 @@ public:
 
 private:
     tfnode::Device devicePort;
-    SMASettings settings;  // TODO place modifiable fields within this settings handle
+    tfnode::SMAControllerSettings settings;  // TODO place modifiable fields within this settings handle
 
     // PWM and Measurement Delay during PWM while High
     const float PWM_FREQUENCY = 100;            // PWM Frequency

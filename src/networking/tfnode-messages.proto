@@ -63,6 +63,7 @@ enum SMAControlMode {
   MODE_VOLTS = 2;
   MODE_OHMS = 3;
   MODE_TRAIN = 4;
+  MODE_CNT = 5;
 }
 
 
@@ -212,16 +213,17 @@ message NodeStatusDump {
   NodeSettings loaded_settings = 2;
 
   // Make sure the following values are not included already in compact status
-  string firmware_version = 3;
-  string board_version = 4;
-  uint32 muscle_cnt = 5;
-  uint32 log_interval_ms = 6;
-  float vrd_scalar = 7;
-  float vrd_offset = 8;
-  float max_current = 9;
-  float min_v_supply = 10;
+  uint32 firmware_version = 3;
+  uint32 firmware_subversion = 4;
+  uint32 board_version = 5;
+  uint32 board_subversion = 6;
+  uint32 muscle_cnt = 7;
+  uint32 log_interval_ms = 8;
+  float vrd_scalar = 9;
+  float vrd_offset = 10;
+  float max_current = 11;
+  float min_v_supply = 12;
 }
-
 
 // Compact status for SMAController
 message SMAStatusCompact {

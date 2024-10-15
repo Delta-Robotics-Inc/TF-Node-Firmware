@@ -5,6 +5,8 @@
 *
 *=============================================================================*/
 
+#define DEBUG  // Define if wanting serial debug statements
+
 #include <Arduino.h>
 #include "config.hpp"
 #include "TFNode.hpp"
@@ -12,7 +14,7 @@
 #include "networking/CommandProcessor.hpp"
 
 // Create instances of network interfaces
-SerialInterface serialInterface();
+SerialInterface serialInterface;
 
 // Assume CANInterface and SPIInterface are implemented similarly
 // CANInterface canInterface;
@@ -33,7 +35,7 @@ void setup() {
     nodeAddress.id = {0x01, 0x02, 0x03};               // Node's unique ID
 
     master_tfNode = new TFNode(nodeAddress);
-    commandProcessor = new CommandProcessor(master_tfNode);
+    commandProcessor = new CommandProcessor(*master_tfNode);
     master_tfNode->setCommandProcessor(commandProcessor);
 
     // Add network interfaces to the command processor
@@ -42,6 +44,9 @@ void setup() {
     // commandProcessor.addNetworkInterface(&spiInterface);
 
     master_tfNode->begin();
+
+    // Add debug actions below
+    master_tfNode->CMD_setStatusMode(tfnode::Device::DEVICE_NODE, tfnode::DeviceStatusMode::STATUS_COMPACT, &serialInterface);
 }
 
 void loop() {

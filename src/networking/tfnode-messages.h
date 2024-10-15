@@ -68,7 +68,7 @@ enum class SMAControlMode : uint32_t
   MODE_VOLTS = 2,
   MODE_OHMS = 3,
   MODE_TRAIN = 4,
-  MODE_CNT
+  MODE_CNT = 5
 };
 
 class DisableCommand final: public ::EmbeddedProto::MessageInterface
@@ -3541,10 +3541,6 @@ class ConfigureSettingsCommand final: public ::EmbeddedProto::MessageInterface
 #endif // End of MSG_TO_STRING
 };
 
-template<
-    uint32_t NodeStatusDump_firmware_version_LENGTH, 
-    uint32_t NodeStatusDump_board_version_LENGTH
->
 class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
 {
   public:
@@ -3554,7 +3550,9 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
       set_compact_status(rhs.get_compact_status());
       set_loaded_settings(rhs.get_loaded_settings());
       set_firmware_version(rhs.get_firmware_version());
+      set_firmware_subversion(rhs.get_firmware_subversion());
       set_board_version(rhs.get_board_version());
+      set_board_subversion(rhs.get_board_subversion());
       set_muscle_cnt(rhs.get_muscle_cnt());
       set_log_interval_ms(rhs.get_log_interval_ms());
       set_vrd_scalar(rhs.get_vrd_scalar());
@@ -3568,7 +3566,9 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
       set_compact_status(rhs.get_compact_status());
       set_loaded_settings(rhs.get_loaded_settings());
       set_firmware_version(rhs.get_firmware_version());
+      set_firmware_subversion(rhs.get_firmware_subversion());
       set_board_version(rhs.get_board_version());
+      set_board_subversion(rhs.get_board_subversion());
       set_muscle_cnt(rhs.get_muscle_cnt());
       set_log_interval_ms(rhs.get_log_interval_ms());
       set_vrd_scalar(rhs.get_vrd_scalar());
@@ -3585,13 +3585,15 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
       COMPACT_STATUS = 1,
       LOADED_SETTINGS = 2,
       FIRMWARE_VERSION = 3,
-      BOARD_VERSION = 4,
-      MUSCLE_CNT = 5,
-      LOG_INTERVAL_MS = 6,
-      VRD_SCALAR = 7,
-      VRD_OFFSET = 8,
-      MAX_CURRENT = 9,
-      MIN_V_SUPPLY = 10
+      FIRMWARE_SUBVERSION = 4,
+      BOARD_VERSION = 5,
+      BOARD_SUBVERSION = 6,
+      MUSCLE_CNT = 7,
+      LOG_INTERVAL_MS = 8,
+      VRD_SCALAR = 9,
+      VRD_OFFSET = 10,
+      MAX_CURRENT = 11,
+      MIN_V_SUPPLY = 12
     };
 
     NodeStatusDump& operator=(const NodeStatusDump& rhs)
@@ -3599,7 +3601,9 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
       set_compact_status(rhs.get_compact_status());
       set_loaded_settings(rhs.get_loaded_settings());
       set_firmware_version(rhs.get_firmware_version());
+      set_firmware_subversion(rhs.get_firmware_subversion());
       set_board_version(rhs.get_board_version());
+      set_board_subversion(rhs.get_board_subversion());
       set_muscle_cnt(rhs.get_muscle_cnt());
       set_log_interval_ms(rhs.get_log_interval_ms());
       set_vrd_scalar(rhs.get_vrd_scalar());
@@ -3614,7 +3618,9 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
       set_compact_status(rhs.get_compact_status());
       set_loaded_settings(rhs.get_loaded_settings());
       set_firmware_version(rhs.get_firmware_version());
+      set_firmware_subversion(rhs.get_firmware_subversion());
       set_board_version(rhs.get_board_version());
+      set_board_subversion(rhs.get_board_subversion());
       set_muscle_cnt(rhs.get_muscle_cnt());
       set_log_interval_ms(rhs.get_log_interval_ms());
       set_vrd_scalar(rhs.get_vrd_scalar());
@@ -3642,17 +3648,35 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
 
     static constexpr char const* FIRMWARE_VERSION_NAME = "firmware_version";
     inline void clear_firmware_version() { firmware_version_.clear(); }
-    inline ::EmbeddedProto::FieldString<NodeStatusDump_firmware_version_LENGTH>& mutable_firmware_version() { return firmware_version_; }
-    inline void set_firmware_version(const ::EmbeddedProto::FieldString<NodeStatusDump_firmware_version_LENGTH>& rhs) { firmware_version_.set(rhs); }
-    inline const ::EmbeddedProto::FieldString<NodeStatusDump_firmware_version_LENGTH>& get_firmware_version() const { return firmware_version_; }
-    inline const char* firmware_version() const { return firmware_version_.get_const(); }
+    inline void set_firmware_version(const uint32_t& value) { firmware_version_ = value; }
+    inline void set_firmware_version(const uint32_t&& value) { firmware_version_ = value; }
+    inline uint32_t& mutable_firmware_version() { return firmware_version_.get(); }
+    inline const uint32_t& get_firmware_version() const { return firmware_version_.get(); }
+    inline uint32_t firmware_version() const { return firmware_version_.get(); }
+
+    static constexpr char const* FIRMWARE_SUBVERSION_NAME = "firmware_subversion";
+    inline void clear_firmware_subversion() { firmware_subversion_.clear(); }
+    inline void set_firmware_subversion(const uint32_t& value) { firmware_subversion_ = value; }
+    inline void set_firmware_subversion(const uint32_t&& value) { firmware_subversion_ = value; }
+    inline uint32_t& mutable_firmware_subversion() { return firmware_subversion_.get(); }
+    inline const uint32_t& get_firmware_subversion() const { return firmware_subversion_.get(); }
+    inline uint32_t firmware_subversion() const { return firmware_subversion_.get(); }
 
     static constexpr char const* BOARD_VERSION_NAME = "board_version";
     inline void clear_board_version() { board_version_.clear(); }
-    inline ::EmbeddedProto::FieldString<NodeStatusDump_board_version_LENGTH>& mutable_board_version() { return board_version_; }
-    inline void set_board_version(const ::EmbeddedProto::FieldString<NodeStatusDump_board_version_LENGTH>& rhs) { board_version_.set(rhs); }
-    inline const ::EmbeddedProto::FieldString<NodeStatusDump_board_version_LENGTH>& get_board_version() const { return board_version_; }
-    inline const char* board_version() const { return board_version_.get_const(); }
+    inline void set_board_version(const uint32_t& value) { board_version_ = value; }
+    inline void set_board_version(const uint32_t&& value) { board_version_ = value; }
+    inline uint32_t& mutable_board_version() { return board_version_.get(); }
+    inline const uint32_t& get_board_version() const { return board_version_.get(); }
+    inline uint32_t board_version() const { return board_version_.get(); }
+
+    static constexpr char const* BOARD_SUBVERSION_NAME = "board_subversion";
+    inline void clear_board_subversion() { board_subversion_.clear(); }
+    inline void set_board_subversion(const uint32_t& value) { board_subversion_ = value; }
+    inline void set_board_subversion(const uint32_t&& value) { board_subversion_ = value; }
+    inline uint32_t& mutable_board_subversion() { return board_subversion_.get(); }
+    inline const uint32_t& get_board_subversion() const { return board_subversion_.get(); }
+    inline uint32_t board_subversion() const { return board_subversion_.get(); }
 
     static constexpr char const* MUSCLE_CNT_NAME = "muscle_cnt";
     inline void clear_muscle_cnt() { muscle_cnt_.clear(); }
@@ -3717,14 +3741,24 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
         return_value = loaded_settings_.serialize_with_id(static_cast<uint32_t>(FieldNumber::LOADED_SETTINGS), buffer, false);
       }
 
-      if(::EmbeddedProto::Error::NO_ERRORS == return_value)
+      if((0U != firmware_version_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
       {
         return_value = firmware_version_.serialize_with_id(static_cast<uint32_t>(FieldNumber::FIRMWARE_VERSION), buffer, false);
       }
 
-      if(::EmbeddedProto::Error::NO_ERRORS == return_value)
+      if((0U != firmware_subversion_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = firmware_subversion_.serialize_with_id(static_cast<uint32_t>(FieldNumber::FIRMWARE_SUBVERSION), buffer, false);
+      }
+
+      if((0U != board_version_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
       {
         return_value = board_version_.serialize_with_id(static_cast<uint32_t>(FieldNumber::BOARD_VERSION), buffer, false);
+      }
+
+      if((0U != board_subversion_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = board_subversion_.serialize_with_id(static_cast<uint32_t>(FieldNumber::BOARD_SUBVERSION), buffer, false);
       }
 
       if((0U != muscle_cnt_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
@@ -3785,8 +3819,16 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
             return_value = firmware_version_.deserialize_check_type(buffer, wire_type);
             break;
 
+          case FieldNumber::FIRMWARE_SUBVERSION:
+            return_value = firmware_subversion_.deserialize_check_type(buffer, wire_type);
+            break;
+
           case FieldNumber::BOARD_VERSION:
             return_value = board_version_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::BOARD_SUBVERSION:
+            return_value = board_subversion_.deserialize_check_type(buffer, wire_type);
             break;
 
           case FieldNumber::MUSCLE_CNT:
@@ -3845,7 +3887,9 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
       clear_compact_status();
       clear_loaded_settings();
       clear_firmware_version();
+      clear_firmware_subversion();
       clear_board_version();
+      clear_board_subversion();
       clear_muscle_cnt();
       clear_log_interval_ms();
       clear_vrd_scalar();
@@ -3869,8 +3913,14 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
         case FieldNumber::FIRMWARE_VERSION:
           name = FIRMWARE_VERSION_NAME;
           break;
+        case FieldNumber::FIRMWARE_SUBVERSION:
+          name = FIRMWARE_SUBVERSION_NAME;
+          break;
         case FieldNumber::BOARD_VERSION:
           name = BOARD_VERSION_NAME;
+          break;
+        case FieldNumber::BOARD_SUBVERSION:
+          name = BOARD_SUBVERSION_NAME;
           break;
         case FieldNumber::MUSCLE_CNT:
           name = MUSCLE_CNT_NAME;
@@ -3953,7 +4003,9 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
       left_chars = compact_status_.to_string(left_chars, indent_level + 2, COMPACT_STATUS_NAME, true);
       left_chars = loaded_settings_.to_string(left_chars, indent_level + 2, LOADED_SETTINGS_NAME, false);
       left_chars = firmware_version_.to_string(left_chars, indent_level + 2, FIRMWARE_VERSION_NAME, false);
+      left_chars = firmware_subversion_.to_string(left_chars, indent_level + 2, FIRMWARE_SUBVERSION_NAME, false);
       left_chars = board_version_.to_string(left_chars, indent_level + 2, BOARD_VERSION_NAME, false);
+      left_chars = board_subversion_.to_string(left_chars, indent_level + 2, BOARD_SUBVERSION_NAME, false);
       left_chars = muscle_cnt_.to_string(left_chars, indent_level + 2, MUSCLE_CNT_NAME, false);
       left_chars = log_interval_ms_.to_string(left_chars, indent_level + 2, LOG_INTERVAL_MS_NAME, false);
       left_chars = vrd_scalar_.to_string(left_chars, indent_level + 2, VRD_SCALAR_NAME, false);
@@ -3986,8 +4038,10 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
 
       NodeStatusCompact compact_status_;
       NodeSettings loaded_settings_;
-      ::EmbeddedProto::FieldString<NodeStatusDump_firmware_version_LENGTH> firmware_version_;
-      ::EmbeddedProto::FieldString<NodeStatusDump_board_version_LENGTH> board_version_;
+      EmbeddedProto::uint32 firmware_version_ = 0U;
+      EmbeddedProto::uint32 firmware_subversion_ = 0U;
+      EmbeddedProto::uint32 board_version_ = 0U;
+      EmbeddedProto::uint32 board_subversion_ = 0U;
       EmbeddedProto::uint32 muscle_cnt_ = 0U;
       EmbeddedProto::uint32 log_interval_ms_ = 0U;
       EmbeddedProto::floatfixed vrd_scalar_ = 0.0;
@@ -4012,9 +4066,6 @@ class SMAStatusDump final: public ::EmbeddedProto::MessageInterface
       set_af_mohms(rhs.get_af_mohms());
       set_delta_mohms(rhs.get_delta_mohms());
       set_trainState(rhs.get_trainState());
-      set_rctrl_kp(rhs.get_rctrl_kp());
-      set_rctrl_ki(rhs.get_rctrl_ki());
-      set_rctrl_kd(rhs.get_rctrl_kd());
     }
 
     SMAStatusDump(const SMAStatusDump&& rhs ) noexcept
@@ -4028,9 +4079,6 @@ class SMAStatusDump final: public ::EmbeddedProto::MessageInterface
       set_af_mohms(rhs.get_af_mohms());
       set_delta_mohms(rhs.get_delta_mohms());
       set_trainState(rhs.get_trainState());
-      set_rctrl_kp(rhs.get_rctrl_kp());
-      set_rctrl_ki(rhs.get_rctrl_ki());
-      set_rctrl_kd(rhs.get_rctrl_kd());
     }
 
     ~SMAStatusDump() override = default;
@@ -4046,10 +4094,7 @@ class SMAStatusDump final: public ::EmbeddedProto::MessageInterface
       AMP_GAIN = 6,
       AF_MOHMS = 7,
       DELTA_MOHMS = 8,
-      TRAINSTATE = 9,
-      RCTRL_KP = 10,
-      RCTRL_KI = 11,
-      RCTRL_KD = 12
+      TRAINSTATE = 9
     };
 
     SMAStatusDump& operator=(const SMAStatusDump& rhs)
@@ -4063,9 +4108,6 @@ class SMAStatusDump final: public ::EmbeddedProto::MessageInterface
       set_af_mohms(rhs.get_af_mohms());
       set_delta_mohms(rhs.get_delta_mohms());
       set_trainState(rhs.get_trainState());
-      set_rctrl_kp(rhs.get_rctrl_kp());
-      set_rctrl_ki(rhs.get_rctrl_ki());
-      set_rctrl_kd(rhs.get_rctrl_kd());
       return *this;
     }
 
@@ -4080,9 +4122,6 @@ class SMAStatusDump final: public ::EmbeddedProto::MessageInterface
       set_af_mohms(rhs.get_af_mohms());
       set_delta_mohms(rhs.get_delta_mohms());
       set_trainState(rhs.get_trainState());
-      set_rctrl_kp(rhs.get_rctrl_kp());
-      set_rctrl_ki(rhs.get_rctrl_ki());
-      set_rctrl_kd(rhs.get_rctrl_kd());
       return *this;
     }
 
@@ -4158,30 +4197,6 @@ class SMAStatusDump final: public ::EmbeddedProto::MessageInterface
     inline const uint32_t& get_trainState() const { return trainState_.get(); }
     inline uint32_t trainState() const { return trainState_.get(); }
 
-    static constexpr char const* RCTRL_KP_NAME = "rctrl_kp";
-    inline void clear_rctrl_kp() { rctrl_kp_.clear(); }
-    inline void set_rctrl_kp(const float& value) { rctrl_kp_ = value; }
-    inline void set_rctrl_kp(const float&& value) { rctrl_kp_ = value; }
-    inline float& mutable_rctrl_kp() { return rctrl_kp_.get(); }
-    inline const float& get_rctrl_kp() const { return rctrl_kp_.get(); }
-    inline float rctrl_kp() const { return rctrl_kp_.get(); }
-
-    static constexpr char const* RCTRL_KI_NAME = "rctrl_ki";
-    inline void clear_rctrl_ki() { rctrl_ki_.clear(); }
-    inline void set_rctrl_ki(const float& value) { rctrl_ki_ = value; }
-    inline void set_rctrl_ki(const float&& value) { rctrl_ki_ = value; }
-    inline float& mutable_rctrl_ki() { return rctrl_ki_.get(); }
-    inline const float& get_rctrl_ki() const { return rctrl_ki_.get(); }
-    inline float rctrl_ki() const { return rctrl_ki_.get(); }
-
-    static constexpr char const* RCTRL_KD_NAME = "rctrl_kd";
-    inline void clear_rctrl_kd() { rctrl_kd_.clear(); }
-    inline void set_rctrl_kd(const float& value) { rctrl_kd_ = value; }
-    inline void set_rctrl_kd(const float&& value) { rctrl_kd_ = value; }
-    inline float& mutable_rctrl_kd() { return rctrl_kd_.get(); }
-    inline const float& get_rctrl_kd() const { return rctrl_kd_.get(); }
-    inline float rctrl_kd() const { return rctrl_kd_.get(); }
-
 
     ::EmbeddedProto::Error serialize(::EmbeddedProto::WriteBufferInterface& buffer) const override
     {
@@ -4230,21 +4245,6 @@ class SMAStatusDump final: public ::EmbeddedProto::MessageInterface
       if((0U != trainState_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
       {
         return_value = trainState_.serialize_with_id(static_cast<uint32_t>(FieldNumber::TRAINSTATE), buffer, false);
-      }
-
-      if((0.0 != rctrl_kp_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
-      {
-        return_value = rctrl_kp_.serialize_with_id(static_cast<uint32_t>(FieldNumber::RCTRL_KP), buffer, false);
-      }
-
-      if((0.0 != rctrl_ki_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
-      {
-        return_value = rctrl_ki_.serialize_with_id(static_cast<uint32_t>(FieldNumber::RCTRL_KI), buffer, false);
-      }
-
-      if((0.0 != rctrl_kd_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
-      {
-        return_value = rctrl_kd_.serialize_with_id(static_cast<uint32_t>(FieldNumber::RCTRL_KD), buffer, false);
       }
 
       return return_value;
@@ -4299,18 +4299,6 @@ class SMAStatusDump final: public ::EmbeddedProto::MessageInterface
             return_value = trainState_.deserialize_check_type(buffer, wire_type);
             break;
 
-          case FieldNumber::RCTRL_KP:
-            return_value = rctrl_kp_.deserialize_check_type(buffer, wire_type);
-            break;
-
-          case FieldNumber::RCTRL_KI:
-            return_value = rctrl_ki_.deserialize_check_type(buffer, wire_type);
-            break;
-
-          case FieldNumber::RCTRL_KD:
-            return_value = rctrl_kd_.deserialize_check_type(buffer, wire_type);
-            break;
-
           case FieldNumber::NOT_SET:
             return_value = ::EmbeddedProto::Error::INVALID_FIELD_ID;
             break;
@@ -4349,9 +4337,6 @@ class SMAStatusDump final: public ::EmbeddedProto::MessageInterface
       clear_af_mohms();
       clear_delta_mohms();
       clear_trainState();
-      clear_rctrl_kp();
-      clear_rctrl_ki();
-      clear_rctrl_kd();
 
     }
 
@@ -4386,15 +4371,6 @@ class SMAStatusDump final: public ::EmbeddedProto::MessageInterface
           break;
         case FieldNumber::TRAINSTATE:
           name = TRAINSTATE_NAME;
-          break;
-        case FieldNumber::RCTRL_KP:
-          name = RCTRL_KP_NAME;
-          break;
-        case FieldNumber::RCTRL_KI:
-          name = RCTRL_KI_NAME;
-          break;
-        case FieldNumber::RCTRL_KD:
-          name = RCTRL_KD_NAME;
           break;
         default:
           name = "Invalid FieldNumber";
@@ -4465,9 +4441,6 @@ class SMAStatusDump final: public ::EmbeddedProto::MessageInterface
       left_chars = af_mohms_.to_string(left_chars, indent_level + 2, AF_MOHMS_NAME, false);
       left_chars = delta_mohms_.to_string(left_chars, indent_level + 2, DELTA_MOHMS_NAME, false);
       left_chars = trainState_.to_string(left_chars, indent_level + 2, TRAINSTATE_NAME, false);
-      left_chars = rctrl_kp_.to_string(left_chars, indent_level + 2, RCTRL_KP_NAME, false);
-      left_chars = rctrl_ki_.to_string(left_chars, indent_level + 2, RCTRL_KI_NAME, false);
-      left_chars = rctrl_kd_.to_string(left_chars, indent_level + 2, RCTRL_KD_NAME, false);
   
       if( 0 == indent_level) 
       {
@@ -4501,9 +4474,6 @@ class SMAStatusDump final: public ::EmbeddedProto::MessageInterface
       EmbeddedProto::floatfixed af_mohms_ = 0.0;
       EmbeddedProto::floatfixed delta_mohms_ = 0.0;
       EmbeddedProto::uint32 trainState_ = 0U;
-      EmbeddedProto::floatfixed rctrl_kp_ = 0.0;
-      EmbeddedProto::floatfixed rctrl_ki_ = 0.0;
-      EmbeddedProto::floatfixed rctrl_kd_ = 0.0;
 
 };
 
@@ -5473,10 +5443,6 @@ class NodeCommand final: public ::EmbeddedProto::MessageInterface
 #endif // End of MSG_TO_STRING
 };
 
-template<
-    uint32_t StatusResponse_node_status_dump_NodeStatusDump_firmware_version_LENGTH, 
-    uint32_t StatusResponse_node_status_dump_NodeStatusDump_board_version_LENGTH
->
 class StatusResponse final: public ::EmbeddedProto::MessageInterface
 {
   public:
@@ -5686,10 +5652,10 @@ class StatusResponse final: public ::EmbeddedProto::MessageInterface
       if(FieldNumber::NODE_STATUS_DUMP == which_status_response_)
       {
         which_status_response_ = FieldNumber::NOT_SET;
-        status_response_.node_status_dump_.~NodeStatusDump<StatusResponse_node_status_dump_NodeStatusDump_firmware_version_LENGTH, StatusResponse_node_status_dump_NodeStatusDump_board_version_LENGTH>();
+        status_response_.node_status_dump_.~NodeStatusDump();
       }
     }
-    inline void set_node_status_dump(const NodeStatusDump<StatusResponse_node_status_dump_NodeStatusDump_firmware_version_LENGTH, StatusResponse_node_status_dump_NodeStatusDump_board_version_LENGTH>& value)
+    inline void set_node_status_dump(const NodeStatusDump& value)
     {
       if(FieldNumber::NODE_STATUS_DUMP != which_status_response_)
       {
@@ -5697,7 +5663,7 @@ class StatusResponse final: public ::EmbeddedProto::MessageInterface
       }
       status_response_.node_status_dump_ = value;
     }
-    inline void set_node_status_dump(const NodeStatusDump<StatusResponse_node_status_dump_NodeStatusDump_firmware_version_LENGTH, StatusResponse_node_status_dump_NodeStatusDump_board_version_LENGTH>&& value)
+    inline void set_node_status_dump(const NodeStatusDump&& value)
     {
       if(FieldNumber::NODE_STATUS_DUMP != which_status_response_)
       {
@@ -5705,7 +5671,7 @@ class StatusResponse final: public ::EmbeddedProto::MessageInterface
       }
       status_response_.node_status_dump_ = value;
     }
-    inline NodeStatusDump<StatusResponse_node_status_dump_NodeStatusDump_firmware_version_LENGTH, StatusResponse_node_status_dump_NodeStatusDump_board_version_LENGTH>& mutable_node_status_dump()
+    inline NodeStatusDump& mutable_node_status_dump()
     {
       if(FieldNumber::NODE_STATUS_DUMP != which_status_response_)
       {
@@ -5713,8 +5679,8 @@ class StatusResponse final: public ::EmbeddedProto::MessageInterface
       }
       return status_response_.node_status_dump_;
     }
-    inline const NodeStatusDump<StatusResponse_node_status_dump_NodeStatusDump_firmware_version_LENGTH, StatusResponse_node_status_dump_NodeStatusDump_board_version_LENGTH>& get_node_status_dump() const { return status_response_.node_status_dump_; }
-    inline const NodeStatusDump<StatusResponse_node_status_dump_NodeStatusDump_firmware_version_LENGTH, StatusResponse_node_status_dump_NodeStatusDump_board_version_LENGTH>& node_status_dump() const { return status_response_.node_status_dump_; }
+    inline const NodeStatusDump& get_node_status_dump() const { return status_response_.node_status_dump_; }
+    inline const NodeStatusDump& node_status_dump() const { return status_response_.node_status_dump_; }
 
     static constexpr char const* SMA_STATUS_COMPACT_NAME = "sma_status_compact";
     inline bool has_sma_status_compact() const
@@ -6015,7 +5981,7 @@ class StatusResponse final: public ::EmbeddedProto::MessageInterface
         status_response() {}
         ~status_response() {}
         NodeStatusCompact node_status_compact_;
-        NodeStatusDump<StatusResponse_node_status_dump_NodeStatusDump_firmware_version_LENGTH, StatusResponse_node_status_dump_NodeStatusDump_board_version_LENGTH> node_status_dump_;
+        NodeStatusDump node_status_dump_;
         SMAStatusCompact sma_status_compact_;
         SMAStatusDump sma_status_dump_;
       };
@@ -6037,7 +6003,7 @@ class StatusResponse final: public ::EmbeddedProto::MessageInterface
             break;
 
           case FieldNumber::NODE_STATUS_DUMP:
-            new(&status_response_.node_status_dump_) NodeStatusDump<StatusResponse_node_status_dump_NodeStatusDump_firmware_version_LENGTH, StatusResponse_node_status_dump_NodeStatusDump_board_version_LENGTH>;
+            new(&status_response_.node_status_dump_) NodeStatusDump;
             break;
 
           case FieldNumber::SMA_STATUS_COMPACT:
@@ -6142,15 +6108,11 @@ class StatusResponse final: public ::EmbeddedProto::MessageInterface
 #endif // End of MSG_TO_STRING
 };
 
-template<
-    uint32_t Response_status_response_StatusResponse_node_status_dump_NodeStatusDump_firmware_version_LENGTH, 
-    uint32_t Response_status_response_StatusResponse_node_status_dump_NodeStatusDump_board_version_LENGTH
->
-class Response final: public ::EmbeddedProto::MessageInterface
+class NodeResponse final: public ::EmbeddedProto::MessageInterface
 {
   public:
-    Response() = default;
-    Response(const Response& rhs )
+    NodeResponse() = default;
+    NodeResponse(const NodeResponse& rhs )
     {
       if(rhs.get_which_response() != which_response_)
       {
@@ -6174,7 +6136,7 @@ class Response final: public ::EmbeddedProto::MessageInterface
 
     }
 
-    Response(const Response&& rhs ) noexcept
+    NodeResponse(const NodeResponse&& rhs ) noexcept
     {
       if(rhs.get_which_response() != which_response_)
       {
@@ -6198,7 +6160,7 @@ class Response final: public ::EmbeddedProto::MessageInterface
 
     }
 
-    ~Response() override = default;
+    ~NodeResponse() override = default;
 
     enum class FieldNumber : uint32_t
     {
@@ -6207,7 +6169,7 @@ class Response final: public ::EmbeddedProto::MessageInterface
       STATUS_RESPONSE = 2
     };
 
-    Response& operator=(const Response& rhs)
+    NodeResponse& operator=(const NodeResponse& rhs)
     {
       if(rhs.get_which_response() != which_response_)
       {
@@ -6232,7 +6194,7 @@ class Response final: public ::EmbeddedProto::MessageInterface
       return *this;
     }
 
-    Response& operator=(const Response&& rhs) noexcept
+    NodeResponse& operator=(const NodeResponse&& rhs) noexcept
     {
       if(rhs.get_which_response() != which_response_)
       {
@@ -6309,10 +6271,10 @@ class Response final: public ::EmbeddedProto::MessageInterface
       if(FieldNumber::STATUS_RESPONSE == which_response_)
       {
         which_response_ = FieldNumber::NOT_SET;
-        response_.status_response_.~StatusResponse<Response_status_response_StatusResponse_node_status_dump_NodeStatusDump_firmware_version_LENGTH, Response_status_response_StatusResponse_node_status_dump_NodeStatusDump_board_version_LENGTH>();
+        response_.status_response_.~StatusResponse();
       }
     }
-    inline void set_status_response(const StatusResponse<Response_status_response_StatusResponse_node_status_dump_NodeStatusDump_firmware_version_LENGTH, Response_status_response_StatusResponse_node_status_dump_NodeStatusDump_board_version_LENGTH>& value)
+    inline void set_status_response(const StatusResponse& value)
     {
       if(FieldNumber::STATUS_RESPONSE != which_response_)
       {
@@ -6320,7 +6282,7 @@ class Response final: public ::EmbeddedProto::MessageInterface
       }
       response_.status_response_ = value;
     }
-    inline void set_status_response(const StatusResponse<Response_status_response_StatusResponse_node_status_dump_NodeStatusDump_firmware_version_LENGTH, Response_status_response_StatusResponse_node_status_dump_NodeStatusDump_board_version_LENGTH>&& value)
+    inline void set_status_response(const StatusResponse&& value)
     {
       if(FieldNumber::STATUS_RESPONSE != which_response_)
       {
@@ -6328,7 +6290,7 @@ class Response final: public ::EmbeddedProto::MessageInterface
       }
       response_.status_response_ = value;
     }
-    inline StatusResponse<Response_status_response_StatusResponse_node_status_dump_NodeStatusDump_firmware_version_LENGTH, Response_status_response_StatusResponse_node_status_dump_NodeStatusDump_board_version_LENGTH>& mutable_status_response()
+    inline StatusResponse& mutable_status_response()
     {
       if(FieldNumber::STATUS_RESPONSE != which_response_)
       {
@@ -6336,8 +6298,8 @@ class Response final: public ::EmbeddedProto::MessageInterface
       }
       return response_.status_response_;
     }
-    inline const StatusResponse<Response_status_response_StatusResponse_node_status_dump_NodeStatusDump_firmware_version_LENGTH, Response_status_response_StatusResponse_node_status_dump_NodeStatusDump_board_version_LENGTH>& get_status_response() const { return response_.status_response_; }
-    inline const StatusResponse<Response_status_response_StatusResponse_node_status_dump_NodeStatusDump_firmware_version_LENGTH, Response_status_response_StatusResponse_node_status_dump_NodeStatusDump_board_version_LENGTH>& status_response() const { return response_.status_response_; }
+    inline const StatusResponse& get_status_response() const { return response_.status_response_; }
+    inline const StatusResponse& status_response() const { return response_.status_response_; }
 
 
     ::EmbeddedProto::Error serialize(::EmbeddedProto::WriteBufferInterface& buffer) const override
@@ -6521,7 +6483,7 @@ class Response final: public ::EmbeddedProto::MessageInterface
         response() {}
         ~response() {}
         GeneralResponse general_response_;
-        StatusResponse<Response_status_response_StatusResponse_node_status_dump_NodeStatusDump_firmware_version_LENGTH, Response_status_response_StatusResponse_node_status_dump_NodeStatusDump_board_version_LENGTH> status_response_;
+        StatusResponse status_response_;
       };
       response response_;
 
@@ -6541,7 +6503,7 @@ class Response final: public ::EmbeddedProto::MessageInterface
             break;
 
           case FieldNumber::STATUS_RESPONSE:
-            new(&response_.status_response_) StatusResponse<Response_status_response_StatusResponse_node_status_dump_NodeStatusDump_firmware_version_LENGTH, Response_status_response_StatusResponse_node_status_dump_NodeStatusDump_board_version_LENGTH>;
+            new(&response_.status_response_) StatusResponse;
             break;
 
           default:

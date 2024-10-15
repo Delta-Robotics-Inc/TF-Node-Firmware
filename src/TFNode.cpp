@@ -79,6 +79,10 @@ void TFNode::setCommandProcessor(CommandProcessor* cp) {
 //=============================================================================
 
 tfnode::ResponseCode TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::DeviceStatusMode mode, NetworkInterface* iface) {
+    #ifdef DEBUG
+    Serial.print("Setting status mode to ");
+    Serial.println(mode);
+    #endif
     // For now, we assume device is DEVICE_NODE or DEVICE_ALL
     if (device == tfnode::Device::DEVICE_NODE || device == tfnode::Device::DEVICE_ALL) {
         statusMode = mode;
@@ -133,11 +137,10 @@ void TFNode::sendStatusResponse() {
         // No status to send or no interface to send on
         return;
     }
-
-    tfnode::Response response;
-    response.set_device(tfnode::Device::DEVICE_NODE); // Set the device sending the response
+    tfnode::NodeResponse response;
 
     tfnode::StatusResponse& statusResponse = response.mutable_status_response();
+    statusResponse.set_device(tfnode::Device::DEVICE_NODE); // Set the device sending the response
 
     switch (statusMode) {
         case tfnode::DeviceStatusMode::STATUS_COMPACT: {
@@ -187,14 +190,16 @@ tfnode::NodeStatusDump TFNode::getStatusDump() {
 
     // Set compact status
     tfnode::NodeStatusCompact compactStatus = getStatusCompact();
-    *status.mutable_compact_status() = compactStatus;
+    status.mutable_compact_status() = compactStatus;
 
     // Get loaded settings (if any)
-    *status.mutable_loaded_settings() = settings;
+    status.mutable_loaded_settings() = settings;
 
     // Set other detailed fields
-    status.set_firmware_version(CFG_FIRMWARE_VERSION);
-    status.set_board_version(SHIELD_VERSION);
+    //status.set_firmware_version(CFG_FIRMWARE_VERSION);
+    //status.set_board_version(SHIELD_VERSION);
+    status.set_firmware_version(0);
+    status.set_board_version(0);
     status.set_muscle_cnt(SMA_CONTROLLER_CNT); // Number of SMAControllers
     status.set_log_interval_ms(LOG_MS);
     status.set_vrd_scalar(VRD_SCALE_FACTOR);

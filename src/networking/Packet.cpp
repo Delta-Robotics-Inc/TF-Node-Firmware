@@ -40,6 +40,7 @@ bool Packet::parse(const std::vector<uint8_t>& rawData) {
     destinationId.id.assign(rawData.begin() + index, rawData.begin() + index + idLength);
     index += idLength;
 
+    // TODO verify this line
     size_t dataLength = packetLength - (1 + 1 + 1 + idLength + idLength + 1); // Exclude checksum
     if (index + dataLength + 1 > rawData.size()) {
         // Not enough data
@@ -54,6 +55,9 @@ bool Packet::parse(const std::vector<uint8_t>& rawData) {
     // Validate checksum
     if (checksum != calculateChecksum()) {
         // Checksum mismatch
+        #ifdef DEBUG
+        Serial.println("Invalid Checksum");
+        #endif
         return false;
     }
 
@@ -64,13 +68,13 @@ bool Packet::parse(const std::vector<uint8_t>& rawData) {
 
 std::vector<uint8_t> Packet::serialize() const {
     std::vector<uint8_t> rawData;
-    rawData.push_back(startByte);
+    rawData.push_back(Packet::startByte);
 
     // Placeholder for packet length
     rawData.push_back(0);
     rawData.push_back(0);
 
-    rawData.push_back(protocolVersion);
+    rawData.push_back(Packet::protocolVersion);
     rawData.push_back(senderId.idType);
     rawData.push_back(destinationId.idType);
 

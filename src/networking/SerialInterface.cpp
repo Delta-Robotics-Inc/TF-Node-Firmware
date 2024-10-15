@@ -3,7 +3,12 @@
 
 void SerialInterface::sendPacket(const Packet& packet) {
     std::vector<uint8_t> rawData = packet.serialize();
-    Serial.write(rawData.data(), rawData.size());
+    //Serial.write(rawData.data(), rawData.size());
+
+    for(int i = 0; i < rawData.size(); i++) {
+        Serial.print(rawData[i]);
+        Serial.print(" ");
+    }
 }
 
 void SerialInterface::receiveData() {

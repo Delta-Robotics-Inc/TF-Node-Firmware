@@ -3,7 +3,6 @@
 
 //#include "SMAController.hpp"
 #include "networking/CommandProcessor.hpp"
-#include "Settings.hpp"
 #include "networking/tfnode-messages.h"
 
 class SMAController;  // Forward Declaration TODO remove the need for this...
@@ -78,7 +77,7 @@ private:
     tfnode::DeviceStatusMode statusMode;
     NodeAddress address;
     CommandProcessor* commandProcessor; // Reference to CommandProcessor
-    NodeSettings settings;
+    tfnode::NodeSettings settings;
     NetworkInterface* statusInterface;
 };
 

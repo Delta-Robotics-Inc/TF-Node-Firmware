@@ -23,7 +23,7 @@ public:
     void addNetworkInterface(NetworkInterface* netInterface);
     std::vector<NetworkInterface*> getInterfaces();
     void process();
-    void sendResponse(const tfnode::Response& response, NetworkInterface* iface);
+    void sendResponse(const tfnode::NodeResponse& response, NetworkInterface* iface);
     void sendSerialString(String message);
 
 private:
