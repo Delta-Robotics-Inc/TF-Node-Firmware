@@ -4,6 +4,8 @@
 #define NETWORK_INTERFACE_H
 
 #include "Packet.h"
+#include <vector>
+#include <queue>
 
 class NetworkInterface {
 public:
@@ -15,6 +17,10 @@ public:
     // TODO implement these on Serial and CAN interfaces
     virtual bool isConnected() = 0;
     virtual void attemptConnection() = 0;
+    
+private:
+    std::vector<uint8_t> rxBuffer;
+    std::queue<Packet> packetQueue;
 };
 
 #endif // NETWORK_INTERFACE_H
