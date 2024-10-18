@@ -13,10 +13,24 @@ void SerialInterface::sendPacket(const Packet& packet) {
 }
 
 void SerialInterface::receiveData() {
+
+    bool sendDebug = Serial.available();  // Debug Received Bytes
+
     // Read available bytes and append to rxBuffer
     while (Serial.available()) {
         uint8_t byte = Serial.read();
+        // TODO: Clear buffer if too large
         rxBuffer.push_back(byte);
+    }
+
+    // Debug Received Bytes
+    if(sendDebug) {
+        Serial.println("\nReceived Bytes: ");
+        // Debug Received Bytes
+        for(int i = 0; i < rxBuffer.size(); i++) {
+            Serial.print(rxBuffer[i]);
+            Serial.print(" ");
+        }
     }
 
     // Attempt to parse packets from rxBuffer
@@ -40,6 +54,7 @@ void SerialInterface::receiveData() {
 
         if (rxBuffer.size() < 4) {
             // Not enough data to read packetLength
+            Serial.println("Not enough data for packetLength");
             break;
         }
 
@@ -51,6 +66,9 @@ void SerialInterface::receiveData() {
 
         if (rxBuffer.size() < totalPacketSize) {
             // Not enough data yet
+            Serial.print("PacketLength: ");
+            Serial.println(packetLength);
+            Serial.println("Not enough data for full packet");
             break;
         }
 
@@ -63,11 +81,12 @@ void SerialInterface::receiveData() {
             // Successfully parsed packet
             packetQueue.push(packet);
             // Remove parsed bytes
-            //Serial.println("Packet received");
+            Serial.println("Packet received");
             rxBuffer.erase(rxBuffer.begin(), rxBuffer.begin() + totalPacketSize);
         } else {
             // Invalid packet, discard the first byte and try again
             rxBuffer.erase(rxBuffer.begin());
+            Serial.println("Invalid packet");
         }
     }
 }

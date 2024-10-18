@@ -25,7 +25,6 @@ void TFNode::begin() {
     //EEPROM.begin(sizeof(NodeSettings));
     //settings.load();
 
-    //Serial.begin(115200);
     pinMode(STATUS_SOLID_LED, OUTPUT);
     digitalWrite(STATUS_SOLID_LED, LOW);  // This pin currently goes high on errors
 
@@ -36,8 +35,6 @@ void TFNode::begin() {
     smaControllers[0].begin();
     smaControllers[1].begin();
 
-    // Initialize command processor
-    //commandProcessor.begin();
     log_timer = millis();
 }
 

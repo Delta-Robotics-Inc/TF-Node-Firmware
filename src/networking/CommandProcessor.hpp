@@ -21,17 +21,20 @@ public:
     CommandProcessor(TFNode& node);
 
     void addNetworkInterface(NetworkInterface* netInterface);
-    std::vector<NetworkInterface*> getInterfaces();
+    NetworkInterface* getInterfaceByName(String name);
+    std::vector<NetworkInterface *> getInterfaces();
     void process();
     void sendResponse(const tfnode::NodeResponse& response, NetworkInterface* iface);
     void sendSerialString(String message);
+    void testSendCommandPacket();
 
 private:
     TFNode& node;
     std::vector<NetworkInterface*> interfaces;
 
     void handlePacket(Packet& packet, NetworkInterface* sourceInterface);
-    void executeCommand(const Packet& packet, NetworkInterface* sourceInterface);
+    tfnode::NodeCommand parseCommandPacket(const Packet& packet);
+    tfnode::ResponseCode executeCommand(tfnode::NodeCommand command, NetworkInterface* sourceInterface);
     void forwardPacket(const Packet& packet, NetworkInterface* excludeInterface = nullptr);
 };
 

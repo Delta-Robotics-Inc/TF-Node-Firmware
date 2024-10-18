@@ -128,9 +128,11 @@ message ConfigureSettingsCommand {
 }
 
 // Requests specified status information from specified device.  Optional repetitive reporting
-message StatusCommand {
+message SetStatusCommand {
   Device device = 1; // Default to DEVICE_ALL
   DeviceStatusMode mode = 2;
+  bool repeating = 4; // true to repeat status reports, false to report once
+  // TODO: Add a field for the interval between status reports
 }
 
 // Silence the node until unsilenced (A method for dealing with a babbling Node)

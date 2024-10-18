@@ -41,5 +41,6 @@
         "streambuf": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp"
-    }
+    },
+    "cmake.sourceDirectory": "C:/Users/priva/Dropbox/Github/TF-Node-Firmware/lib/EmbeddedProto"
 }
