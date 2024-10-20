@@ -279,7 +279,7 @@ void CommandProcessor::sendSerialString(String message) {
 void CommandProcessor::testSendCommandPacket() {
 
     // Specify the command being sent
-    Serial.print("Sending Serialized StatusCommand Packet: ");
+    Serial.println("Sending Serialized StatusCommand: ");
 
     // Create a NodeCommand message
     tfnode::NodeCommand command;
@@ -320,12 +320,22 @@ void CommandProcessor::testSendCommandPacket() {
         packet.packetLength = packet.calculatePacketLength();
         packet.checksum = packet.calculateChecksum();
 
+        // Debugging output
+        Serial.print("Calculated Packet Length: ");
+        Serial.println(packet.packetLength);
+
         // Send the packet over Serial Interface
         getInterfaceByName("SerialInterface")->sendPacket(packet);
 
         // Debug to console the full readable contents of packet
         Serial.println("\nSent Packet: ");
         Serial.println(packet.toString());  // Debug display outgoing packet
+
+        delay(5000);
+
+        // Now, handle the same packet that was constructed to test packet handling
+        Serial.println("Handling packet...\n");
+        handlePacket(packet, getInterfaceByName("SerialInterface"));
     } else {
         // Handle serialization error
         Serial.println("Error: Failed to serialize command");

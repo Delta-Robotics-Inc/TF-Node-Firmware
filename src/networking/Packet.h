@@ -28,25 +28,16 @@ public:
     // Constructor
     Packet();
 
-    // Parse raw data into a packet
-    bool parse(const std::vector<uint8_t>& rawData);
-
-    // Serialize the packet into raw data
-    std::vector<uint8_t> serialize() const;
-
-    // Convert packet to string representation
-    String toString() const;
-
-    // Check if the packet is valid
-    bool isValid() const;
-
-    // Check if the packet is intended for this node
-    bool isForThisNode(const NodeAddress& nodeAddress) const;
+    bool parse(const std::vector<uint8_t>& rawData);  // Parse raw data into a packet
+    std::vector<uint8_t> serialize() const;  // Serialize the packet into raw data
+    String toString() const;  // Convert packet to string representation
+    bool isValid() const;   // Check if the packet is valid
+    bool isForThisNode(const NodeAddress& nodeAddress) const;  // Check if the packet is intended for this node
 
     // Packet fields
     static constexpr uint8_t startByte = 0x7E;
-    static constexpr uint8_t protocolVersion = 0x01;
     uint16_t packetLength;
+    static constexpr uint8_t protocolVersion = 0x01;
     NodeAddress senderId;
     NodeAddress destinationId;
     std::vector<uint8_t> data; // Serialized Protobuf message

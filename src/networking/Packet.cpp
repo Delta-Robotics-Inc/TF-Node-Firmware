@@ -6,6 +6,7 @@
 Packet::Packet()
     : packetLength(0), checksum(0) {}
 
+// Appears to be working
 bool Packet::parse(const std::vector<uint8_t>& rawData) {
     if (rawData.size() < 13) {
         // Packet too short
@@ -77,29 +78,86 @@ bool Packet::parse(const std::vector<uint8_t>& rawData) {
 
 std::vector<uint8_t> Packet::serialize() const {
     std::vector<uint8_t> rawData;
+    String rawDataString;
     rawData.push_back(Packet::startByte);
+
+    // // Debug rawData ==========================================================
+    // rawDataString = "\nSerializing Start Byte: ";
+    // for (auto byte : rawData) {
+    //     rawDataString += String(byte, HEX) + " ";
+    // }
+    // Serial.println(rawDataString);
+    // //=========================================================================
 
     // Placeholder for packet length
     rawData.push_back(0);
     rawData.push_back(0);
 
+    // // Debug rawData ==========================================================
+    // rawDataString = "Reserving Space For Packet Length: ";
+    // for (auto byte : rawData) {
+    //     rawDataString += String(byte, HEX) + " ";
+    // }
+    // Serial.println(rawDataString);
+    // //=========================================================================
+
     rawData.push_back(Packet::protocolVersion);
     rawData.push_back(senderId.idType);
     rawData.push_back(destinationId.idType);
 
+    // // Debug rawData ==========================================================
+    // rawDataString = "Serializing Protocol Version, Sender ID Type, and Destination ID Type: ";
+    // for (auto byte : rawData) {
+    //     rawDataString += String(byte, HEX) + " ";
+    // }
+    // Serial.println(rawDataString);
+    // //=========================================================================
+
     rawData.insert(rawData.end(), senderId.id.begin(), senderId.id.end());
     rawData.insert(rawData.end(), destinationId.id.begin(), destinationId.id.end());
 
+    // // Debug rawData ==========================================================
+    // rawDataString = "Serializing Sender and Destination IDs: ";
+    // for (auto byte : rawData) {
+    //     rawDataString += String(byte, HEX) + " ";
+    // }
+    // Serial.println(rawDataString);
+    // //=========================================================================
+
     rawData.insert(rawData.end(), data.begin(), data.end());
 
+    // // Debug rawData ==========================================================
+    // rawDataString = "Serializing Packet Data/Message: ";
+    // for (auto byte : rawData) {
+    //     rawDataString += String(byte, HEX) + " ";
+    // }
+    // Serial.println(rawDataString);
+    // //=========================================================================
+
     // Calculate packet length
-    uint16_t length = rawData.size() - 1; // Exclude start byte
+    uint16_t length = packetLength; //rawData.size() - 1; //Exclude start byte
     rawData[1] = (length >> 8) & 0xFF;
     rawData[2] = length & 0xFF;
+
+    // // Debug rawData ==========================================================
+    // rawDataString = "Serializing Packet Length: ";
+    // for (auto byte : rawData) {
+    //     rawDataString += String(byte, HEX) + " ";
+    // }
+    // Serial.println(rawDataString);
+    // //=========================================================================
 
     // Calculate checksum
     uint8_t checksum = calculateChecksum();
     rawData.push_back(checksum);
+
+    // // Debug rawData ==========================================================
+    // rawDataString = "Serializing Checksum: ";
+    // for (auto byte : rawData) {
+    //     rawDataString += String(byte, HEX) + " ";
+    // }
+    // Serial.println(rawDataString);
+    // //=========================================================================
 
     return rawData;
 }

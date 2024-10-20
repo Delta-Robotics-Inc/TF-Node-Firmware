@@ -46,10 +46,10 @@ void setup() {
     master_tfNode->begin();
 
     // Add debug actions below
-    //master_tfNode->CMD_setStatusMode(tfnode::Device::DEVICE_NODE, tfnode::DeviceStatusMode::STATUS_COMPACT, &serialInterface);
-    delay(1000);
-    commandProcessor->testSendCommandPacket();
-    Serial.println("Setup complete");
+    // master_tfNode->CMD_setStatusMode(tfnode::Device::DEVICE_NODE, tfnode::DeviceStatusMode::STATUS_COMPACT, &serialInterface);
+    // delay(1000);
+    // commandProcessor->testSendCommandPacket();
+    // Serial.println("Setup complete");
 }
 
 void loop() {

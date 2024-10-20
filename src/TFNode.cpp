@@ -25,6 +25,10 @@ void TFNode::begin() {
     //EEPROM.begin(sizeof(NodeSettings));
     //settings.load();
 
+    pinMode(STATUS_RGB_RED, OUTPUT);
+    pinMode(STATUS_RGB_GREEN, OUTPUT);
+    pinMode(STATUS_RGB_BLUE, OUTPUT);
+
     pinMode(STATUS_SOLID_LED, OUTPUT);
     digitalWrite(STATUS_SOLID_LED, LOW);  // This pin currently goes high on errors
 
@@ -36,6 +40,10 @@ void TFNode::begin() {
     smaControllers[1].begin();
 
     log_timer = millis();
+
+    digitalWrite(STATUS_RGB_RED, LOW);
+    digitalWrite(STATUS_RGB_GREEN, HIGH);
+    digitalWrite(STATUS_RGB_BLUE, LOW);
 }
 
 void TFNode::update() {

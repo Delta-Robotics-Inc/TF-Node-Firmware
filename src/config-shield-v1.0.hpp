@@ -34,9 +34,9 @@ const float AMP_GAIN = 100.0f;  // [V/V] Vin/Vout gain of amplifier
 // Pinout - make sure to match with physical board
 #define VRD_PIN A4
 #define STATUS_SOLID_LED 8
-#define STATUS_RGB_RED 10
-#define STATUS_RGB_GREEN 11
-#define STATUS_RGB_BLUE 12
+#define STATUS_RGB_RED 12
+#define STATUS_RGB_GREEN 10
+#define STATUS_RGB_BLUE 11
 
 //SMAController0
 #define M1_MOS_TRIG 9
