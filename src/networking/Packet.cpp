@@ -29,7 +29,7 @@ bool Packet::parse(const std::vector<uint8_t>& rawData) {
     if(incoming_protocolVersion != protocolVersion) {
         // Throw error for incompatible version
         // FUTURE implement all acceptable versions
-        Serial.println("Error: Invalid Protocol version.");
+        //Serial.println("Error: Invalid Protocol version.");
         return false;
     }
 
@@ -48,7 +48,7 @@ bool Packet::parse(const std::vector<uint8_t>& rawData) {
     size_t dataLength = packetLength - (1 + 1 + 1 + idLength + idLength + 1); // Exclude checksum
     if (index + dataLength + 1 > rawData.size()) {
         // Not enough data
-        Serial.println("Error: Not enough data.");
+        //Serial.println("Error: Not enough data.");
         return false;
     }
 
@@ -63,10 +63,10 @@ bool Packet::parse(const std::vector<uint8_t>& rawData) {
     if (checksum != calculated_checksum) {
         // Checksum mismatch
         //#ifdef DEBUG
-        Serial.print("Error: Invalid Checksum: ");
-        Serial.print(checksum);
-        Serial.print(" != ");
-        Serial.println(calculated_checksum);
+        //Serial.print("Error: Invalid Checksum: ");
+        //Serial.print(checksum);
+        //Serial.print(" != ");
+        //Serial.println(calculated_checksum);
         //#endif
         return false;
     }

@@ -55,7 +55,7 @@ void SerialInterface::receiveData() {
 
         switch (state) {
             case ReceptionState::WAIT_FOR_START_BYTE:
-                Serial.println("Waiting for start byte");
+                //Serial.println("Waiting for start byte");
                 if (byte == Packet::startByte) {
                     packetData.clear();
                     packetData.push_back(byte);
@@ -64,7 +64,7 @@ void SerialInterface::receiveData() {
                 break;
 
             case ReceptionState::READ_LENGTH:
-                Serial.println("Reading length");
+                //Serial.println("Reading length");
                 packetData.push_back(byte);
                 if (packetData.size() == 3) { // Start byte + 2 length bytes
                     packetLength = (packetData[1] << 8) | packetData[2];
@@ -73,20 +73,20 @@ void SerialInterface::receiveData() {
                 break;
 
             case ReceptionState::READ_PACKET:
-                Serial.print("Reading packet: [");
-                Serial.print(packetData.size() - 3);
-                Serial.print('/');
-                Serial.print(packetLength);
-                Serial.println(']');
+                // Serial.print("Reading packet: [");
+                // Serial.print(packetData.size() - 3);
+                // Serial.print('/');
+                // Serial.print(packetLength);
+                // Serial.println(']');
 
                 packetData.push_back(byte);
                 if (packetData.size() == 3 + packetLength) { // Start byte + 2 length bytes + packet length
                     Packet packet;
                     if (packet.parse(packetData)) {
                         packetQueue.push(packet);
-                        Serial.println("Packet received");
+                        // Serial.println("Packet received");
                     } else {
-                        Serial.println("Invalid packet");
+                        // Serial.println("Invalid packet");
                     }
                     state = ReceptionState::WAIT_FOR_START_BYTE;
                 }
