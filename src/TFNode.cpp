@@ -70,7 +70,7 @@ void TFNode::update() {
     // TODO implement logger (should it be encapsulate within class or external function?)
     // Every certain interval (LOG_MS), log/report data to console
     if(millis() - log_timer > LOG_MS) {
-        sendStatusResponse();
+        sendStatusResponse(statusMode);
         digitalWrite(STATUS_SOLID_LED, !digitalRead(STATUS_SOLID_LED));
     }
 }
@@ -84,15 +84,23 @@ void TFNode::setCommandProcessor(CommandProcessor* cp) {
 // Command Handlers
 //=============================================================================
 
-tfnode::ResponseCode TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::DeviceStatusMode mode, NetworkInterface* iface) {
+tfnode::ResponseCode TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::DeviceStatusMode mode, bool repeating, NetworkInterface* iface) {
     #ifdef DEBUG
     Serial.print("Setting status mode to ");
     Serial.println(mode);
     #endif
     // For now, we assume device is DEVICE_NODE or DEVICE_ALL
     if (device == tfnode::Device::DEVICE_NODE || device == tfnode::Device::DEVICE_ALL) {
-        statusMode = mode;
-        statusInterface = iface; // Keep track of the interface
+        if(repeating) {
+            // Set status mode for the node for repeating status
+            statusMode = mode;
+            statusInterface = iface; // Keep track of the interface
+        }
+        else {
+            // Nonrepeating status means set the statusMode to none
+            statusMode = tfnode::DeviceStatusMode::STATUS_NONE;
+            sendStatusResponse(mode);  // Send a single status response
+        }
     }
 
     // Optionally, handle status mode for SMAControllers
@@ -138,8 +146,8 @@ tfnode::ResponseCode TFNode::CMD_enableDevice(tfnode::Device device) {
 //=============================================================================
 
 // Send Status Response based on current Status Mode
-void TFNode::sendStatusResponse() {
-    if (statusMode == tfnode::DeviceStatusMode::STATUS_NONE || !commandProcessor || !statusInterface) {
+void TFNode::sendStatusResponse(tfnode::DeviceStatusMode mode) {
+    if (mode == tfnode::DeviceStatusMode::STATUS_NONE || !commandProcessor || !statusInterface) {
         // No status to send or no interface to send on
         return;
     }
@@ -148,7 +156,7 @@ void TFNode::sendStatusResponse() {
     tfnode::StatusResponse& statusResponse = response.mutable_status_response();
     statusResponse.set_device(tfnode::Device::DEVICE_NODE); // Set the device sending the response
 
-    switch (statusMode) {
+    switch (mode) {
         case tfnode::DeviceStatusMode::STATUS_COMPACT: {
             tfnode::NodeStatusCompact compactStatus = getStatusCompact();
             statusResponse.mutable_node_status_compact() = compactStatus;

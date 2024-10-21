@@ -246,6 +246,7 @@ tfnode::ResponseCode CommandProcessor::executeCommand(tfnode::NodeCommand comman
             responseCode = node.CMD_setStatusMode(
                 command.status().device(),
                 command.status().mode(),
+                command.status().repeating(),
                 sourceInterface // Pass the interface
             );
             break;
@@ -259,6 +260,7 @@ tfnode::ResponseCode CommandProcessor::executeCommand(tfnode::NodeCommand comman
 }
 
 void CommandProcessor::forwardPacket(const Packet& packet, NetworkInterface* excludeInterface) {
+    Serial.println("Forwarding packet to other interfaces...");
     for (auto iface : interfaces) {
         if (iface != excludeInterface) {
             // If Network ID Type and Network ID are specified, forward only to matching interface
@@ -283,11 +285,12 @@ void CommandProcessor::testSendCommandPacket() {
 
     // Create a NodeCommand message
     tfnode::NodeCommand command;
-    tfnode::StatusCommand statusCommand;  // Or other command type
+    tfnode::GetStatusCommand statusCommand;  // Or other command type
 
     // Set the command fields as needed
     statusCommand.set_device(tfnode::Device::DEVICE_ALL);
     statusCommand.set_mode(tfnode::DeviceStatusMode::STATUS_COMPACT);
+    statusCommand.set_repeating(false);
     command.set_status(statusCommand);
 
     uint8_t bufferData[256]; // Adjust size as needed

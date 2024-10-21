@@ -81,7 +81,7 @@ message NodeCommand {
     SetModeCommand set_mode = 4;
     SetSetpointCommand set_setpoint = 5;
     ConfigureSettingsCommand configure_settings = 6;
-    StatusCommand status = 7;
+    GetStatusCommand status = 7;
     SilenceNodeCommand silence_node = 8;
     // Add more commands as needed
   }
@@ -128,7 +128,7 @@ message ConfigureSettingsCommand {
 }
 
 // Requests specified status information from specified device.  Optional repetitive reporting
-message SetStatusCommand {
+message GetStatusCommand {
   Device device = 1; // Default to DEVICE_ALL
   DeviceStatusMode mode = 2;
   bool repeating = 4; // true to repeat status reports, false to report once

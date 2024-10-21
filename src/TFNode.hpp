@@ -45,12 +45,12 @@ public:
 
     // Command handlers
     // Status Logging functions
-    tfnode::ResponseCode CMD_setStatusMode(tfnode::Device device, tfnode::DeviceStatusMode mode, NetworkInterface* iface);
+    tfnode::ResponseCode CMD_setStatusMode(tfnode::Device device, tfnode::DeviceStatusMode mode, bool repeating, NetworkInterface* iface);
     tfnode::ResponseCode CMD_resetDevice(tfnode::Device device);
     tfnode::ResponseCode CMD_enableDevice(tfnode::Device device);
     // Add other command handlers
 
-    void sendStatusResponse();  // Sends status response based on status mode
+    void sendStatusResponse(tfnode::DeviceStatusMode mode);  // Sends status response based on status mode
     tfnode::NodeStatusCompact getStatusCompact();  // TODO change return type to .proto def
     tfnode::NodeStatusDump getStatusDump();
     String getStatusReadable();

@@ -728,6 +728,262 @@ class GeneralResponse final: public ::EmbeddedProto::MessageInterface
 
 };
 
+class GetStatusCommand final: public ::EmbeddedProto::MessageInterface
+{
+  public:
+    GetStatusCommand() = default;
+    GetStatusCommand(const GetStatusCommand& rhs )
+    {
+      set_device(rhs.get_device());
+      set_mode(rhs.get_mode());
+      set_repeating(rhs.get_repeating());
+    }
+
+    GetStatusCommand(const GetStatusCommand&& rhs ) noexcept
+    {
+      set_device(rhs.get_device());
+      set_mode(rhs.get_mode());
+      set_repeating(rhs.get_repeating());
+    }
+
+    ~GetStatusCommand() override = default;
+
+    enum class FieldNumber : uint32_t
+    {
+      NOT_SET = 0,
+      DEVICE = 1,
+      MODE = 2,
+      REPEATING = 4
+    };
+
+    GetStatusCommand& operator=(const GetStatusCommand& rhs)
+    {
+      set_device(rhs.get_device());
+      set_mode(rhs.get_mode());
+      set_repeating(rhs.get_repeating());
+      return *this;
+    }
+
+    GetStatusCommand& operator=(const GetStatusCommand&& rhs) noexcept
+    {
+      set_device(rhs.get_device());
+      set_mode(rhs.get_mode());
+      set_repeating(rhs.get_repeating());
+      return *this;
+    }
+
+    static constexpr char const* DEVICE_NAME = "device";
+    inline void clear_device() { device_.clear(); }
+    inline void set_device(const Device& value) { device_ = value; }
+    inline void set_device(const Device&& value) { device_ = value; }
+    inline const Device& get_device() const { return device_.get(); }
+    inline Device device() const { return device_.get(); }
+
+    static constexpr char const* MODE_NAME = "mode";
+    inline void clear_mode() { mode_.clear(); }
+    inline void set_mode(const DeviceStatusMode& value) { mode_ = value; }
+    inline void set_mode(const DeviceStatusMode&& value) { mode_ = value; }
+    inline const DeviceStatusMode& get_mode() const { return mode_.get(); }
+    inline DeviceStatusMode mode() const { return mode_.get(); }
+
+    static constexpr char const* REPEATING_NAME = "repeating";
+    inline void clear_repeating() { repeating_.clear(); }
+    inline void set_repeating(const bool& value) { repeating_ = value; }
+    inline void set_repeating(const bool&& value) { repeating_ = value; }
+    inline bool& mutable_repeating() { return repeating_.get(); }
+    inline const bool& get_repeating() const { return repeating_.get(); }
+    inline bool repeating() const { return repeating_.get(); }
+
+
+    ::EmbeddedProto::Error serialize(::EmbeddedProto::WriteBufferInterface& buffer) const override
+    {
+      ::EmbeddedProto::Error return_value = ::EmbeddedProto::Error::NO_ERRORS;
+
+      if((static_cast<Device>(0) != device_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = device_.serialize_with_id(static_cast<uint32_t>(FieldNumber::DEVICE), buffer, false);
+      }
+
+      if((static_cast<DeviceStatusMode>(0) != mode_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = mode_.serialize_with_id(static_cast<uint32_t>(FieldNumber::MODE), buffer, false);
+      }
+
+      if((false != repeating_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = repeating_.serialize_with_id(static_cast<uint32_t>(FieldNumber::REPEATING), buffer, false);
+      }
+
+      return return_value;
+    };
+
+    ::EmbeddedProto::Error deserialize(::EmbeddedProto::ReadBufferInterface& buffer) override
+    {
+      ::EmbeddedProto::Error return_value = ::EmbeddedProto::Error::NO_ERRORS;
+      ::EmbeddedProto::WireFormatter::WireType wire_type = ::EmbeddedProto::WireFormatter::WireType::VARINT;
+      uint32_t id_number = 0;
+      FieldNumber id_tag = FieldNumber::NOT_SET;
+
+      ::EmbeddedProto::Error tag_value = ::EmbeddedProto::WireFormatter::DeserializeTag(buffer, wire_type, id_number);
+      while((::EmbeddedProto::Error::NO_ERRORS == return_value) && (::EmbeddedProto::Error::NO_ERRORS == tag_value))
+      {
+        id_tag = static_cast<FieldNumber>(id_number);
+        switch(id_tag)
+        {
+          case FieldNumber::DEVICE:
+            return_value = device_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::MODE:
+            return_value = mode_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::REPEATING:
+            return_value = repeating_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::NOT_SET:
+            return_value = ::EmbeddedProto::Error::INVALID_FIELD_ID;
+            break;
+
+          default:
+            return_value = skip_unknown_field(buffer, wire_type);
+            break;
+        }
+
+        if(::EmbeddedProto::Error::NO_ERRORS == return_value)
+        {
+          // Read the next tag.
+          tag_value = ::EmbeddedProto::WireFormatter::DeserializeTag(buffer, wire_type, id_number);
+        }
+      }
+
+      // When an error was detect while reading the tag but no other errors where found, set it in the return value.
+      if((::EmbeddedProto::Error::NO_ERRORS == return_value)
+         && (::EmbeddedProto::Error::NO_ERRORS != tag_value)
+         && (::EmbeddedProto::Error::END_OF_BUFFER != tag_value)) // The end of the buffer is not an array in this case.
+      {
+        return_value = tag_value;
+      }
+
+      return return_value;
+    };
+
+    void clear() override
+    {
+      clear_device();
+      clear_mode();
+      clear_repeating();
+
+    }
+
+    static char const* field_number_to_name(const FieldNumber fieldNumber)
+    {
+      char const* name = nullptr;
+      switch(fieldNumber)
+      {
+        case FieldNumber::DEVICE:
+          name = DEVICE_NAME;
+          break;
+        case FieldNumber::MODE:
+          name = MODE_NAME;
+          break;
+        case FieldNumber::REPEATING:
+          name = REPEATING_NAME;
+          break;
+        default:
+          name = "Invalid FieldNumber";
+          break;
+      }
+      return name;
+    }
+
+#ifdef MSG_TO_STRING
+
+    ::EmbeddedProto::string_view to_string(::EmbeddedProto::string_view& str) const
+    {
+      return this->to_string(str, 0, nullptr, true);
+    }
+
+    ::EmbeddedProto::string_view to_string(::EmbeddedProto::string_view& str, const uint32_t indent_level, char const* name, const bool first_field) const override
+    {
+      ::EmbeddedProto::string_view left_chars = str;
+      int32_t n_chars_used = 0;
+
+      if(!first_field)
+      {
+        // Add a comma behind the previous field.
+        n_chars_used = snprintf(left_chars.data, left_chars.size, ",\n");
+        if(0 < n_chars_used)
+        {
+          // Update the character pointer and characters left in the array.
+          left_chars.data += n_chars_used;
+          left_chars.size -= n_chars_used;
+        }
+      }
+
+      if(nullptr != name)
+      {
+        if( 0 == indent_level)
+        {
+          n_chars_used = snprintf(left_chars.data, left_chars.size, "\"%s\": {\n", name);
+        }
+        else
+        {
+          n_chars_used = snprintf(left_chars.data, left_chars.size, "%*s\"%s\": {\n", indent_level, " ", name);
+        }
+      }
+      else
+      {
+        if( 0 == indent_level)
+        {
+          n_chars_used = snprintf(left_chars.data, left_chars.size, "{\n");
+        }
+        else
+        {
+          n_chars_used = snprintf(left_chars.data, left_chars.size, "%*s{\n", indent_level, " ");
+        }
+      }
+      
+      if(0 < n_chars_used)
+      {
+        left_chars.data += n_chars_used;
+        left_chars.size -= n_chars_used;
+      }
+
+      left_chars = device_.to_string(left_chars, indent_level + 2, DEVICE_NAME, true);
+      left_chars = mode_.to_string(left_chars, indent_level + 2, MODE_NAME, false);
+      left_chars = repeating_.to_string(left_chars, indent_level + 2, REPEATING_NAME, false);
+  
+      if( 0 == indent_level) 
+      {
+        n_chars_used = snprintf(left_chars.data, left_chars.size, "\n}");
+      }
+      else 
+      {
+        n_chars_used = snprintf(left_chars.data, left_chars.size, "\n%*s}", indent_level, " ");
+      }
+
+      if(0 < n_chars_used)
+      {
+        left_chars.data += n_chars_used;
+        left_chars.size -= n_chars_used;
+      }
+
+      return left_chars;
+    }
+
+#endif // End of MSG_TO_STRING
+
+  private:
+
+
+      EmbeddedProto::enumeration<Device> device_ = static_cast<Device>(0);
+      EmbeddedProto::enumeration<DeviceStatusMode> mode_ = static_cast<DeviceStatusMode>(0);
+      EmbeddedProto::boolean repeating_ = false;
+
+};
+
 class NodeSettings final: public ::EmbeddedProto::MessageInterface
 {
   public:
@@ -2812,234 +3068,6 @@ class SilenceNodeCommand final: public ::EmbeddedProto::MessageInterface
 
 };
 
-class StatusCommand final: public ::EmbeddedProto::MessageInterface
-{
-  public:
-    StatusCommand() = default;
-    StatusCommand(const StatusCommand& rhs )
-    {
-      set_device(rhs.get_device());
-      set_mode(rhs.get_mode());
-    }
-
-    StatusCommand(const StatusCommand&& rhs ) noexcept
-    {
-      set_device(rhs.get_device());
-      set_mode(rhs.get_mode());
-    }
-
-    ~StatusCommand() override = default;
-
-    enum class FieldNumber : uint32_t
-    {
-      NOT_SET = 0,
-      DEVICE = 1,
-      MODE = 2
-    };
-
-    StatusCommand& operator=(const StatusCommand& rhs)
-    {
-      set_device(rhs.get_device());
-      set_mode(rhs.get_mode());
-      return *this;
-    }
-
-    StatusCommand& operator=(const StatusCommand&& rhs) noexcept
-    {
-      set_device(rhs.get_device());
-      set_mode(rhs.get_mode());
-      return *this;
-    }
-
-    static constexpr char const* DEVICE_NAME = "device";
-    inline void clear_device() { device_.clear(); }
-    inline void set_device(const Device& value) { device_ = value; }
-    inline void set_device(const Device&& value) { device_ = value; }
-    inline const Device& get_device() const { return device_.get(); }
-    inline Device device() const { return device_.get(); }
-
-    static constexpr char const* MODE_NAME = "mode";
-    inline void clear_mode() { mode_.clear(); }
-    inline void set_mode(const DeviceStatusMode& value) { mode_ = value; }
-    inline void set_mode(const DeviceStatusMode&& value) { mode_ = value; }
-    inline const DeviceStatusMode& get_mode() const { return mode_.get(); }
-    inline DeviceStatusMode mode() const { return mode_.get(); }
-
-
-    ::EmbeddedProto::Error serialize(::EmbeddedProto::WriteBufferInterface& buffer) const override
-    {
-      ::EmbeddedProto::Error return_value = ::EmbeddedProto::Error::NO_ERRORS;
-
-      if((static_cast<Device>(0) != device_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
-      {
-        return_value = device_.serialize_with_id(static_cast<uint32_t>(FieldNumber::DEVICE), buffer, false);
-      }
-
-      if((static_cast<DeviceStatusMode>(0) != mode_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
-      {
-        return_value = mode_.serialize_with_id(static_cast<uint32_t>(FieldNumber::MODE), buffer, false);
-      }
-
-      return return_value;
-    };
-
-    ::EmbeddedProto::Error deserialize(::EmbeddedProto::ReadBufferInterface& buffer) override
-    {
-      ::EmbeddedProto::Error return_value = ::EmbeddedProto::Error::NO_ERRORS;
-      ::EmbeddedProto::WireFormatter::WireType wire_type = ::EmbeddedProto::WireFormatter::WireType::VARINT;
-      uint32_t id_number = 0;
-      FieldNumber id_tag = FieldNumber::NOT_SET;
-
-      ::EmbeddedProto::Error tag_value = ::EmbeddedProto::WireFormatter::DeserializeTag(buffer, wire_type, id_number);
-      while((::EmbeddedProto::Error::NO_ERRORS == return_value) && (::EmbeddedProto::Error::NO_ERRORS == tag_value))
-      {
-        id_tag = static_cast<FieldNumber>(id_number);
-        switch(id_tag)
-        {
-          case FieldNumber::DEVICE:
-            return_value = device_.deserialize_check_type(buffer, wire_type);
-            break;
-
-          case FieldNumber::MODE:
-            return_value = mode_.deserialize_check_type(buffer, wire_type);
-            break;
-
-          case FieldNumber::NOT_SET:
-            return_value = ::EmbeddedProto::Error::INVALID_FIELD_ID;
-            break;
-
-          default:
-            return_value = skip_unknown_field(buffer, wire_type);
-            break;
-        }
-
-        if(::EmbeddedProto::Error::NO_ERRORS == return_value)
-        {
-          // Read the next tag.
-          tag_value = ::EmbeddedProto::WireFormatter::DeserializeTag(buffer, wire_type, id_number);
-        }
-      }
-
-      // When an error was detect while reading the tag but no other errors where found, set it in the return value.
-      if((::EmbeddedProto::Error::NO_ERRORS == return_value)
-         && (::EmbeddedProto::Error::NO_ERRORS != tag_value)
-         && (::EmbeddedProto::Error::END_OF_BUFFER != tag_value)) // The end of the buffer is not an array in this case.
-      {
-        return_value = tag_value;
-      }
-
-      return return_value;
-    };
-
-    void clear() override
-    {
-      clear_device();
-      clear_mode();
-
-    }
-
-    static char const* field_number_to_name(const FieldNumber fieldNumber)
-    {
-      char const* name = nullptr;
-      switch(fieldNumber)
-      {
-        case FieldNumber::DEVICE:
-          name = DEVICE_NAME;
-          break;
-        case FieldNumber::MODE:
-          name = MODE_NAME;
-          break;
-        default:
-          name = "Invalid FieldNumber";
-          break;
-      }
-      return name;
-    }
-
-#ifdef MSG_TO_STRING
-
-    ::EmbeddedProto::string_view to_string(::EmbeddedProto::string_view& str) const
-    {
-      return this->to_string(str, 0, nullptr, true);
-    }
-
-    ::EmbeddedProto::string_view to_string(::EmbeddedProto::string_view& str, const uint32_t indent_level, char const* name, const bool first_field) const override
-    {
-      ::EmbeddedProto::string_view left_chars = str;
-      int32_t n_chars_used = 0;
-
-      if(!first_field)
-      {
-        // Add a comma behind the previous field.
-        n_chars_used = snprintf(left_chars.data, left_chars.size, ",\n");
-        if(0 < n_chars_used)
-        {
-          // Update the character pointer and characters left in the array.
-          left_chars.data += n_chars_used;
-          left_chars.size -= n_chars_used;
-        }
-      }
-
-      if(nullptr != name)
-      {
-        if( 0 == indent_level)
-        {
-          n_chars_used = snprintf(left_chars.data, left_chars.size, "\"%s\": {\n", name);
-        }
-        else
-        {
-          n_chars_used = snprintf(left_chars.data, left_chars.size, "%*s\"%s\": {\n", indent_level, " ", name);
-        }
-      }
-      else
-      {
-        if( 0 == indent_level)
-        {
-          n_chars_used = snprintf(left_chars.data, left_chars.size, "{\n");
-        }
-        else
-        {
-          n_chars_used = snprintf(left_chars.data, left_chars.size, "%*s{\n", indent_level, " ");
-        }
-      }
-      
-      if(0 < n_chars_used)
-      {
-        left_chars.data += n_chars_used;
-        left_chars.size -= n_chars_used;
-      }
-
-      left_chars = device_.to_string(left_chars, indent_level + 2, DEVICE_NAME, true);
-      left_chars = mode_.to_string(left_chars, indent_level + 2, MODE_NAME, false);
-  
-      if( 0 == indent_level) 
-      {
-        n_chars_used = snprintf(left_chars.data, left_chars.size, "\n}");
-      }
-      else 
-      {
-        n_chars_used = snprintf(left_chars.data, left_chars.size, "\n%*s}", indent_level, " ");
-      }
-
-      if(0 < n_chars_used)
-      {
-        left_chars.data += n_chars_used;
-        left_chars.size -= n_chars_used;
-      }
-
-      return left_chars;
-    }
-
-#endif // End of MSG_TO_STRING
-
-  private:
-
-
-      EmbeddedProto::enumeration<Device> device_ = static_cast<Device>(0);
-      EmbeddedProto::enumeration<DeviceStatusMode> mode_ = static_cast<DeviceStatusMode>(0);
-
-};
-
 class ConfigureSettingsCommand final: public ::EmbeddedProto::MessageInterface
 {
   public:
@@ -4942,10 +4970,10 @@ class NodeCommand final: public ::EmbeddedProto::MessageInterface
       if(FieldNumber::STATUS == which_command_)
       {
         which_command_ = FieldNumber::NOT_SET;
-        command_.status_.~StatusCommand();
+        command_.status_.~GetStatusCommand();
       }
     }
-    inline void set_status(const StatusCommand& value)
+    inline void set_status(const GetStatusCommand& value)
     {
       if(FieldNumber::STATUS != which_command_)
       {
@@ -4953,7 +4981,7 @@ class NodeCommand final: public ::EmbeddedProto::MessageInterface
       }
       command_.status_ = value;
     }
-    inline void set_status(const StatusCommand&& value)
+    inline void set_status(const GetStatusCommand&& value)
     {
       if(FieldNumber::STATUS != which_command_)
       {
@@ -4961,7 +4989,7 @@ class NodeCommand final: public ::EmbeddedProto::MessageInterface
       }
       command_.status_ = value;
     }
-    inline StatusCommand& mutable_status()
+    inline GetStatusCommand& mutable_status()
     {
       if(FieldNumber::STATUS != which_command_)
       {
@@ -4969,8 +4997,8 @@ class NodeCommand final: public ::EmbeddedProto::MessageInterface
       }
       return command_.status_;
     }
-    inline const StatusCommand& get_status() const { return command_.status_; }
-    inline const StatusCommand& status() const { return command_.status_; }
+    inline const GetStatusCommand& get_status() const { return command_.status_; }
+    inline const GetStatusCommand& status() const { return command_.status_; }
 
     static constexpr char const* SILENCE_NODE_NAME = "silence_node";
     inline bool has_silence_node() const
@@ -5265,7 +5293,7 @@ class NodeCommand final: public ::EmbeddedProto::MessageInterface
         SetModeCommand set_mode_;
         SetSetpointCommand set_setpoint_;
         ConfigureSettingsCommand configure_settings_;
-        StatusCommand status_;
+        GetStatusCommand status_;
         SilenceNodeCommand silence_node_;
       };
       command command_;
@@ -5306,7 +5334,7 @@ class NodeCommand final: public ::EmbeddedProto::MessageInterface
             break;
 
           case FieldNumber::STATUS:
-            new(&command_.status_) StatusCommand;
+            new(&command_.status_) GetStatusCommand;
             break;
 
           case FieldNumber::SILENCE_NODE:
