@@ -51,12 +51,12 @@ void CANInterface::receiveData()
         msg = CAN.read();
         // Debug================================================================================================
         // Serial.print("Received CAN Message: ");
-        for (int i = 0; i < msg.data_length; i++)
-        {
-            Serial.print(msg.data[i]);
-            Serial.print(" ");
-        }
-        // Serial.println();
+        // for (int i = 0; i < msg.data_length; i++)
+        // {
+        //     Serial.print(msg.data[i]);
+        //     Serial.print(" ");
+        // }
+        // // Serial.println();
         //======================================================================================================
         
         for (int i = 0; i < msg.data_length; i++)

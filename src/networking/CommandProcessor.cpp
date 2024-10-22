@@ -58,10 +58,11 @@ void CommandProcessor::process() {
         Packet packet;
 
         if (iface->receivePacket(packet)) {
-            //#ifdef DEBUG
-            // Serial.println("\nReceived Packet: ");
-            //#endif
-            // Serial.println(packet.toString());  // Debug display incoming packet
+            // Debug to console the full readable contents of packet
+            Serial.print("\Received Packet over ");
+            Serial.print(iface->getName().c_str());
+            Serial.println(": ");
+            Serial.println(packet.toString());  // Debug display outgoing packet
             handlePacket(packet, iface);
         }
     }
@@ -109,9 +110,11 @@ void CommandProcessor::sendResponse(const tfnode::NodeResponse& response, Networ
         // Send the packet
         iface->sendPacket(packet);
 
-        // Debug to console the full readable contents of packet
-        // Serial.println("\nSent Packet: ");
-        // Serial.println(packet.toString());  // Debug display outgoing packet
+        // // Debug to console the full readable contents of packet
+        Serial.print("\nSent Packet over ");
+        Serial.print(iface->getName().c_str());
+        Serial.println(": ");
+        Serial.println(packet.toString());  // Debug display outgoing packet
     } else {
         // Handle serialization error
     }

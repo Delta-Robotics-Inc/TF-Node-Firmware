@@ -178,10 +178,10 @@ void TFNode::sendStatusResponse(tfnode::DeviceStatusMode mode) {
             return;
     }
 
-    // Send the response via the command processor
-    if (commandProcessor && statusInterface) {
-        commandProcessor->sendResponse(response, statusInterface);
-    }
+    // // Send the response via the command processor
+    // if (commandProcessor && statusInterface) {
+            commandProcessor->sendResponse(response, statusInterface);
+    // }
 }
 
 tfnode::NodeStatusCompact TFNode::getStatusCompact() {
