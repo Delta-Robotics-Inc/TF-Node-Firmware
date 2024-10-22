@@ -63,6 +63,7 @@ void CommandProcessor::process() {
             Serial.print(iface->getName().c_str());
             Serial.println(": ");
             Serial.println(packet.toString());  // Debug display outgoing packet
+            
             handlePacket(packet, iface);
         }
     }
@@ -150,6 +151,7 @@ void CommandProcessor::handlePacket(Packet& packet, NetworkInterface* sourceInte
         generalResponse.set_received_cmd(tfnode::FunctionCode::FUNCTION_ENABLE);  // TODO parse the received command into a function code
         response.set_general_response(generalResponse);
 
+        Serial.println("Sending Command Resonse...");
         sendResponse(response, sourceInterface);
     } else {
         // Packet is not for this node, forward it
@@ -264,12 +266,18 @@ tfnode::ResponseCode CommandProcessor::executeCommand(tfnode::NodeCommand comman
 }
 
 void CommandProcessor::forwardPacket(const Packet& packet, NetworkInterface* excludeInterface) {
-    //Serial.println("Forwarding packet to other interfaces...");
+    Serial.println("Forwarding packet to other interfaces...");
     for (auto iface : interfaces) {
         if (iface != excludeInterface) {
             // If Network ID Type and Network ID are specified, forward only to matching interface
             // Implement logic based on your network addressing
             iface->sendPacket(packet);
+
+            // Debug to console the full readable contents of packet
+            Serial.print("\nForwarded Packet over ");
+            Serial.print(iface->getName().c_str());
+            Serial.println(": ");
+            Serial.println(packet.toString());  // Debug display outgoing packet
         }
     }
 }
@@ -351,7 +359,75 @@ void CommandProcessor::testSendCommandPacket() {
 
 /// @brief Test function to send a command to the PC.  Not used in production.
 ///        Use this function to determine the format of the command packet.
+void CommandProcessor::testCANEnableCommandPacket() {
+
+    // Specify the command being sent
+    Serial.println("Sending CAN EnableCommand: ");
+
+    // Create a NodeCommand message
+    tfnode::NodeCommand command;
+    tfnode::EnableCommand enableCommand;  // Or other command type
+
+    // Set the command fields as needed
+    enableCommand.set_device(tfnode::Device::DEVICE_PORT1);
+    command.set_enable(enableCommand);
+
+    uint8_t bufferData[256]; // Adjust size as needed
+    WriteBuffer buffer(bufferData, sizeof(bufferData));
+
+    ::EmbeddedProto::Error err = command.serialize(buffer);
+
+    // Debug
+    //Serial.print(" Data: ");
+    //for(int i = 0; i < buffer.get_size(); i++)
+        //Serial.print((char)buffer.get_data()[i]);
+    //Serial.print(" ");
+
+    if (err == ::EmbeddedProto::Error::NO_ERRORS) {
+        // Create a Packet with the serialized data
+        Packet packet;
+
+        // Set sender and destination IDs
+        packet.senderId.id = {0x0, 0x0, 0x0}; // Set sender ID to zero for test
+        packet.senderId.idType = NodeAddress::IDType::NodeID;
+
+        // Set destination ID as needed
+        // For simplicity, set destination ID to zero
+        packet.destinationId.id = {0x01, 0x02, 0x03};  // Destination is this device for the test
+        packet.destinationId.idType = NodeAddress::IDType::NodeID;
+        // Set data
+        packet.data.assign(bufferData, bufferData + buffer.get_size());
+
+        // Calculate packet length and checksum
+        packet.packetLength = packet.calculatePacketLength();
+        packet.checksum = packet.calculateChecksum();
+
+        // Debugging output
+        Serial.print("Calculated Packet Length: ");
+        Serial.println(packet.packetLength);
+
+        // Send the packet over Serial Interface
+        getInterfaceByName("CANInterface")->sendPacket(packet);
+
+        // Debug to console the full readable contents of packet
+        Serial.println("\nSent Packet: ");
+        Serial.println(packet.toString());  // Debug display outgoing packet
+
+        delay(5000);
+
+        // Now, handle the same packet that was constructed to test packet handling
+        //Serial.println("Handling packet...\n");
+        //handlePacket(packet, getInterfaceByName("SerialInterface"));
+    } else {
+        // Handle serialization error
+        Serial.println("Error: Failed to serialize command");
+    }
+}
+
+/// @brief Test function to send a command to the PC.  Not used in production.
+///        Use this function to determine the format of the command packet.
 void CommandProcessor::testCANCommandPacket() {
+    
 
     // Specify the command being sent
     Serial.println("Sending CAN StatusCommand: ");

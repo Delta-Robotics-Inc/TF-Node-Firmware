@@ -12,6 +12,7 @@
 #include "TFNode.hpp"
 #include "networking/SerialInterface.h"
 #include "networking/CanInterface.h"
+#include "SMAController.hpp"  // Include the header file for SMAController
 
 
 // Create instances of network interfaces
@@ -44,15 +45,20 @@ void setup() {
     // Add network interfaces to the command processor
     commandProcessor->addNetworkInterface(serialInterface);
     commandProcessor->addNetworkInterface(canInterface);
-    commandProcessor->addNetworkInterface(serialInterface);
-    commandProcessor->addNetworkInterface(canInterface);
     // commandProcessor.addNetworkInterface(&spiInterface);
 
     master_tfNode->begin();
 
+
     // Add debug actions below
+    master_tfNode->smaControllers[0].CMD_setMode(tfnode::SMAControlMode::MODE_PERCENT);
+    master_tfNode->smaControllers[1].CMD_setMode(tfnode::SMAControlMode::MODE_PERCENT);
+    master_tfNode->smaControllers[0].CMD_setSetpoint(tfnode::SMAControlMode::MODE_PERCENT, 1.0);
+    master_tfNode->smaControllers[1].CMD_setSetpoint(tfnode::SMAControlMode::MODE_PERCENT, 1.0);
+    master_tfNode->CMD_enableDevice(tfnode::Device::DEVICE_PORT1);
     // master_tfNode->CMD_setStatusMode(tfnode::Device::DEVICE_NODE, tfnode::DeviceStatusMode::STATUS_COMPACT, &serialInterface);
     //commandProcessor->testCANCommandPacket();
+    commandProcessor->testCANEnableCommandPacket();
     //Serial.println("Setup complete");
 }
 
@@ -62,7 +68,7 @@ void loop() {
     master_tfNode->update();
 
     // Periodically attempt reconnections
-    static unsigned long lastAttemptTime = 0;
+    /*static unsigned long lastAttemptTime = 0;
     if (millis() - lastAttemptTime > RECONNECTION_INTERVAL_MS) {
         for (auto iface : commandProcessor->getInterfaces()) {
             if (!iface->isConnected()) {
@@ -70,5 +76,5 @@ void loop() {
             }
         }
         lastAttemptTime = millis();
-    }
+    }*/
 }
