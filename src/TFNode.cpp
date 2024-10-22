@@ -40,10 +40,6 @@ void TFNode::begin() {
     smaControllers[1].begin();
 
     log_timer = millis();
-
-    digitalWrite(STATUS_RGB_RED, LOW);
-    digitalWrite(STATUS_RGB_GREEN, HIGH);
-    digitalWrite(STATUS_RGB_BLUE, LOW);
 }
 
 void TFNode::update() {
@@ -77,6 +73,33 @@ void TFNode::update() {
 
 void TFNode::setCommandProcessor(CommandProcessor* cp) {
     commandProcessor = cp;
+}
+
+
+
+void TFNode::toggleRGBStatusLED() {
+
+    ledState =  (ledState == RED) ? GREEN :
+                (ledState == GREEN) ? BLUE :
+                RED;
+
+    switch(ledState) {
+        case RED:
+            digitalWrite(STATUS_RGB_RED, HIGH);
+            digitalWrite(STATUS_RGB_GREEN, LOW);
+            digitalWrite(STATUS_RGB_BLUE, LOW);
+            break;
+        case GREEN:
+            digitalWrite(STATUS_RGB_RED, LOW);
+            digitalWrite(STATUS_RGB_GREEN, HIGH);
+            digitalWrite(STATUS_RGB_BLUE, LOW);
+            break;
+        case BLUE:
+            digitalWrite(STATUS_RGB_RED, LOW);
+            digitalWrite(STATUS_RGB_GREEN, LOW);
+            digitalWrite(STATUS_RGB_BLUE, HIGH);
+            break;
+    }
 }
 
 

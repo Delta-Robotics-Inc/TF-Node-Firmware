@@ -18,6 +18,12 @@ enum NodeError {
     ERR_EXTERNAL_INTERRUPT
 };
 
+enum StatusLEDColorState {
+    RED,
+    GREEN,
+    BLUE
+};
+
 
 class TFNode {
 public:
@@ -57,6 +63,8 @@ public:
 
     // Callbacks
     void optButtonStopFunc();
+    void toggleRGBStatusLED();
+    StatusLEDColorState ledState = RED;
 
     // Error handling
     // TODO implement better error processing
