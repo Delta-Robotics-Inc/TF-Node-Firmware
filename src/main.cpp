@@ -12,7 +12,7 @@
 #include "TFNode.hpp"
 #include "networking/SerialInterface.h"
 #include "networking/CanInterface.h"
-#include "SMAController.hpp"  // Include the header file for SMAController
+#include "SMAController.hpp"
 
 
 // Create instances of network interfaces
