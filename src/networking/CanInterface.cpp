@@ -1,6 +1,12 @@
 #include "CANInterface.h"
 #include "tfnode-messages.h"
 
+CANInterface::CANInterface() {
+    if(!CAN.begin(CanBitRate::BR_250k)) {
+        Serial.println("Failed to start CAN");
+    }
+}
+
 void CANInterface::sendPacket(const Packet& packet) {
     tfnode::NodeSettings* nodeSettings;
     std::vector<uint8_t> rawData = packet.serialize();

@@ -59,9 +59,9 @@ void CommandProcessor::process() {
 
         if (iface->receivePacket(packet)) {
             //#ifdef DEBUG
-            //Serial.println("\nReceived Packet: ");
+            Serial.println("\nReceived Packet: ");
             //#endif
-            //Serial.println(packet.toString());  // Debug display incoming packet
+            Serial.println(packet.toString());  // Debug display incoming packet
             handlePacket(packet, iface);
         }
     }

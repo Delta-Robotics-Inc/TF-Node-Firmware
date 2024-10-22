@@ -8,6 +8,7 @@
 
 class CANInterface : public NetworkInterface {
 public:
+    CANInterface();
     void sendPacket(const Packet& packet) override;
     bool receivePacket(Packet& packet) override;
     std::string getName() const override;

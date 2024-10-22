@@ -26,7 +26,7 @@ CommandProcessor* commandProcessor;
 
 void setup() {
     Serial.begin(115200);
-    
+    canInterface = CANInterface();
 
     // Initialize node with its address
     // TODO this should be different for every device
