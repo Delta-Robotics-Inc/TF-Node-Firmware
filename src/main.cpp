@@ -12,6 +12,7 @@
 #include "TFNode.hpp"
 #include "networking/SerialInterface.h"
 #include "networking/CanInterface.h"
+#include "SMAController.hpp"
 
 
 // Create instances of network interfaces
@@ -44,12 +45,13 @@ void setup() {
     // Add network interfaces to the command processor
     commandProcessor->addNetworkInterface(serialInterface);
     commandProcessor->addNetworkInterface(canInterface);
-    commandProcessor->addNetworkInterface(serialInterface);
-    commandProcessor->addNetworkInterface(canInterface);
     // commandProcessor.addNetworkInterface(&spiInterface);
 
     master_tfNode->begin();
-
+    master_tfNode->smaControllers[0].CMD_setMode(tfnode::SMAControlMode::MODE_PERCENT);
+    master_tfNode->smaControllers[1].CMD_setMode(tfnode::SMAControlMode::MODE_PERCENT);
+    master_tfNode->smaControllers[0].CMD_setSetpoint(tfnode::SMAControlMode::MODE_PERCENT, 1.0);
+    master_tfNode->smaControllers[1].CMD_setSetpoint(tfnode::SMAControlMode::MODE_PERCENT, 1.0);
     // Add debug actions below
     // master_tfNode->CMD_setStatusMode(tfnode::Device::DEVICE_NODE, tfnode::DeviceStatusMode::STATUS_COMPACT, &serialInterface);
     //commandProcessor->testCANCommandPacket();

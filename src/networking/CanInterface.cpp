@@ -21,12 +21,12 @@ void CANInterface::sendPacket(const Packet &packet)
         uint8_t chunkSize = std::min(static_cast<size_t>(8), rawData.size() - i);
 
         // Debug Sent CANMsg Data======================================
-        //  Serial.print("Data: ");
-        //  for(int j = 0; j < chunkSize; j++) {
-        //      Serial.print(rawData[i + j]);
-        //      Serial.print(" ");
-        //  }
-        //  Serial.println();
+         Serial.println("Sending CAN message: ");
+         for(int j = 0; j < chunkSize; j++) {
+             Serial.print(rawData[i + j]);
+             Serial.print(" ");
+         }
+         Serial.println();
         //============================================================
 
         CanMsg msg(CanStandardId(CAN_ID), chunkSize, rawData.data() + i);
@@ -37,7 +37,6 @@ void CANInterface::sendPacket(const Packet &packet)
             //Serial.println(rc);
         }
         //TODO determine better solution then delay
-       //delayMicroseconds(500);
        delay(5);
     }
 }
@@ -50,13 +49,13 @@ void CANInterface::receiveData()
     {
         msg = CAN.read();
         // Debug================================================================================================
-        // Serial.print("Received CAN Message: ");
-        // for (int i = 0; i < msg.data_length; i++)
-        // {
-        //     Serial.print(msg.data[i]);
-        //     Serial.print(" ");
-        // }
-        // Serial.println();
+        Serial.print("Received CAN Message: ");
+        for (int i = 0; i < msg.data_length; i++)
+        {
+            Serial.print(msg.data[i]);
+            Serial.print(" ");
+        }
+        Serial.println();
         //======================================================================================================
         
         for (int i = 0; i < msg.data_length; i++)

@@ -58,10 +58,11 @@ void CommandProcessor::process() {
         Packet packet;
 
         if (iface->receivePacket(packet)) {
-            //#ifdef DEBUG
-            // Serial.println("\nReceived Packet: ");
-            //#endif
-            // Serial.println(packet.toString());  // Debug display incoming packet
+            // Debug to console the full readable contents of packet
+            Serial.print("\Received Packet over ");
+            Serial.print(iface->getName().c_str());
+            Serial.println(": ");
+            Serial.println(packet.toString());  // Debug display outgoing packet
             handlePacket(packet, iface);
         }
     }
@@ -109,9 +110,11 @@ void CommandProcessor::sendResponse(const tfnode::NodeResponse& response, Networ
         // Send the packet
         iface->sendPacket(packet);
 
-        // Debug to console the full readable contents of packet
-        // Serial.println("\nSent Packet: ");
-        // Serial.println(packet.toString());  // Debug display outgoing packet
+        // // Debug to console the full readable contents of packet
+        Serial.print("\nSent Packet over ");
+        Serial.print(iface->getName().c_str());
+        Serial.println(": ");
+        Serial.println(packet.toString());  // Debug display outgoing packet
     } else {
         // Handle serialization error
     }
@@ -147,7 +150,8 @@ void CommandProcessor::handlePacket(Packet& packet, NetworkInterface* sourceInte
         generalResponse.set_received_cmd(tfnode::FunctionCode::FUNCTION_ENABLE);  // TODO parse the received command into a function code
         response.set_general_response(generalResponse);
 
-        //sendResponse(response, sourceInterface);
+        Serial.println("Sending CMD response...");
+        sendResponse(response, sourceInterface);
     } else {
         // Packet is not for this node, forward it
         forwardPacket(packet, sourceInterface);
@@ -261,12 +265,17 @@ tfnode::ResponseCode CommandProcessor::executeCommand(tfnode::NodeCommand comman
 }
 
 void CommandProcessor::forwardPacket(const Packet& packet, NetworkInterface* excludeInterface) {
-    //Serial.println("Forwarding packet to other interfaces...");
+    Serial.println("Forwarding packet to other interfaces...");
     for (auto iface : interfaces) {
         if (iface != excludeInterface) {
             // If Network ID Type and Network ID are specified, forward only to matching interface
             // Implement logic based on your network addressing
             iface->sendPacket(packet);
+            // // Debug to console the full readable contents of packet
+            Serial.print("\nforwarding Packet over ");
+            Serial.print(iface->getName().c_str());
+            Serial.println(": ");
+            Serial.println(packet.toString());  // Debug display outgoing packet
         }
     }
 }

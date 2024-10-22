@@ -90,15 +90,18 @@ tfnode::ResponseCode TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::De
     Serial.println(mode);
     #endif
     // For now, we assume device is DEVICE_NODE or DEVICE_ALL
+
     if (device == tfnode::Device::DEVICE_NODE || device == tfnode::Device::DEVICE_ALL) {
+        statusInterface = iface;
         if(repeating) {
             // Set status mode for the node for repeating status
             statusMode = mode;
-            statusInterface = iface; // Keep track of the interface
+           //statusInterface = iface; // Keep track of the interface
         }
         else {
             // Nonrepeating status means set the statusMode to none
             statusMode = tfnode::DeviceStatusMode::STATUS_NONE;
+            Serial.println("Sending Single Status response...");
             sendStatusResponse(mode);  // Send a single status response
         }
     }
@@ -155,6 +158,8 @@ void TFNode::sendStatusResponse(tfnode::DeviceStatusMode mode) {
 
     tfnode::StatusResponse& statusResponse = response.mutable_status_response();
     statusResponse.set_device(tfnode::Device::DEVICE_NODE); // Set the device sending the response
+    Serial.println("Sending CMD response...");
+
 
     switch (mode) {
         case tfnode::DeviceStatusMode::STATUS_COMPACT: {
@@ -178,10 +183,9 @@ void TFNode::sendStatusResponse(tfnode::DeviceStatusMode mode) {
             return;
     }
 
-    // Send the response via the command processor
     // if (commandProcessor && statusInterface) {
-         commandProcessor->sendResponse(response, statusInterface);
-    // }
+            commandProcessor->sendResponse(response, statusInterface);
+                // }
 }
 
 tfnode::NodeStatusCompact TFNode::getStatusCompact() {
