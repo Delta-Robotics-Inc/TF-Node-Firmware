@@ -7,6 +7,13 @@
 #include <vector>
 #include <queue>
 
+enum class ReceptionState
+{
+    WAIT_FOR_START_BYTE,
+    READ_LENGTH,
+    READ_PACKET
+};
+
 class NetworkInterface {
 public:
     virtual ~NetworkInterface() {}

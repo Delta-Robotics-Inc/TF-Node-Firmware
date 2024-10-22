@@ -8,7 +8,8 @@
 
 // Common configuration parameters
 const char CFG_FIRMWARE_VERSION[] = "1.0.0";
-const std::vector<uint8_t> NODE_ID = {0x04, 0x05, 0x06};
+const std::vector<uint8_t> NODE_ID = {0x01, 0x02, 0x03};
+
 
 const int SIGNAL_TIMEOUT = 2000;            // Amount of time (ms) between receiving master commands before auto-disable
 const int RECONNECTION_INTERVAL_MS = 5000;  // Attempt to reconnect to enabled NetworkInterfaces on this interval

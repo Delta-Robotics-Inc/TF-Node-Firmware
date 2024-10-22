@@ -23,6 +23,10 @@ public:
 private:
     std::vector<uint8_t> rxBuffer;
     std::queue<Packet> packetQueue;
+
+    ReceptionState state = ReceptionState::WAIT_FOR_START_BYTE;
+    std::vector<uint8_t> packetData;
+    uint16_t packetLength = 0;
 };
 
 #endif // SERIAL_INTERFACE_H

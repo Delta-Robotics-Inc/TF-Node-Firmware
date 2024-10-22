@@ -39,16 +39,7 @@ void SerialInterface::sendPacket(const Packet& packet) {
     }*/
 }
 
-enum class ReceptionState {
-    WAIT_FOR_START_BYTE,
-    READ_LENGTH,
-    READ_PACKET
-};
-
-ReceptionState state = ReceptionState::WAIT_FOR_START_BYTE;
-std::vector<uint8_t> packetData;
-uint16_t packetLength = 0;
-
+// TODO remove boilerplate code and add repeat functions to NetworkInterface
 void SerialInterface::receiveData() {
     while (Serial.available()) {
         uint8_t byte = Serial.read();

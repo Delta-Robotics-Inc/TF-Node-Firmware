@@ -1,13 +1,16 @@
 #include "CANInterface.h"
 
-CANInterface::CANInterface() {
+CANInterface::CANInterface()
+{
     Serial.println("Starting CAN...");
-    if(!CAN.begin(CanBitRate::BR_250k)) {
+    if (!CAN.begin(CanBitRate::BR_250k))
+    {
         Serial.println("Failed to start CAN");
     }
 }
 
-void CANInterface::sendPacket(const Packet& packet) {
+void CANInterface::sendPacket(const Packet &packet)
+{
     Serial.println("Serializing packet for CAN");
 
     Serial.println("Serializing packet for CAN ");
@@ -19,109 +22,184 @@ void CANInterface::sendPacket(const Packet& packet) {
     Serial.println("Writing down packet");
 
     // Send the rawData in chunks of 8 bytes
-    for (size_t i = 0; i < rawData.size(); i += 8) {
+    for (size_t i = 0; i < rawData.size(); i += 8)
+    {
         uint8_t chunkSize = std::min(static_cast<size_t>(8), rawData.size() - i);
 
-        //Debug Sent CANMsg Data======================================
-        // Serial.print("Data: ");
-        // for(int j = 0; j < chunkSize; j++) {
-        //     Serial.print(rawData[i + j]);
-        //     Serial.print(" ");
-        // }
-        // Serial.println();
+        // Debug Sent CANMsg Data======================================
+        //  Serial.print("Data: ");
+        //  for(int j = 0; j < chunkSize; j++) {
+        //      Serial.print(rawData[i + j]);
+        //      Serial.print(" ");
+        //  }
+        //  Serial.println();
         //============================================================
 
         CanMsg msg(CanStandardId(CAN_ID), chunkSize, rawData.data() + i);
         if (int const rc = CAN.write(msg); rc < 0)
         {
-            Serial.print  ("CAN.write(...) failed with error code ");
+            Serial.print("CAN.write(...) failed with error code ");
             Serial.println(rc);
         }
-        //TODO determine better solution then delay
-       delayMicroseconds(500);
+        // TODO determine better solution then delay
+        //delayMicroseconds(500);
+        delay(5);
     }
 }
 
-void CANInterface::receiveData() {
+void CANInterface::receiveData()
+{
     CanMsg msg;
     // Check if a CAN packet is available and append to rxBuffer
-    while (CAN.available()) {
+    while (CAN.available())
+    {
         msg = CAN.read();
-        //Debug================================================================================================
-        Serial.print("Received CAN Message: ");\
-        for(int i = 0; i < msg.data_length; i++) {
+        // Debug================================================================================================
+        Serial.print("Received CAN Message: ");
+        for (int i = 0; i < msg.data_length; i++)
+        {
             Serial.print(msg.data[i]);
             Serial.print(" ");
         }
         Serial.println();
         //======================================================================================================
-        for (int i = 0; i < msg.data_length; i++) {
-            uint8_t byte = msg.data[i];  // Access each byte individually
-            //TODO ask how vectors work
-            rxBuffer.push_back(byte);    // Add each byte to the rxBuffer
-        }
-    }
+        
+        for (int i = 0; i < msg.data_length; i++)
+        {
+            uint8_t byte = msg.data[i]; // Access each byte individually
+            switch (state)
+            {
+            case ReceptionState::WAIT_FOR_START_BYTE:
+                // Serial.println("Waiting for start byte");
+                if (byte == Packet::startByte)
+                {
+                    packetData.clear();
+                    packetData.push_back(byte);
+                    state = ReceptionState::READ_LENGTH;
+                }
+                break;
 
-    // Attempt to parse packets from rxBuffer (same as original)
-    while (true) {
-        if (rxBuffer.size() < 4 ){
-            // Not enough data for even the smallest packet
-            break;
-        }
+            case ReceptionState::READ_LENGTH:
+                // Serial.println("Reading length");
+                packetData.push_back(byte);
+                if (packetData.size() == 3)
+                { // Start byte + 2 length bytes
+                    packetLength = (packetData[1] << 8) | packetData[2];
+                    state = ReceptionState::READ_PACKET;
+                }
+                break;
 
-        size_t index = 0;
-        while (index < rxBuffer.size() && rxBuffer[index] != Packet::startByte) {
-            index++;
-        }
+            case ReceptionState::READ_PACKET:
+                // Serial.print("Reading packet: [");
+                // Serial.print(packetData.size() - 3);
+                // Serial.print('/');
+                // Serial.print(packetLength);
+                // Serial.println(']');
 
-        if (index > 0) {
-            rxBuffer.erase(rxBuffer.begin(), rxBuffer.begin() + index);
-        }
-
-        if (rxBuffer.size() < 4) {
-            break;
-        }
-
-        uint16_t packetLength = (rxBuffer[1] << 8) | rxBuffer[2];
-        size_t totalPacketSize = 1 + 2 + packetLength;
-
-        if (rxBuffer.size() < totalPacketSize) {
-            break;
-        }
-
-        std::vector<uint8_t> packetData(rxBuffer.begin(), rxBuffer.begin() + totalPacketSize);
-        Packet packet;
-        if (packet.parse(packetData)) {
-            packetQueue.push(packet);
-            rxBuffer.erase(rxBuffer.begin(), rxBuffer.begin() + totalPacketSize);
-        } else {
-            rxBuffer.erase(rxBuffer.begin());
+                packetData.push_back(byte);
+                if (packetData.size() == 3 + packetLength)
+                { // Start byte + 2 length bytes + packet length
+                    Packet packet;
+                    if (packet.parse(packetData))
+                    {
+                        packetQueue.push(packet);
+                        // Serial.println("Packet received");
+                    }
+                    else
+                    {
+                        // Serial.println("Invalid packet");
+                    }
+                    state = ReceptionState::WAIT_FOR_START_BYTE;
+                }
+                break;
+            }
         }
     }
 }
 
+// void CANInterface::receiveData() {
+//     CanMsg msg;
+//     // Check if a CAN packet is available and append to rxBuffer
+//     while (CAN.available()) {
+//         msg = CAN.read();
+//         //Debug================================================================================================
+//         Serial.print("Received CAN Message: ");\
+//         for(int i = 0; i < msg.data_length; i++) {
+//             Serial.print(msg.data[i]);
+//             Serial.print(" ");
+//         }
+//         Serial.println();
+//         //======================================================================================================
+//         for (int i = 0; i < msg.data_length; i++) {
+//             uint8_t byte = msg.data[i];  // Access each byte individually
+//             rxBuffer.push_back(byte);    // Add each byte to the rxBuffer
+//         }
+//     }
 
-bool CANInterface::hasPacket() {
+//     // Attempt to parse packets from rxBuffer (same as original)
+//     while (true) {
+//         if (rxBuffer.size() < 4 ){
+//             // Not enough data for even the smallest packet
+//             break;
+//         }
+
+//         size_t index = 0;
+//         while (index < rxBuffer.size() && rxBuffer[index] != Packet::startByte) {
+//             index++;
+//         }
+
+//         if (index > 0) {
+//             rxBuffer.erase(rxBuffer.begin(), rxBuffer.begin() + index);
+//         }
+
+//         if (rxBuffer.size() < 4) {
+//             break;
+//         }
+
+//         uint16_t packetLength = (rxBuffer[1] << 8) | rxBuffer[2];
+//         size_t totalPacketSize = 1 + 2 + packetLength;
+
+//         if (rxBuffer.size() < totalPacketSize) {
+//             break;
+//         }
+
+//         std::vector<uint8_t> packetData(rxBuffer.begin(), rxBuffer.begin() + totalPacketSize);
+//         Packet packet;
+//         if (packet.parse(packetData)) {
+//             packetQueue.push(packet);
+//             rxBuffer.erase(rxBuffer.begin(), rxBuffer.begin() + totalPacketSize);
+//         } else {
+//             rxBuffer.erase(rxBuffer.begin());
+//         }
+//     }
+// }
+
+bool CANInterface::hasPacket()
+{
     return !packetQueue.empty();
 }
 
-Packet CANInterface::getNextPacket() {
+Packet CANInterface::getNextPacket()
+{
     Packet packet = packetQueue.front();
     packetQueue.pop();
     return packet;
 }
 
 // Override method utilizing hasPacket() and getNextPacket()
-bool CANInterface::receivePacket(Packet& packet) {
+bool CANInterface::receivePacket(Packet &packet)
+{
     receiveData();
     // This method can be optional if using receiveData(), hasPacket(), and getNextPacket()
-    if (hasPacket()) {
+    if (hasPacket())
+    {
         packet = getNextPacket();
         return true;
     }
     return false;
 }
 
-std::string CANInterface::getName() const {
+std::string CANInterface::getName() const
+{
     return "CANInterface";
 }
