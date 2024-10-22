@@ -344,3 +344,72 @@ void CommandProcessor::testSendCommandPacket() {
         Serial.println("Error: Failed to serialize command");
     }
 }
+
+/// @brief Test function to send a command to the PC.  Not used in production.
+///        Use this function to determine the format of the command packet.
+void CommandProcessor::testCANCommandPacket() {
+
+    // Specify the command being sent
+    Serial.println("Sending CAN StatusCommand: ");
+
+    // Create a NodeCommand message
+    tfnode::NodeCommand command;
+    tfnode::GetStatusCommand statusCommand;  // Or other command type
+
+    // Set the command fields as needed
+    statusCommand.set_device(tfnode::Device::DEVICE_ALL);
+    statusCommand.set_mode(tfnode::DeviceStatusMode::STATUS_COMPACT);
+    statusCommand.set_repeating(true);
+    command.set_status(statusCommand);
+
+    uint8_t bufferData[256]; // Adjust size as needed
+    WriteBuffer buffer(bufferData, sizeof(bufferData));
+
+    ::EmbeddedProto::Error err = command.serialize(buffer);
+
+    // Debug
+    //Serial.print(" Data: ");
+    //for(int i = 0; i < buffer.get_size(); i++)
+        //Serial.print((char)buffer.get_data()[i]);
+    //Serial.print(" ");
+
+    if (err == ::EmbeddedProto::Error::NO_ERRORS) {
+        // Create a Packet with the serialized data
+        Packet packet;
+
+        // Set sender and destination IDs
+        packet.senderId.id = {0x0, 0x0, 0x0}; // Set sender ID to zero for test
+        packet.senderId.idType = NodeAddress::IDType::NodeID;
+
+        // Set destination ID as needed
+        // For simplicity, set destination ID to zero
+        packet.destinationId.id = {0x04, 0x05, 0x06};  // Destination is this device for the test
+        packet.destinationId.idType = NodeAddress::IDType::NodeID;
+        // Set data
+        packet.data.assign(bufferData, bufferData + buffer.get_size());
+
+        // Calculate packet length and checksum
+        packet.packetLength = packet.calculatePacketLength();
+        packet.checksum = packet.calculateChecksum();
+
+        // Debugging output
+        Serial.print("Calculated Packet Length: ");
+        Serial.println(packet.packetLength);
+
+        // Send the packet over Serial Interface
+        getInterfaceByName("CANInterface")->sendPacket(packet);
+
+        // Debug to console the full readable contents of packet
+        Serial.println("\nSent Packet: ");
+        Serial.println(packet.toString());  // Debug display outgoing packet
+
+        delay(5000);
+
+        // Now, handle the same packet that was constructed to test packet handling
+        //Serial.println("Handling packet...\n");
+        //handlePacket(packet, getInterfaceByName("SerialInterface"));
+    } else {
+        // Handle serialization error
+        Serial.println("Error: Failed to serialize command");
+    }
+}

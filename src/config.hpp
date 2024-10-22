@@ -4,10 +4,11 @@
 // Select the shield version
 #include "config-shield-v1.0.hpp"
 #include <Arduino.h>
+#include <vector>
 
 // Common configuration parameters
 const char CFG_FIRMWARE_VERSION[] = "1.0.0";
-constexpr uint8_t NODE_ID = 1;
+const std::vector<uint8_t> NODE_ID = {0x04, 0x05, 0x06};
 
 const int SIGNAL_TIMEOUT = 2000;            // Amount of time (ms) between receiving master commands before auto-disable
 const int RECONNECTION_INTERVAL_MS = 5000;  // Attempt to reconnect to enabled NetworkInterfaces on this interval

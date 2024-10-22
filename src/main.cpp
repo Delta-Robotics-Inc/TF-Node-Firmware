@@ -11,13 +11,14 @@
 #include "config.hpp"
 #include "TFNode.hpp"
 #include "networking/SerialInterface.h"
-#include "networking/CommandProcessor.hpp"
+#include "networking/CanInterface.h"
+
 
 // Create instances of network interfaces
 SerialInterface serialInterface;
 
 // Assume CANInterface and SPIInterface are implemented similarly
-// CANInterface canInterface;
+CANInterface canInterface;
 // SPIInterface spiInterface;
 
 TFNode* master_tfNode;
@@ -32,7 +33,7 @@ void setup() {
     // TODO add a unique command for setting address and attach it to Settings
     NodeAddress nodeAddress;
     nodeAddress.idType = NodeAddress::IDType::NodeID;  // Default NodeID ID type
-    nodeAddress.id = {0x01, 0x02, 0x03};               // Node's unique ID
+    nodeAddress.id = NODE_ID;  // Node's unique ID specified in Config
 
     master_tfNode = new TFNode(nodeAddress);
     commandProcessor = new CommandProcessor(*master_tfNode);
@@ -40,16 +41,16 @@ void setup() {
 
     // Add network interfaces to the command processor
     commandProcessor->addNetworkInterface(&serialInterface);
-    // commandProcessor.addNetworkInterface(&canInterface);
+    commandProcessor->addNetworkInterface(&canInterface);
     // commandProcessor.addNetworkInterface(&spiInterface);
 
     master_tfNode->begin();
 
     // Add debug actions below
     // master_tfNode->CMD_setStatusMode(tfnode::Device::DEVICE_NODE, tfnode::DeviceStatusMode::STATUS_COMPACT, &serialInterface);
-    delay(1000);
-    commandProcessor->testSendCommandPacket();
-    Serial.println("Setup complete");
+    //delay(1000);
+    //commandProcessor->testCANCommandPacket();
+    //Serial.println("Setup complete");
 }
 
 void loop() {

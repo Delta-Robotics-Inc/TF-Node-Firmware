@@ -27,6 +27,7 @@ public:
     void sendResponse(const tfnode::NodeResponse& response, NetworkInterface* iface);
     void sendSerialString(String message);
     void testSendCommandPacket();
+    void testCANCommandPacket();
 
 private:
     TFNode& node;
