@@ -16,8 +16,13 @@ void CANInterface::sendPacket(const Packet& packet) {
 
     Serial.print("Writing down packet");
 
-    CanMsg msg(CanStandardId(CAN_ID), rawData.size(), rawData.data());
-    CAN.write(msg);
+    
+    // Send the rawData in chunks of 8 bytes
+    for (size_t i = 0; i < rawData.size(); i += 8) {
+        size_t chunkSize = std::min(static_cast<size_t>(8), rawData.size() - i);
+        CanMsg msg(CanStandardId(CAN_ID), chunkSize, rawData.data() + i);
+        CAN.write(msg);
+    }
 }
 
 void CANInterface::receiveData() {
@@ -25,6 +30,13 @@ void CANInterface::receiveData() {
     // Check if a CAN packet is available and append to rxBuffer
         while (CAN.available()) {
             msg = CAN.read();
+            //Debug================================================================================================
+            Serial.print("Received CAN Message: ");\
+            for(int i = 0; i < msg.data_length; i++) {
+                Serial.print(msg.data[i]);
+                Serial.print(" ");
+            }
+            //======================================================================================================
             for (int i = 0; i < msg.data_length; i++) {
                 uint8_t byte = msg.data[i];  // Access each byte individually
                 //TODO ask how vectors work
