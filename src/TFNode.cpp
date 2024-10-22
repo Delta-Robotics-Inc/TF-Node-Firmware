@@ -40,6 +40,10 @@ void TFNode::begin() {
     smaControllers[1].begin();
 
     log_timer = millis();
+
+    digitalWrite(STATUS_RGB_RED, LOW);
+    digitalWrite(STATUS_RGB_GREEN, HIGH);
+    digitalWrite(STATUS_RGB_BLUE, HIGH);
 }
 
 void TFNode::update() {
@@ -85,19 +89,19 @@ void TFNode::toggleRGBStatusLED() {
 
     switch(ledState) {
         case RED:
-            digitalWrite(STATUS_RGB_RED, HIGH);
-            digitalWrite(STATUS_RGB_GREEN, LOW);
-            digitalWrite(STATUS_RGB_BLUE, LOW);
-            break;
-        case GREEN:
             digitalWrite(STATUS_RGB_RED, LOW);
             digitalWrite(STATUS_RGB_GREEN, HIGH);
-            digitalWrite(STATUS_RGB_BLUE, LOW);
+            digitalWrite(STATUS_RGB_BLUE, HIGH);
             break;
-        case BLUE:
-            digitalWrite(STATUS_RGB_RED, LOW);
+        case GREEN:
+            digitalWrite(STATUS_RGB_RED, HIGH);
             digitalWrite(STATUS_RGB_GREEN, LOW);
             digitalWrite(STATUS_RGB_BLUE, HIGH);
+            break;
+        case BLUE:
+            digitalWrite(STATUS_RGB_RED, HIGH);
+            digitalWrite(STATUS_RGB_GREEN, HIGH);
+            digitalWrite(STATUS_RGB_BLUE, LOW);
             break;
     }
 }
