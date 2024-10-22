@@ -16,10 +16,7 @@
 
 // Create instances of network interfaces
 SerialInterface* serialInterface;
-SerialInterface* serialInterface;
-
 // Assume CANInterface and SPIInterface are implemented similarly
-CANInterface* canInterface;
 CANInterface* canInterface;
 // SPIInterface spiInterface;
 
@@ -55,7 +52,7 @@ void setup() {
 
     // Add debug actions below
     // master_tfNode->CMD_setStatusMode(tfnode::Device::DEVICE_NODE, tfnode::DeviceStatusMode::STATUS_COMPACT, &serialInterface);
-    commandProcessor->testCANCommandPacket();
+    //commandProcessor->testCANCommandPacket();
     //Serial.println("Setup complete");
 }
 

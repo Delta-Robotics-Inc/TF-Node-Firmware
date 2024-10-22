@@ -2,16 +2,16 @@
 
 CANInterface::CANInterface()
 {
-    Serial.println("Starting CAN...");
+    // Serial.println("Starting CAN...");
     if (!CAN.begin(CanBitRate::BR_250k))
     {
-        Serial.println("Failed to start CAN");
+        // Serial.println("Failed to start CAN");
     }
 }
 
 void CANInterface::sendPacket(const Packet &packet)
 {
-    Serial.println("Serializing packet for CAN");
+    // Serial.println("Serializing packet for CAN");
     std::vector<uint8_t> rawData = packet.serialize();
     static uint32_t const CAN_ID = 0x20;
 
@@ -50,13 +50,13 @@ void CANInterface::receiveData()
     {
         msg = CAN.read();
         // Debug================================================================================================
-        Serial.print("Received CAN Message: ");
+        // Serial.print("Received CAN Message: ");
         for (int i = 0; i < msg.data_length; i++)
         {
             Serial.print(msg.data[i]);
             Serial.print(" ");
         }
-        Serial.println();
+        // Serial.println();
         //======================================================================================================
         
         for (int i = 0; i < msg.data_length; i++)
