@@ -1,27 +1,42 @@
 #include "CANInterface.h"
 
 CANInterface::CANInterface() {
+    Serial.println("Starting CAN...");
     if(!CAN.begin(CanBitRate::BR_250k)) {
         Serial.println("Failed to start CAN");
     }
 }
 
 void CANInterface::sendPacket(const Packet& packet) {
+    Serial.println("Serializing packet for CAN ");
+
     std::vector<uint8_t> rawData = packet.serialize();
 
     static uint32_t const CAN_ID = 0x20;
-    
-    uint32_t const can_id = packet.senderId.id[packet.senderId.CANID];
-    // Begin sending a CAN packet
 
-    Serial.print("Writing down packet");
+    Serial.println("Writing down packet");
 
-    
     // Send the rawData in chunks of 8 bytes
     for (size_t i = 0; i < rawData.size(); i += 8) {
-        size_t chunkSize = std::min(static_cast<size_t>(8), rawData.size() - i);
+        uint8_t chunkSize = std::min(static_cast<size_t>(8), rawData.size() - i);
+
+        //Debug Sent CANMsg Data======================================
+        // Serial.print("Data: ");
+        // for(int j = 0; j < chunkSize; j++) {
+        //     Serial.print(rawData[i + j]);
+        //     Serial.print(" ");
+        // }
+        // Serial.println();
+        //============================================================
+
         CanMsg msg(CanStandardId(CAN_ID), chunkSize, rawData.data() + i);
-        CAN.write(msg);
+        if (int const rc = CAN.write(msg); rc < 0)
+        {
+            Serial.print  ("CAN.write(...) failed with error code ");
+            Serial.println(rc);
+        }
+        //TODO determine better solution then delay
+       delayMicroseconds(500);
     }
 }
 
