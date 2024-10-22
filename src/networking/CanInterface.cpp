@@ -110,6 +110,7 @@ Packet CANInterface::getNextPacket() {
 
 // Override method utilizing hasPacket() and getNextPacket()
 bool CANInterface::receivePacket(Packet& packet) {
+    receiveData();
     // This method can be optional if using receiveData(), hasPacket(), and getNextPacket()
     if (hasPacket()) {
         packet = getNextPacket();
