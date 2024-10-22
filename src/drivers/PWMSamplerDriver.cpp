@@ -14,8 +14,8 @@ PWMSamplerDriver::PWMSamplerDriver(float frequency, float startDuty, int _pwm_pi
 
     min_duty_percent = (measure_delay_us / 1000000.0) / (1.0 / pwm_freq_hz);
 
-    Serial.print("Min duty percent: ");
-    Serial.println(min_duty_percent);
+    //Serial.print("Min duty percent: ");
+    //Serial.println(min_duty_percent);
     
     pinMode(pwm_pin, OUTPUT);
     digitalWrite(pwm_pin, LOW);
