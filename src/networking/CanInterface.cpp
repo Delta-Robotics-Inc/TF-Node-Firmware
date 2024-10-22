@@ -13,7 +13,9 @@ void CANInterface::sendPacket(const Packet& packet) {
     
     uint32_t const can_id = packet.senderId.id[packet.senderId.CANID];
     // Begin sending a CAN packet
-    //TODO ask mark about how to get the ID from the
+
+    Serial.print("Writing down packet");
+
     CanMsg msg(CanStandardId(CAN_ID), rawData.size(), rawData.data());
     CAN.write(msg);
 }
