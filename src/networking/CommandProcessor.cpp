@@ -110,8 +110,8 @@ void CommandProcessor::sendResponse(const tfnode::NodeResponse& response, Networ
         iface->sendPacket(packet);
 
         // Debug to console the full readable contents of packet
-        //Serial.println("\nSent Packet: ");
-        //Serial.println(packet.toString());  // Debug display outgoing packet
+        Serial.println("\nSent Packet: ");
+        Serial.println(packet.toString());  // Debug display outgoing packet
     } else {
         // Handle serialization error
     }
@@ -151,6 +151,7 @@ void CommandProcessor::handlePacket(Packet& packet, NetworkInterface* sourceInte
     } else {
         // Packet is not for this node, forward it
         forwardPacket(packet, sourceInterface);
+        //Serial.println("Packet is not for this node, forwarding...");
     }
 }
 

@@ -9,14 +9,8 @@ CANInterface::CANInterface() {
 
 void CANInterface::sendPacket(const Packet& packet) {
     Serial.println("Serializing packet for CAN");
-
-    Serial.println("Serializing packet for CAN ");
-
     std::vector<uint8_t> rawData = packet.serialize();
-
     static uint32_t const CAN_ID = 0x20;
-
-    Serial.println("Writing down packet");
 
     // Send the rawData in chunks of 8 bytes
     for (size_t i = 0; i < rawData.size(); i += 8) {
@@ -34,11 +28,13 @@ void CANInterface::sendPacket(const Packet& packet) {
         CanMsg msg(CanStandardId(CAN_ID), chunkSize, rawData.data() + i);
         if (int const rc = CAN.write(msg); rc < 0)
         {
-            Serial.print  ("CAN.write(...) failed with error code ");
-            Serial.println(rc);
+            // TODO implement error
+            //Serial.print  ("CAN.write(...) failed with error code ");
+            //Serial.println(rc);
         }
         //TODO determine better solution then delay
-       delayMicroseconds(500);
+       //delayMicroseconds(500);
+       delay(5);
     }
 }
 

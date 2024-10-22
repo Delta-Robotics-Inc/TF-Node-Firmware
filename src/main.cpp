@@ -15,10 +15,10 @@
 
 
 // Create instances of network interfaces
-SerialInterface serialInterface;
+SerialInterface* serialInterface;
 
 // Assume CANInterface and SPIInterface are implemented similarly
-CANInterface canInterface;
+CANInterface* canInterface;
 // SPIInterface spiInterface;
 
 TFNode* master_tfNode;
@@ -26,7 +26,8 @@ CommandProcessor* commandProcessor;
 
 void setup() {
     Serial.begin(115200);
-    canInterface = CANInterface();
+    serialInterface = new SerialInterface();
+    canInterface = new CANInterface();
 
     // Initialize node with its address
     // TODO this should be different for every device
@@ -40,17 +41,17 @@ void setup() {
     master_tfNode->setCommandProcessor(commandProcessor);
 
     // Add network interfaces to the command processor
-    commandProcessor->addNetworkInterface(&serialInterface);
-    commandProcessor->addNetworkInterface(&canInterface);
+    commandProcessor->addNetworkInterface(serialInterface);
+    commandProcessor->addNetworkInterface(canInterface);
     // commandProcessor.addNetworkInterface(&spiInterface);
 
     master_tfNode->begin();
 
     // Add debug actions below
     // master_tfNode->CMD_setStatusMode(tfnode::Device::DEVICE_NODE, tfnode::DeviceStatusMode::STATUS_COMPACT, &serialInterface);
-    //delay(1000);
+    delay(1000);
     //commandProcessor->testCANCommandPacket();
-    //Serial.println("Setup complete");
+    Serial.println("Setup complete");
 }
 
 void loop() {
