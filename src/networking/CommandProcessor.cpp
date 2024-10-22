@@ -59,9 +59,9 @@ void CommandProcessor::process() {
 
         if (iface->receivePacket(packet)) {
             //#ifdef DEBUG
-            Serial.println("\nReceived Packet: ");
+            // Serial.println("\nReceived Packet: ");
             //#endif
-            Serial.println(packet.toString());  // Debug display incoming packet
+            // Serial.println(packet.toString());  // Debug display incoming packet
             handlePacket(packet, iface);
         }
     }
@@ -110,8 +110,8 @@ void CommandProcessor::sendResponse(const tfnode::NodeResponse& response, Networ
         iface->sendPacket(packet);
 
         // Debug to console the full readable contents of packet
-        Serial.println("\nSent Packet: ");
-        Serial.println(packet.toString());  // Debug display outgoing packet
+        // Serial.println("\nSent Packet: ");
+        // Serial.println(packet.toString());  // Debug display outgoing packet
     } else {
         // Handle serialization error
     }
@@ -261,7 +261,7 @@ tfnode::ResponseCode CommandProcessor::executeCommand(tfnode::NodeCommand comman
 }
 
 void CommandProcessor::forwardPacket(const Packet& packet, NetworkInterface* excludeInterface) {
-    Serial.println("Forwarding packet to other interfaces...");
+    //Serial.println("Forwarding packet to other interfaces...");
     for (auto iface : interfaces) {
         if (iface != excludeInterface) {
             // If Network ID Type and Network ID are specified, forward only to matching interface
