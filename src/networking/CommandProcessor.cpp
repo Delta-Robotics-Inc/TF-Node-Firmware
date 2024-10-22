@@ -147,7 +147,7 @@ void CommandProcessor::handlePacket(Packet& packet, NetworkInterface* sourceInte
         generalResponse.set_received_cmd(tfnode::FunctionCode::FUNCTION_ENABLE);  // TODO parse the received command into a function code
         response.set_general_response(generalResponse);
 
-        sendResponse(response, sourceInterface);
+        //sendResponse(response, sourceInterface);
     } else {
         // Packet is not for this node, forward it
         forwardPacket(packet, sourceInterface);
