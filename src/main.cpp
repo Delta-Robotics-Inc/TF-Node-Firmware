@@ -51,15 +51,15 @@ void setup() {
 
 
     // Add debug actions below
-    master_tfNode->smaControllers[0].CMD_setMode(tfnode::SMAControlMode::MODE_PERCENT);
-    master_tfNode->smaControllers[1].CMD_setMode(tfnode::SMAControlMode::MODE_PERCENT);
-    master_tfNode->smaControllers[0].CMD_setSetpoint(tfnode::SMAControlMode::MODE_PERCENT, 1.0);
-    master_tfNode->smaControllers[1].CMD_setSetpoint(tfnode::SMAControlMode::MODE_PERCENT, 1.0);
-    master_tfNode->CMD_enableDevice(tfnode::Device::DEVICE_PORT1);
+    // master_tfNode->smaControllers[0].CMD_setMode(tfnode::SMAControlMode::MODE_PERCENT);
+    // master_tfNode->smaControllers[1].CMD_setMode(tfnode::SMAControlMode::MODE_PERCENT);
+    // master_tfNode->smaControllers[0].CMD_setSetpoint(tfnode::SMAControlMode::MODE_PERCENT, 1.0);
+    // master_tfNode->smaControllers[1].CMD_setSetpoint(tfnode::SMAControlMode::MODE_PERCENT, 1.0);
+    // master_tfNode->CMD_enableDevice(tfnode::Device::DEVICE_PORT1);
     // master_tfNode->CMD_setStatusMode(tfnode::Device::DEVICE_NODE, tfnode::DeviceStatusMode::STATUS_COMPACT, &serialInterface);
     //commandProcessor->testCANCommandPacket();
-    commandProcessor->testCANEnableCommandPacket();
-    //Serial.println("Setup complete");
+    // commandProcessor->testCANEnableCommandPacket();
+    Serial.println("Setup complete");
 }
 
 void loop() {
