@@ -32,7 +32,8 @@ public:
     std::vector<uint8_t> serialize() const;  // Serialize the packet into raw data
     String toString() const;  // Convert packet to string representation
     bool isValid() const;   // Check if the packet is valid
-    bool isForThisNode(const NodeAddress& nodeAddress) const;  // Check if the packet is intended for this node
+    bool isBroadcast() const;
+    bool isForThisNode(const NodeAddress &nodeAddress) const; // Check if the packet is intended for this node
 
     // Packet fields
     static constexpr uint8_t startByte = 0x7E;

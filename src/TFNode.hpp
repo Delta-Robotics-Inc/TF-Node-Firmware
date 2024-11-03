@@ -1,11 +1,11 @@
 #ifndef TF_NODE_H
 #define TF_NODE_H
 
-//#include "SMAController.hpp"
+#include "SMAController.hpp"  // Ensure this header file contains the full definition of SMAController
 #include "networking/CommandProcessor.hpp"
 #include "networking/tfnode-messages.h"
 
-class SMAController;  // Forward Declaration TODO remove the need for this...
+//class SMAController;  // Forward Declaration TODO remove the need for this...
 
 //=============================================================================
 // Diagnostics
@@ -31,6 +31,8 @@ public:
     void begin();
     void update();
 
+    void init_finished();
+
     // Setter for CommandProcessor
     void setCommandProcessor(CommandProcessor* cp);
 
@@ -46,7 +48,10 @@ public:
     float n_vSupply;    // Current value of measured battery voltage.
     float pot_val;      // Current value of the potentiometer
 
-    std::vector<SMAController> smaControllers;
+    // Use smart pointers to manage memory automatically
+    //std::array<std::unique_ptr<SMAController>, 2> smaControllers;
+    SMAController smaController0;
+    SMAController smaController1;
 
 
     // Command handlers

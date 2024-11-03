@@ -167,8 +167,17 @@ bool Packet::isValid() const {
     return true;
 }
 
+bool Packet::isBroadcast() const {
+    // Broadcast packets have a destination ID of FF FF FF
+    return destinationId.idType == NodeAddress::IDType::NodeID && destinationId.id[0] == 0xFF && destinationId.id[1] == 0xFF && destinationId.id[2] == 0xFF;
+}
+
 bool Packet::isForThisNode(const NodeAddress& nodeAddress) const {
-    return destinationId == nodeAddress;
+    bool isDontCareAddress = destinationId.idType == NodeAddress::IDType::NodeID && 
+                                destinationId.id[0] == 0x00 && 
+                                destinationId.id[1] == 0x00 && 
+                                destinationId.id[2] == 0x01;
+    return isDontCareAddress || (destinationId == nodeAddress);
 }
 
 uint8_t Packet::calculateChecksum() const {

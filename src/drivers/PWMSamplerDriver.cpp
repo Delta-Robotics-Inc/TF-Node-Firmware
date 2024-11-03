@@ -217,19 +217,24 @@ bool PWMSamplerDriver::begintimer()
 
 bool PWMSamplerDriver::startTimer()
 {
+    //Serial.println("PWMSamplerDriver::startTimer - Start Timer");
     return timer.start();
 }
 
 bool PWMSamplerDriver::stopTimer()
 {
+    //Serial.println("PWMSamplerDriver::stopTimer - Stop Timer");
     return timer.stop();
 }
 
 bool PWMSamplerDriver::resetTimer()
 {
+    //Serial.println("PWMSamplerDriver::resetTimer - Reset Timer");
     return timer.reset();
 }
 
 PWMSamplerDriver::~PWMSamplerDriver() {
-    timer.end();
+    //Serial.println("PWMSamplerDriver destructor called");
+    timer.stop();  // Stop the timer
+    timer.end();   // Clean up the timer
 }

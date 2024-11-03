@@ -1,14 +1,15 @@
+#include "globals.hpp"
+#include "SMAController.hpp"
 #include "TFNode.hpp"
 #include "config.hpp"
-#include "SMAController.hpp"
 
 TFNode::TFNode(const NodeAddress& addr)
     : address(addr),
     commandProcessor(nullptr), // Initialize to nullptr
     statusMode(tfnode::DeviceStatusMode::STATUS_NONE),
     statusInterface(nullptr),
-    smaControllers{ SMAController(tfnode::Device::DEVICE_PORT1, "M1", M1_MOS_TRIG, M1_CURR_RD, M1_VLD_RD, VLD_SCALE_FACTOR_M1, VLD_OFFSET_M1),
-                    SMAController(tfnode::Device::DEVICE_PORT1, "M2", M2_MOS_TRIG, M2_CURR_RD, M2_VLD_RD, VLD_SCALE_FACTOR_M2, VLD_OFFSET_M2)},   // Vector is initialized with two SMAController objects
+    smaController0(tfnode::Device::DEVICE_PORT1, "M1_PORT0", M1_MOS_TRIG, M1_CURR_RD, M1_VLD_RD, VLD_SCALE_FACTOR_M1, VLD_OFFSET_M1),
+    smaController1(tfnode::Device::DEVICE_PORT2, "M2_PORT1", M2_MOS_TRIG, M2_CURR_RD, M2_VLD_RD, VLD_SCALE_FACTOR_M2, VLD_OFFSET_M2),
     n_error(0xFF), // Assuming all errors are cleared at start
     n_vSupply(0.0f),
     pot_val(0.0f),
@@ -36,15 +37,22 @@ void TFNode::begin() {
 
     // Initialize controllers
     //*********************************************************/
-    smaControllers[0].begin();
-    smaControllers[1].begin();
+    // Serial.print("SMA 0 pointer: ");
+    // Serial.println((uintptr_t)smaControllers[0].get(), HEX);
+    smaController0.begin();
+    // Serial.print("SMA 1 pointer: ");
+    // Serial.println((uintptr_t)smaControllers[1].get(), HEX);
+    smaController1.begin();
 
     log_timer = millis();
+}
 
+void TFNode::init_finished() {
     digitalWrite(STATUS_RGB_RED, LOW);
     digitalWrite(STATUS_RGB_GREEN, HIGH);
     digitalWrite(STATUS_RGB_BLUE, HIGH);
 }
+
 
 void TFNode::update() {
     // Poll sensors
@@ -53,8 +61,9 @@ void TFNode::update() {
 
     // Update controllers
     //*********************************************************/
-    smaControllers[0].update();
-    smaControllers[1].update();
+    smaController0.update();
+    smaController1.update();
+    //Serial.println("TFNode::update() - Finished SMAController::update()");
 
     checkErrs();
 
@@ -71,15 +80,11 @@ void TFNode::update() {
     // Every certain interval (LOG_MS), log/report data to console
     if(millis() - log_timer > LOG_MS) {
         sendStatusResponse(statusMode);
-        digitalWrite(STATUS_SOLID_LED, !digitalRead(STATUS_SOLID_LED));
+        //smaController0.sendStatusResponse(statusMode);
+        //smaController1.sendStatusResponse(statusMode);
+        //digitalWrite(STATUS_SOLID_LED, !digitalRead(STATUS_SOLID_LED));
     }
 }
-
-void TFNode::setCommandProcessor(CommandProcessor* cp) {
-    commandProcessor = cp;
-}
-
-
 
 void TFNode::toggleRGBStatusLED() {
 
@@ -112,12 +117,8 @@ void TFNode::toggleRGBStatusLED() {
 //=============================================================================
 
 tfnode::ResponseCode TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::DeviceStatusMode mode, bool repeating, NetworkInterface* iface) {
-    #ifdef DEBUG
-    Serial.print("Setting status mode to ");
-    Serial.println(mode);
-    #endif
-    // For now, we assume device is DEVICE_NODE or DEVICE_ALL
 
+    // For now, we assume device is DEVICE_NODE or DEVICE_ALL
     if (device == tfnode::Device::DEVICE_NODE || device == tfnode::Device::DEVICE_ALL) {
         statusInterface = iface;
         if(repeating) {
@@ -134,7 +135,11 @@ tfnode::ResponseCode TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::De
     }
 
     // Optionally, handle status mode for SMAControllers
-    if (device == tfnode::Device::DEVICE_PORT1 || device == tfnode::Device::DEVICE_PORT2) {
+    if (device == tfnode::Device::DEVICE_PORT1 || device == tfnode::Device::DEVICE_PORTALL || device == tfnode::Device::DEVICE_ALL) {
+        // Set status mode on the specific SMAController
+        // Not implemented in this example
+    }
+    if(device == tfnode::Device::DEVICE_PORT2 || device == tfnode::Device::DEVICE_PORTALL || device == tfnode::Device::DEVICE_ALL) {
         // Set status mode on the specific SMAController
         // Not implemented in this example
     }
@@ -146,11 +151,11 @@ tfnode::ResponseCode TFNode::CMD_resetDevice(tfnode::Device device) {
     if (device == tfnode::Device::DEVICE_NODE || device == tfnode::Device::DEVICE_ALL) {
         // Reset node-specific settings
     }
-    if (device == tfnode::Device::DEVICE_PORT1 || device == tfnode::Device::DEVICE_ALL) {
-        smaControllers[0].CMD_reset();
+    if (device == tfnode::Device::DEVICE_PORT1 || device == tfnode::Device::DEVICE_ALL || device == tfnode::Device::DEVICE_PORTALL) {
+        smaController0.CMD_reset();
     }
-    if (device == tfnode::Device::DEVICE_PORT2 || device == tfnode::Device::DEVICE_ALL) {
-        smaControllers[1].CMD_reset();
+    if (device == tfnode::Device::DEVICE_PORT2 || device == tfnode::Device::DEVICE_ALL || device == tfnode::Device::DEVICE_PORTALL) {
+        smaController1.CMD_reset();
     }
 
     return tfnode::ResponseCode::RESPONSE_SUCCESS;
@@ -158,9 +163,13 @@ tfnode::ResponseCode TFNode::CMD_resetDevice(tfnode::Device device) {
 
 tfnode::ResponseCode TFNode::CMD_enableDevice(tfnode::Device device) {
     if (device == tfnode::Device::DEVICE_PORT1) {
-        smaControllers[0].CMD_setEnable(true);
+        smaController0.CMD_setEnable(true);
     } else if (device == tfnode::Device::DEVICE_PORT2) {
-        smaControllers[1].CMD_setEnable(true);
+        smaController1.CMD_setEnable(true);
+    }
+    else if (device == tfnode::Device::DEVICE_ALL || device == tfnode::Device::DEVICE_PORTALL) {
+        smaController0.CMD_setEnable(true);
+        smaController1.CMD_setEnable(true);
     }
     // Handle DEVICE_ALL and DEVICE_PORTALL as needed
 
@@ -279,9 +288,9 @@ String TFNode::getStatusReadable()
 
 void TFNode::optButtonStopFunc() {
     //******************************************************** */
-  smaControllers[0].CMD_setEnable(false);
-  smaControllers[1].CMD_setEnable(false);
-  errRaise(ERR_EXTERNAL_INTERRUPT);
+    smaController0.CMD_setEnable(false);
+    smaController1.CMD_setEnable(false);
+    errRaise(ERR_EXTERNAL_INTERRUPT);
 }
 
 void TFNode::checkErrs() {
@@ -313,7 +322,7 @@ void TFNode::errClear(NodeError err_code) {
 //=============================================================================
 
 float TFNode::getSupplyVolts() {
-  float value=0.0,samples=0.0,avg_value=0.0,raw=0.0;
+    float value=0.0,samples=0.0,avg_value=0.0,raw=0.0;
     
     for (int x = 0; x < 30; x++){   // Get 30 samples
       value = analogRead(VRD_PIN);  // Read voltage divider value   

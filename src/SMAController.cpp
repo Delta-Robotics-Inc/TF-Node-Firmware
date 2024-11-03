@@ -1,7 +1,6 @@
+#include "globals.hpp"
 #include "SMAController.hpp"
 #include "drivers/PWMSamplerDriver.h"
-
-extern TFNode master_tfNode;
 
 SMAController::SMAController(tfnode::Device _devicePort, String _name, uint8_t _m, uint8_t _currPin, uint8_t _vLdPin, float _scaleFactor, float _offset)
     : devicePort(_devicePort), name(_name), mosfet_pin(_m), curr_pin(_currPin), vld_pin(_vLdPin), vld_scaleFactor(_scaleFactor), vld_offset(_offset) {}
@@ -16,10 +15,12 @@ void SMAController::begin()
 void SMAController::update()
 {
     // #TODO: Handle pulse condition
+    // Serial.println("Updating SMAController");
 
     // Write to muscle if enabled
     if (enabled)
     {
+        // Serial.println("Muscle enabled");
         // Handle behavior of each control mode
         switch (currentMode)
         {
@@ -27,7 +28,7 @@ void SMAController::update()
             pwm_duty_percent = setpoint[(int)tfnode::SMAControlMode::MODE_PERCENT];
             break;
         case tfnode::SMAControlMode::MODE_VOLTS:
-            pwm_duty_percent = setpoint[(int)tfnode::SMAControlMode::MODE_VOLTS] / master_tfNode.n_vSupply; // When controlling for volts, the ratio of setpoint/supply will be percentage of power to deliver
+            pwm_duty_percent = setpoint[(int)tfnode::SMAControlMode::MODE_VOLTS] / master_tfNode->n_vSupply; // When controlling for volts, the ratio of setpoint/supply will be percentage of power to deliver
             break;
         // TODO: Implement other control modes
         case tfnode::SMAControlMode::MODE_AMPS:                                        // Need to implement PID loop
@@ -71,7 +72,7 @@ void SMAController::update()
     // CURRENT OVERFLOW ERROR CONDITION
     if (curr_val > MAX_CURRENT)
     {
-        master_tfNode.errRaise(ERR_CURRENT_OF);
+        master_tfNode->errRaise(ERR_CURRENT_OF);
         // setEnable(false); //disable muscle
     }
 }
@@ -82,7 +83,7 @@ void SMAController::CMD_setEnable(bool state)
 
       // Clear the external disable error
       if(enabled)
-        master_tfNode.errClear(ERR_EXTERNAL_INTERRUPT);
+        master_tfNode->errClear(ERR_EXTERNAL_INTERRUPT);
 
       if((currentMode == tfnode::SMAControlMode::MODE_TRAIN || 
           currentMode == tfnode::SMAControlMode::MODE_OHMS) && enabled) {
@@ -164,7 +165,7 @@ void SMAController::measure()
     //Serial.println(name);
     vld_val = getLoadVoltage();    
     curr_val = getMuscleAmps();
-    rld_val = calcResistance(master_tfNode.n_vSupply, vld_val, curr_val);
+    rld_val = calcResistance(master_tfNode->n_vSupply, vld_val, curr_val);
 }
 
 // Callable by PWMSamplerDriver with a reference to a TF_Muscle

@@ -38,7 +38,8 @@ private:
 
     void handlePacket(Packet& packet, NetworkInterface* sourceInterface);
     tfnode::NodeCommand parseCommandPacket(const Packet& packet);
-    tfnode::ResponseCode executeCommand(tfnode::NodeCommand command, NetworkInterface* sourceInterface);
+    void handleCommand(Packet &packet, NetworkInterface* sourceInterface);
+    tfnode::ResponseCode executeCommand(tfnode::NodeCommand command, NetworkInterface *sourceInterface);
     void forwardPacket(const Packet& packet, NetworkInterface* excludeInterface = nullptr);
 };
 

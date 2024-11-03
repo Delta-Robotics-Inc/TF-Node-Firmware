@@ -2,7 +2,8 @@
 #define SMA_CONTROLLER_H
 
 #include "config.hpp"
-#include "TFNode.hpp"
+#include "networking/tfnode-messages.h"
+//#include "TFNode.hpp"
 
 #include "drivers/ResistiveController.h"
 #include "drivers/GradientTracker.hpp"
