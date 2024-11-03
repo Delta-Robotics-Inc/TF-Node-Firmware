@@ -81,6 +81,7 @@ void CommandProcessor::sendResponse(const tfnode::NodeResponse& response, Networ
 
     ::EmbeddedProto::Error err = response.serialize(buffer);
 
+
     // Debug
     //Serial.print(" Data: ");
     //for(int i = 0; i < buffer.get_size(); i++)
@@ -130,30 +131,17 @@ void CommandProcessor::handlePacket(Packet& packet, NetworkInterface* sourceInte
         return;
     }
 
-    if (packet.isForThisNode(node.getAddress())) {
-
-        tfnode::NodeCommand command = parseCommandPacket(packet);
-        tfnode::ResponseCode code;
-
-        if (command.get_which_command() != tfnode::NodeCommand::FieldNumber::NOT_SET) {
-            // Packet is intended for this node
-            code = executeCommand(command, sourceInterface);
-        }
-        // Command not recognized
-        else {
-            code = tfnode::ResponseCode::RESPONSE_UNSUPPORTED_COMMAND;
-        }
-
-        // Create a response message.  GeneralResponse is the response message for all commands
-        tfnode::NodeResponse response;
-        tfnode::GeneralResponse generalResponse;
-        generalResponse.set_response_code(code);
-        generalResponse.set_received_cmd(tfnode::FunctionCode::FUNCTION_ENABLE);  // TODO parse the received command into a function code
-        response.set_general_response(generalResponse);
-
-        Serial.println("Sending Command Resonse...");
-        sendResponse(response, sourceInterface);
-    } else {
+    // Broadcast packets are handled by all nodes, so they are processed and forwarded
+    if(packet.isBroadcast()) {
+        handleCommand(packet, sourceInterface);
+        forwardPacket(packet, sourceInterface);
+    }
+    // Packets intended for this node are processed
+    else if (packet.isForThisNode(node.getAddress())) {
+        handleCommand(packet, sourceInterface);     
+    } 
+    // Packets intended for other nodes are forwarded
+    else {
         // Packet is not for this node, forward it
         forwardPacket(packet, sourceInterface);
         //Serial.println("Packet is not for this node, forwarding...");
@@ -176,6 +164,30 @@ tfnode::NodeCommand CommandProcessor::parseCommandPacket(const Packet& packet) {
 
     return command;
 }
+
+void CommandProcessor::handleCommand(Packet& packet, NetworkInterface* sourceInterface) {
+    tfnode::NodeCommand command = parseCommandPacket(packet);
+    tfnode::ResponseCode code;
+
+    if (command.get_which_command() != tfnode::NodeCommand::FieldNumber::NOT_SET) {
+        // Packet is intended for this node
+        code = executeCommand(command, sourceInterface);
+    }
+    // Command not recognized
+    else {
+        code = tfnode::ResponseCode::RESPONSE_UNSUPPORTED_COMMAND;
+    }
+
+    // Create a response message.  GeneralResponse is the response message for all commands
+    tfnode::NodeResponse response;
+    tfnode::GeneralResponse generalResponse;
+    generalResponse.set_response_code(code);
+    generalResponse.set_received_cmd(tfnode::FunctionCode::FUNCTION_ENABLE);  // TODO parse the received command into a function code
+    response.set_general_response(generalResponse);
+
+    Serial.println("Sending Command Resonse...");
+    sendResponse(response, sourceInterface);
+}   
 
 /// @brief Executes a commmand on the node or SMA controllers and returns a response code
 /// @param command Protobuf command message
@@ -202,18 +214,17 @@ tfnode::ResponseCode CommandProcessor::executeCommand(tfnode::NodeCommand comman
         case tfnode::NodeCommand::FieldNumber::SET_MODE:
             switch(command.set_mode().device()) {
                 case tfnode::Device::DEVICE_PORT1:
-                    node.smaControllers[0].CMD_setMode(command.set_mode().mode());
+                    node.smaController0.CMD_setMode(command.set_mode().mode());
                     responseCode = tfnode::ResponseCode::RESPONSE_SUCCESS;
                     break;
                 case tfnode::Device::DEVICE_PORT2:
-                    node.smaControllers[1].CMD_setMode(command.set_mode().mode());
+                    node.smaController1.CMD_setMode(command.set_mode().mode());
                     responseCode = tfnode::ResponseCode::RESPONSE_SUCCESS;
                     break;
                 case tfnode::Device::DEVICE_ALL:
                 case tfnode::Device::DEVICE_PORTALL:
-                    for (auto& controller : node.smaControllers) {
-                        controller.CMD_setMode(command.set_mode().mode());
-                    }
+                        node.smaController0.CMD_setMode(command.set_mode().mode());
+                        node.smaController1.CMD_setMode(command.set_mode().mode());
                     responseCode = tfnode::ResponseCode::RESPONSE_SUCCESS;
                     break;
                 default:
@@ -224,18 +235,17 @@ tfnode::ResponseCode CommandProcessor::executeCommand(tfnode::NodeCommand comman
         case tfnode::NodeCommand::FieldNumber::SET_SETPOINT:
             switch(command.set_setpoint().device()) {
                 case tfnode::Device::DEVICE_PORT1:
-                    node.smaControllers[0].CMD_setSetpoint(command.set_setpoint().mode(), command.set_setpoint().setpoint());
+                    node.smaController0.CMD_setSetpoint(command.set_setpoint().mode(), command.set_setpoint().setpoint());
                     responseCode = tfnode::ResponseCode::RESPONSE_SUCCESS;
                     break;
                 case tfnode::Device::DEVICE_PORT2:
-                    node.smaControllers[1].CMD_setSetpoint(command.set_setpoint().mode(), command.set_setpoint().setpoint());
+                    node.smaController1.CMD_setSetpoint(command.set_setpoint().mode(), command.set_setpoint().setpoint());
                     responseCode = tfnode::ResponseCode::RESPONSE_SUCCESS;
                     break;
                 case tfnode::Device::DEVICE_ALL:
                 case tfnode::Device::DEVICE_PORTALL:
-                    for (auto& controller : node.smaControllers) {
-                        controller.CMD_setSetpoint(command.set_setpoint().mode(), command.set_setpoint().setpoint());
-                    }
+                    node.smaController0.CMD_setSetpoint(command.set_setpoint().mode(), command.set_setpoint().setpoint());
+                    node.smaController1.CMD_setSetpoint(command.set_setpoint().mode(), command.set_setpoint().setpoint());
                     responseCode = tfnode::ResponseCode::RESPONSE_SUCCESS;
                     break;
                 default:

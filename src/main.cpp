@@ -5,15 +5,9 @@
 *
 *=============================================================================*/
 
-#define DEBUG  // Define if wanting serial debug statements
-
 #include <Arduino.h>
 #include "config.hpp"
-#include "TFNode.hpp"
-#include "networking/SerialInterface.h"
-#include "networking/CanInterface.h"
-#include "SMAController.hpp"
-
+#include "globals.hpp"
 
 // Create instances of network interfaces
 SerialInterface* serialInterface;
@@ -27,9 +21,11 @@ CommandProcessor* commandProcessor;
 void setup() {
     Serial.begin(115200);
     delay(1000);
-    //Serial.println("Serial begin at 115200");
+    Serial.println("Setup starting");
     serialInterface = new SerialInterface;
     canInterface = new CANInterface();
+
+    // Serial.println("Interfaces created");
 
     // Initialize node with its address
     // TODO this should be different for every device
@@ -40,7 +36,8 @@ void setup() {
 
     master_tfNode = new TFNode(nodeAddress);
     commandProcessor = new CommandProcessor(*master_tfNode);
-    master_tfNode->setCommandProcessor(commandProcessor);
+
+    // Serial.println("Node and CommandProcessor created");
 
     // Add network interfaces to the command processor
     commandProcessor->addNetworkInterface(serialInterface);
@@ -50,16 +47,18 @@ void setup() {
     master_tfNode->begin();
 
 
-    // Add debug actions below
-    // master_tfNode->smaControllers[0].CMD_setMode(tfnode::SMAControlMode::MODE_PERCENT);
-    // master_tfNode->smaControllers[1].CMD_setMode(tfnode::SMAControlMode::MODE_PERCENT);
-    // master_tfNode->smaControllers[0].CMD_setSetpoint(tfnode::SMAControlMode::MODE_PERCENT, 1.0);
-    // master_tfNode->smaControllers[1].CMD_setSetpoint(tfnode::SMAControlMode::MODE_PERCENT, 1.0);
-    // master_tfNode->CMD_enableDevice(tfnode::Device::DEVICE_PORT1);
+    // // Add debug actions below
+    // master_tfNode->smaController0.CMD_setMode(tfnode::SMAControlMode::MODE_PERCENT);
+    // master_tfNode->smaController1.CMD_setMode(tfnode::SMAControlMode::MODE_PERCENT);
+    // master_tfNode->smaController0.CMD_setSetpoint(tfnode::SMAControlMode::MODE_PERCENT, 1.0);
+    // master_tfNode->smaController1.CMD_setSetpoint(tfnode::SMAControlMode::MODE_PERCENT, 0.2);
+    // master_tfNode->CMD_enableDevice(tfnode::Device::DEVICE_ALL);
+
     // master_tfNode->CMD_setStatusMode(tfnode::Device::DEVICE_NODE, tfnode::DeviceStatusMode::STATUS_COMPACT, &serialInterface);
     //commandProcessor->testCANCommandPacket();
     // commandProcessor->testCANEnableCommandPacket();
     Serial.println("Setup complete");
+    master_tfNode->init_finished(); // Turn on LED to indicate setup complete
 }
 
 void loop() {

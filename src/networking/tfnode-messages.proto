@@ -6,6 +6,13 @@
 // - For more information, visit https://protobuf.dev/
 //=============================================================================
 
+//=============================================================================
+// Changes for Next Build (as of 24-1025)
+// - Change DEVICE_PORT1 to DEVICE_PORT0
+// - Change DEVICE_PORT2 to DEVICE_PORT1
+// - Make sure to update firmware to switch DEVICE_PORT1 to DEVICE_PORT0 (since it's a breaking change that the compiler won't catch)
+//=============================================================================
+
 syntax = "proto3";
 
 package tfnode;
@@ -42,8 +49,8 @@ enum Device {
   DEVICE_ALL = 0;
   DEVICE_NODE = 1;
   DEVICE_PORTALL = 2;
-  DEVICE_PORT1 = 3;  // Sometimes referred to as "M1"
-  DEVICE_PORT2 = 4;  // Sometimes referred to as "M2"
+  DEVICE_PORT0 = 3;  // Sometimes referred to as "M1"
+  DEVICE_PORT1 = 4;  // Sometimes referred to as "M2"
   // Add more devices as needed
 }
 
