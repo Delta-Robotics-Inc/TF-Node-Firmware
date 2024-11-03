@@ -58,7 +58,7 @@ void setup() {
     master_tfNode->CMD_enableDevice(tfnode::Device::DEVICE_PORT1);
     // master_tfNode->CMD_setStatusMode(tfnode::Device::DEVICE_NODE, tfnode::DeviceStatusMode::STATUS_COMPACT, &serialInterface);
     //commandProcessor->testCANCommandPacket();
-    commandProcessor->testCANEnableCommandPacket();
+    //commandProcessor->testCANEnableCommandPacket();
     //Serial.println("Setup complete");
 }
 

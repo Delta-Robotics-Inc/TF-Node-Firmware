@@ -18,16 +18,24 @@ class NetworkInterface {
 public:
     virtual ~NetworkInterface() {}
     virtual void sendPacket(const Packet& packet) = 0;
-    virtual bool receivePacket(Packet& packet) = 0;
+    virtual void receiveData() = 0; // Reads data and parses packets
     virtual std::string getName() const = 0;
 
     // TODO implement these on Serial and CAN interfaces
     virtual bool isConnected() = 0;
     virtual void attemptConnection() = 0;
+
+    void parsePacket(int byte_from_packet);
+    bool receivePacket(Packet& packet);
+    bool hasPacket();
+    Packet getNextPacket();
+
+    ReceptionState state = ReceptionState::WAIT_FOR_START_BYTE;
     
 private:
-    std::vector<uint8_t> rxBuffer;
     std::queue<Packet> packetQueue;
+    std::vector<uint8_t> packetData;
+    uint16_t packetLength = 0;
 };
 
 #endif // NETWORK_INTERFACE_H
