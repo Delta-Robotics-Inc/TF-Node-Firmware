@@ -173,7 +173,10 @@ bool Packet::isBroadcast() const {
 }
 
 bool Packet::isForThisNode(const NodeAddress& nodeAddress) const {
-    bool isDontCareAddress = destinationId.idType == NodeAddress::IDType::NodeID && destinationId.id[0] == 0 && destinationId.id[1] == 0 && destinationId.id[2] == 0;
+    bool isDontCareAddress = destinationId.idType == NodeAddress::IDType::NodeID && 
+                                destinationId.id[0] == 0x00 && 
+                                destinationId.id[1] == 0x00 && 
+                                destinationId.id[2] == 0x01;
     return isDontCareAddress || (destinationId == nodeAddress);
 }
 
