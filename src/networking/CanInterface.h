@@ -4,30 +4,39 @@
 #include "NetworkInterface.h"
 #include <vector>
 #include <queue>
-#include <Arduino_CAN.h>  // Include the CAN library
+#include <Arduino_CAN.h>//CAN library
+
+// Maximum number of different CAN IDs we'll handle simultaneously
+#define MAX_CAN_BUFFERS 16
+
+struct MessageBuffer {
+    std::vector<uint8_t> data;
+    uint32_t canId;
+    uint8_t expectedLength;
+    bool lengthReceived;
+    bool inUse;
+    
+    MessageBuffer() : canId(0), expectedLength(0), lengthReceived(false), inUse(false) {}
+};
 
 
 class CANInterface : public NetworkInterface {
 public:
     CANInterface();
     void sendPacket(const Packet& packet) override;
-    bool receivePacket(Packet& packet) override;
+    void receiveData() override; // Reads data and parses packets
     std::string getName() const override;
 
     bool isConnected() override { return true; }  // Placeholder, adjust based on actual connection checks
     void attemptConnection() override {}
 
-    void receiveData(); // Reads data and parses packets
-    bool hasPacket();
-    Packet getNextPacket();
+
 
 private:
-    std::vector<uint8_t> rxBuffer;
-    std::queue<Packet> packetQueue;
-    
-    ReceptionState state = ReceptionState::WAIT_FOR_START_BYTE;
-    std::vector<uint8_t> packetData;
-    uint16_t packetLength = 0;
+    MessageBuffer messageBuffers[MAX_CAN_BUFFERS];
+    void processBuffer(int bufferIndex);
+    int findOrCreateBuffer(uint32_t canId);
+
 };
 
 #endif // CAN_INTERFACE_H
