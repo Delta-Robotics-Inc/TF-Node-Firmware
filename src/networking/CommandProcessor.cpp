@@ -135,6 +135,7 @@ void CommandProcessor::handlePacket(Packet& packet, NetworkInterface* sourceInte
     if(packet.isBroadcast()) {
         handleCommand(packet, sourceInterface);
         forwardPacket(packet, sourceInterface);
+        Serial.println("Got Broadcast!");
     }
     // Packets intended for this node are processed
     else if (packet.isForThisNode(node.getAddress())) {
@@ -181,6 +182,7 @@ void CommandProcessor::handleCommand(Packet& packet, NetworkInterface* sourceInt
     // Create a response message.  GeneralResponse is the response message for all commands
     tfnode::NodeResponse response;
     tfnode::GeneralResponse generalResponse;
+    generalResponse.set_device(tfnode::Device::DEVICE_NODE);  // Set the device to the node
     generalResponse.set_response_code(code);
     generalResponse.set_received_cmd(tfnode::FunctionCode::FUNCTION_ENABLE);  // TODO parse the received command into a function code
     response.set_general_response(generalResponse);
