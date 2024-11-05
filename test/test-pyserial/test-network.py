@@ -12,6 +12,8 @@ print("Devices in network:")
 for node in nodenet.node_list:
     print(node.node_id)
 
+tf.endAll()
+
 '''
 # Define 3 node controllers
 node1 = nodenet.getDevice([0x01, 0x02, 0x03])
