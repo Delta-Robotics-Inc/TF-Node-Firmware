@@ -1,9 +1,18 @@
 import thermoflex as tf
+import time
 
 nodenet_list = tf.discover([105])
 nodenet = nodenet_list[0]
 nodenet.refreshDevices() # call this to get all nodes in network
 
+time.sleep(3)
+
+
+print("Devices in network:")
+for node in nodenet.node_list:
+    print(node.node_id)
+
+'''
 # Define 3 node controllers
 node1 = nodenet.getDevice([0x01, 0x02, 0x03])
 node2 = nodenet.getDevice([0x04, 0x05, 0x06])
@@ -12,4 +21,4 @@ node3 = nodenet.getDevice([0x07, 0x08, 0x09])
 # Test getting statuss
 print(node1.status("compact"))
 print(node2.status("dump"))
-print(node3.status("compact"))
+print(node3.status("compact"))'''
