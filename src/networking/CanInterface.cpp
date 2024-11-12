@@ -13,7 +13,7 @@ void CANInterface::sendPacket(const Packet &packet)
 {
     // Serial.println("Serializing packet for CAN");
     std::vector<uint8_t> rawData = packet.serialize();
-    static uint32_t const CAN_ID = 0x52;
+    static uint32_t const CAN_ID = 0x53;
 
     // Send the rawData in chunks of 8 bytes
     for (size_t i = 0; i < rawData.size(); i += 8)

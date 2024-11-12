@@ -124,6 +124,7 @@ void PWMSamplerDriver::timer_callback(timer_callback_args_t __attribute((unused)
 // Set the duty cycle with special case for 0% and 100%
 // Ensure that frequent calls don't affect the timer when duty cycle is the same
 void PWMSamplerDriver::setDutyCyclePercent(float percent, bool _enabled) {
+    bool last_enabled = enabled;
     enabled = _enabled;
 
     if (!enabled) {
@@ -136,6 +137,10 @@ void PWMSamplerDriver::setDutyCyclePercent(float percent, bool _enabled) {
     // If the percent hasn't changed, don't alter the timer or duty cycle
     if (percent == duty_cycle_percent && percent < 1.0) {
         // The duty cycle is the same as before and not 100%, so no changes
+        if(!last_enabled && enabled) {
+            // If the device was just enabled, start the timer
+            timer.start();
+        }
         return;
     }
 

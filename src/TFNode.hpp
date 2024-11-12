@@ -59,6 +59,7 @@ public:
     tfnode::ResponseCode CMD_setStatusMode(tfnode::Device device, tfnode::DeviceStatusMode mode, bool repeating, NetworkInterface* iface);
     tfnode::ResponseCode CMD_resetDevice(tfnode::Device device);
     tfnode::ResponseCode CMD_enableDevice(tfnode::Device device);
+    tfnode::ResponseCode CMD_disableDevice(tfnode::Device device);
     // Add other command handlers
 
     void sendStatusResponse(tfnode::DeviceStatusMode mode);  // Sends status response based on status mode
@@ -89,7 +90,7 @@ private:
     // TODO make array of SMAController
     tfnode::DeviceStatusMode statusMode;
     NodeAddress address;
-    CommandProcessor* commandProcessor; // Reference to CommandProcessor
+    //CommandProcessor* commandProcessor; // Reference to CommandProcessor
     tfnode::NodeSettings settings;
     NetworkInterface* statusInterface;
 };

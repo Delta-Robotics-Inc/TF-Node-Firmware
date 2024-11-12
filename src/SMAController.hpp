@@ -3,6 +3,7 @@
 
 #include "config.hpp"
 #include "networking/tfnode-messages.h"
+#include "networking/NetworkInterface.h"
 //#include "TFNode.hpp"
 
 #include "drivers/ResistiveController.h"
@@ -20,12 +21,6 @@ public:
     uint8_t curr_pin;
     uint8_t vld_pin;
 
-    // statusFormatted/LOGGING MODE
-    int statusMode = 0; // 0=No log; 1=Constant logging (calls statusFormatted every update); 2=Quick Logging (not formatted)
-
-    static SMAController* controllers[SMA_CONTROLLER_CNT];
-
-    
     void begin();
     void update();
     
@@ -35,18 +30,26 @@ public:
     void CMD_setMode(tfnode::SMAControlMode _mode);
     void CMD_setSetpoint(tfnode::SMAControlMode _mode, float val);
     void CMD_reset();
-    void CMD_setStatusMode(int _mode);
+    void CMD_setStatusMode(tfnode::DeviceStatusMode _mode, bool repeating, NetworkInterface* iface);
 
     // Status Logging functions
-    String status();
-    String getStatusCompact();  // TODO change return type to .proto def
-    String getStatusDump();
+    void sendStatusResponse();
+    tfnode::SMAStatusCompact getStatusCompact();
+    tfnode::SMAStatusDump getStatusDump();
     String getStatusReadable();
 
+    // Getters
+    float getBatteryVolts();
+    float getMuscleAmps();
+    float getLoadVolts();
+    float getResistance();
+
+    float setpoint[(int)tfnode::SMAControlMode::MODE_CNT];
+    ResistiveController* resController;
 
     // Sensor Measurements
-    float getMuscleAmps();
-    float getLoadVoltage();
+    float readMuscleAmps();
+    float readLoadVoltage();
     static float calcResistance(float V1, float V2, float I);
     void measure();
     static void static_measure(SMAController* m);  // Measures with SMAController handle
@@ -57,6 +60,9 @@ public:
 private:
     tfnode::Device devicePort;
     tfnode::SMAControllerSettings settings;  // TODO place modifiable fields within this settings handle
+
+    // Device Status
+    tfnode::DeviceStatusMode statusMode = tfnode::DeviceStatusMode::STATUS_NONE;
 
     // PWM and Measurement Delay during PWM while High
     const float PWM_FREQUENCY = 100;            // PWM Frequency
@@ -75,13 +81,11 @@ private:
     float rld_val;
 
     // For OHMS control mode, a PID controller will be used to control output PWM to minimize error to a setpoint resistance
-    ResistiveController* resController;
     const float KP_rc = 0.05, KI_rc = 0.0, KD_rc = 0.0;
 
     // Control Settings
-    bool enabled = false;
+    bool outputEnabled = false;
     tfnode::SMAControlMode currentMode;
-    float setpoint[(int)tfnode::SMAControlMode::MODE_CNT];
     float pwm_duty_percent = 0;  // From 0.0->0.1
 
     // Resistance Training Settings

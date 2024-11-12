@@ -5,7 +5,7 @@
 
 TFNode::TFNode(const NodeAddress& addr)
     : address(addr),
-    commandProcessor(nullptr), // Initialize to nullptr
+    //commandProcessor(&cp), // Initialize with the address of cp
     statusMode(tfnode::DeviceStatusMode::STATUS_NONE),
     statusInterface(nullptr),
     smaController0(tfnode::Device::DEVICE_PORT1, "M1_PORT0", M1_MOS_TRIG, M1_CURR_RD, M1_VLD_RD, VLD_SCALE_FACTOR_M1, VLD_OFFSET_M1),
@@ -124,7 +124,6 @@ tfnode::ResponseCode TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::De
         if(repeating) {
             // Set status mode for the node for repeating status
             statusMode = mode;
-           //statusInterface = iface; // Keep track of the interface
         }
         else {
             // Nonrepeating status means set the statusMode to none
@@ -134,14 +133,14 @@ tfnode::ResponseCode TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::De
         }
     }
 
-    // Optionally, handle status mode for SMAControllers
+    // Handle status mode for SMAControllers
     if (device == tfnode::Device::DEVICE_PORT1 || device == tfnode::Device::DEVICE_PORTALL || device == tfnode::Device::DEVICE_ALL) {
-        // Set status mode on the specific SMAController
-        // Not implemented in this example
+
+        smaController0.CMD_setStatusMode(mode, repeating, iface);
     }
     if(device == tfnode::Device::DEVICE_PORT2 || device == tfnode::Device::DEVICE_PORTALL || device == tfnode::Device::DEVICE_ALL) {
-        // Set status mode on the specific SMAController
-        // Not implemented in this example
+
+        smaController1.CMD_setStatusMode(mode, repeating, iface);
     }
 
     return tfnode::ResponseCode::RESPONSE_SUCCESS;
@@ -171,7 +170,21 @@ tfnode::ResponseCode TFNode::CMD_enableDevice(tfnode::Device device) {
         smaController0.CMD_setEnable(true);
         smaController1.CMD_setEnable(true);
     }
-    // Handle DEVICE_ALL and DEVICE_PORTALL as needed
+
+    return tfnode::ResponseCode::RESPONSE_SUCCESS;
+}
+
+tfnode::ResponseCode TFNode::CMD_disableDevice(tfnode::Device device)
+{
+    if (device == tfnode::Device::DEVICE_PORT1) {
+        smaController0.CMD_setEnable(false);
+    } else if (device == tfnode::Device::DEVICE_PORT2) {
+        smaController1.CMD_setEnable(false);
+    }
+    else if (device == tfnode::Device::DEVICE_ALL || device == tfnode::Device::DEVICE_PORTALL) {
+        smaController0.CMD_setEnable(false);
+        smaController1.CMD_setEnable(false);
+    }
 
     return tfnode::ResponseCode::RESPONSE_SUCCESS;
 }
@@ -188,6 +201,10 @@ tfnode::ResponseCode TFNode::CMD_enableDevice(tfnode::Device device) {
 void TFNode::sendStatusResponse(tfnode::DeviceStatusMode mode) {
     if (mode == tfnode::DeviceStatusMode::STATUS_NONE || !commandProcessor || !statusInterface) {
         // No status to send or no interface to send on
+        /*Serial.println("No status to send or no interface to send on");
+        Serial.println("Mode: " + String(mode == tfnode::DeviceStatusMode::STATUS_NONE ? "STATUS_NONE" : "Other"));
+        Serial.println("CommandProcessor: " + !commandProcessor ? "nullptr" : "Not nullptr");
+        Serial.println("StatusInterface: " + !statusInterface ? "nullptr" : "Not nullptr");*/
         return;
     }
     tfnode::NodeResponse response;
@@ -214,9 +231,10 @@ void TFNode::sendStatusResponse(tfnode::DeviceStatusMode mode) {
             commandProcessor->sendSerialString(readableStatus);
             return;
         }
-        default:
+        default: {
             // Handle other status modes
             return;
+        }
     }
 
     // if (commandProcessor && statusInterface) {
@@ -277,9 +295,15 @@ String TFNode::getStatusReadable()
     stat_str += "Battery Volts: " + String(n_vSupply, 6) + " V\n";
     stat_str += "Error State: " + String(n_error, BIN) + "\n";
     stat_str += "Pot Val: " + String(pot_val, 6) + "\n";
+    stat_str += "========================================\n";
+    stat_str += "SMA Controller 0:\n";
+    stat_str += String(smaController0.getResistance()) + " mOhms\n";
+    stat_str += "Setpoint: " + String(smaController0.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]) + " mOhms";
+    stat_str += "PID Output: " + String(smaController0.resController->getOutput());
+    stat_str += "SMA Controller 1:\n";
+    stat_str += String(smaController1.getResistance()) + " mOhms\n";
     return stat_str;
 }
-
 
 
 //=============================================================================

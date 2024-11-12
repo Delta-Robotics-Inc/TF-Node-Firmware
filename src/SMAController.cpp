@@ -18,7 +18,7 @@ void SMAController::update()
     // Serial.println("Updating SMAController");
 
     // Write to muscle if enabled
-    if (enabled)
+    if (outputEnabled)
     {
         // Serial.println("Muscle enabled");
         // Handle behavior of each control mode
@@ -64,7 +64,7 @@ void SMAController::update()
 
     // analogWrite(mosfet_pin, pwm_val);  // Write pwm to mosfet m
     // measure(); // Update sensor values
-    driver->setDutyCyclePercent(pwm_duty_percent, enabled); // The PWMDriver will hande analogWrite() and measuring sensors
+    driver->setDutyCyclePercent(pwm_duty_percent, outputEnabled); // The PWMDriver will hande analogWrite() and measuring sensors
     // Serial.println(driver->min_duty_percent);
     // Serial.println(driver->cycle_threshold);
     // Serial.println(driver->pulse_cycle_count);
@@ -79,14 +79,16 @@ void SMAController::update()
 
 void SMAController::CMD_setEnable(bool state)
 {
-    enabled = state;
+    Serial.println("SMAController CMD_setEnable " + String(state));
+    outputEnabled = state;
 
       // Clear the external disable error
-      if(enabled)
+      if(outputEnabled)
         master_tfNode->errClear(ERR_EXTERNAL_INTERRUPT);
 
       if((currentMode == tfnode::SMAControlMode::MODE_TRAIN || 
-          currentMode == tfnode::SMAControlMode::MODE_OHMS) && enabled) {
+          currentMode == tfnode::SMAControlMode::MODE_OHMS) && outputEnabled) {
+        Serial.println("SMAController Resetting Training");
         resetTraining();
         resController->Reset();
       }
@@ -118,7 +120,7 @@ void SMAController::CMD_reset()
 }
 
 // TODO Change "mode" to represent status message type and implement a "repeating" var
-void SMAController::CMD_setStatusMode(int _mode)
+void SMAController::CMD_setStatusMode(tfnode::DeviceStatusMode _mode, bool repeating, NetworkInterface *iface)
 {
     statusMode = _mode;
 }
@@ -128,28 +130,51 @@ void SMAController::CMD_setStatusMode(int _mode)
 // SMAController Status Functions
 //=============================================================================
 
-String SMAController::status()
+void SMAController::sendStatusResponse()
 {
-    // TODO Queue outbound response message
-    return String();
+    
 }
 
-String SMAController::getStatusCompact()
+tfnode::SMAStatusCompact SMAController::getStatusCompact()
 {
-    // TODO Queue outbound response message
-    return String();
+    // TODO return proto object
+    //return String();
 }
 
-String SMAController::getStatusDump()
+tfnode::SMAStatusDump SMAController::getStatusDump()
 {
-    // TODO Queue outbound response message
-    return String();
+    // TODO return proto object
+    //return String();
 }
 
 String SMAController::getStatusReadable()
 {
     // TODO Queue outbound response message
     return String();
+}
+
+//=============================================================================
+// Sensor Value Getters
+//=============================================================================
+
+float SMAController::getBatteryVolts()
+{
+    return master_tfNode->n_vSupply;
+}
+
+float SMAController::getMuscleAmps()
+{
+    return curr_val;
+}
+
+float SMAController::getLoadVolts()
+{
+    return vld_val;
+}
+
+float SMAController::getResistance()
+{
+    return rld_val;
 }
 
 
@@ -163,8 +188,8 @@ void SMAController::measure()
     // ONLY MEASURE ON HIGH VALUE OF PWM
     //Serial.print("Measuring ");
     //Serial.println(name);
-    vld_val = getLoadVoltage();    
-    curr_val = getMuscleAmps();
+    vld_val = readLoadVoltage();    
+    curr_val = readMuscleAmps();
     rld_val = calcResistance(master_tfNode->n_vSupply, vld_val, curr_val);
 }
 
@@ -176,7 +201,7 @@ void SMAController::static_measure(SMAController *m)
 }
 
 // Using current amplifier: https://www.ti.com/product/INA301?bm-verify=AAQAAAAJ_____3vvQVqhDs6dN-q2F7TfcduLcXGPYHN_yemLpkjLOSFozABq8zjBc6aZ1bHQMXuQcVRel2S374cevoKQ14rUg6LyRHkRgLS507wvwpDNZhvE-ZWK9hVspPwTC71ayCc3-WGCwn-CquFEWjRJKDJvsJXJVh4eel_qHn8Kcueux4PnQ39dUIMN51MZvpS9lZ7o7K9nCUaPUoq0s-TIxAvmatQPs4K61R7LI2pVSV_YWOOVyAT6TcwQ1i3h7ZRzdiO2DlOvNC6KJ8hoXFBhaxkZCcEV-xI63CAnv-xaEy2seyI
-float SMAController::getMuscleAmps()
+float SMAController::readMuscleAmps()
 {
     float AcsValue=0.0,Samples=0.0,AvgAcs=0.0,raw=0.0;
     
@@ -195,8 +220,8 @@ float SMAController::getMuscleAmps()
       return amps;
 }
 
-// Returns the voltage (VLD) after the load (muscle) -> used with getMuscleAmps() and getBatteryVolts() to calculate resistance
-float SMAController::getLoadVoltage()
+// Returns the voltage (VLD) after the load (muscle) -> used with readMuscleAmps() and getBatteryVolts() to calculate resistance
+float SMAController::readLoadVoltage()
 {
     float value=0.0,samples=0.0,avg_value=0.0,raw=0.0;
 

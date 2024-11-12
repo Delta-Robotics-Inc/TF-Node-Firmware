@@ -59,10 +59,10 @@ void CommandProcessor::process() {
 
         if (iface->receivePacket(packet)) {
             // Debug to console the full readable contents of packet
-            Serial.print("\Received Packet over ");
-            Serial.print(iface->getName().c_str());
-            Serial.println(": ");
-            Serial.println(packet.toString());  // Debug display outgoing packet
+            // Serial.print("\Received Packet over ");
+            // Serial.print(iface->getName().c_str());
+            // Serial.println(": ");
+            // Serial.println(packet.toString());  // Debug display outgoing packet
             
             handlePacket(packet, iface);
         }
@@ -113,10 +113,10 @@ void CommandProcessor::sendResponse(const tfnode::NodeResponse& response, Networ
         iface->sendPacket(packet);
 
         // // Debug to console the full readable contents of packet
-        Serial.print("\nSent Packet over ");
-        Serial.print(iface->getName().c_str());
-        Serial.println(": ");
-        Serial.println(packet.toString());  // Debug display outgoing packet
+        // Serial.print("\nSent Packet over ");
+        // Serial.print(iface->getName().c_str());
+        // Serial.println(": ");
+        // Serial.println(packet.toString());  // Debug display outgoing packet
     } else {
         // Handle serialization error
     }
@@ -161,6 +161,7 @@ tfnode::NodeCommand CommandProcessor::parseCommandPacket(const Packet& packet) {
     if (err != ::EmbeddedProto::Error::NO_ERRORS) {
         // Failed to parse command
         // Handle error
+        Serial.println("Failed to parse command packet");
     }
 
     return command;
@@ -187,7 +188,7 @@ void CommandProcessor::handleCommand(Packet& packet, NetworkInterface* sourceInt
     generalResponse.set_received_cmd(tfnode::FunctionCode::FUNCTION_ENABLE);  // TODO parse the received command into a function code
     response.set_general_response(generalResponse);
 
-    Serial.println("Sending Command Resonse...");
+    Serial.println("Sending Command ACK Response...");
     sendResponse(response, sourceInterface);
 }   
 
@@ -211,7 +212,7 @@ tfnode::ResponseCode CommandProcessor::executeCommand(tfnode::NodeCommand comman
             responseCode = node.CMD_enableDevice(command.enable().device());
             break;
         case tfnode::NodeCommand::FieldNumber::DISABLE:
-            responseCode = node.CMD_enableDevice(command.disable().device());
+            responseCode = node.CMD_disableDevice(command.disable().device());
             break;
         case tfnode::NodeCommand::FieldNumber::SET_MODE:
             switch(command.set_mode().device()) {
@@ -291,8 +292,8 @@ void CommandProcessor::forwardPacket(const Packet& packet, NetworkInterface* exc
             // Debug to console the full readable contents of packet
             Serial.print("\nForwarded Packet over ");
             Serial.print(iface->getName().c_str());
-            Serial.println(": ");
-            Serial.println(packet.toString());  // Debug display outgoing packet
+        //  Serial.println(": ");
+        //     Serial.println(packet.toString());  // Debug display outgoing packet   
         }
     }
 }

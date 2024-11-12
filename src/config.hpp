@@ -8,12 +8,12 @@
 
 // Common configuration parameters
 const char CFG_FIRMWARE_VERSION[] = "1.0.0";
-const std::vector<uint8_t> NODE_ID = {0x07, 0x08, 0x09};
+const std::vector<uint8_t> NODE_ID = {0x01, 0x02, 0x03};
 
 
 const int SIGNAL_TIMEOUT = 2000;            // Amount of time (ms) between receiving master commands before auto-disable
 const int RECONNECTION_INTERVAL_MS = 5000;  // Attempt to reconnect to enabled NetworkInterfaces on this interval
-const unsigned long LOG_MS = 20;            // Time between log frames (ms)
+const unsigned long LOG_MS = 500;            // Time between log frames (ms)
 
 // TODO pull these from .proto file
 //#define CTRL_MODE_CNT 7
