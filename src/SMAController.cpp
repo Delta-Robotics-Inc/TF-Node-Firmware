@@ -80,6 +80,10 @@ void SMAController::update()
 void SMAController::CMD_setEnable(bool state)
 {
     enabled = state;
+    Serial.print("Setting enable: ");
+    Serial.print((int)devicePort);
+    Serial.print(" to ");
+    Serial.println(state);
 
       // Clear the external disable error
       if(enabled)
@@ -128,28 +132,100 @@ void SMAController::CMD_setStatusMode(int _mode)
 // SMAController Status Functions
 //=============================================================================
 
-String SMAController::status()
+tfnode::SMAStatusCompact SMAController::getSMAStatusCompact()
 {
-    // TODO Queue outbound response message
-    return String();
+  tfnode::SMAStatusCompact status;
+  
+  status.set_device_port(devicePort);
+  status.set_enabled(enabled);
+  status.set_mode(currentMode);
+  status.set_setpoint(setpoint[(int)currentMode]);
+  status.set_output_pwm(pwm_duty_percent);
+  status.set_load_amps(curr_val);
+  status.set_load_mohms(rld_val);
+  status.set_load_vdrop(vld_val);
+  
+  return status;
 }
 
-String SMAController::getStatusCompact()
+tfnode::SMAStatusDump SMAController::getSMAStatusDump()
 {
+  tfnode::SMAStatusDump status;
+  // Set compact status
+  tfnode::SMAStatusCompact compactStatus = getSMAStatusCompact();
+  status.mutable_compact_status() = compactStatus;
+
+  // Get loaded settings (if any)
+  status.mutable_loaded_settings() = settings;
     // TODO Queue outbound response message
-    return String();
+
+  status.set_vld_scalar(vld_scaleFactor);
+  status.set_vld_offset(vld_offset);
+  status.set_r_sns_ohms(R_SNS);
+  status.set_amp_gain(AMP_GAIN);
+  status.set_af_mohms(Af_mohms);
+  status.delta_mohms();//I am unsure of what going on here
+  status.set_trainState(trainState);
+
+  return status;
 }
 
-String SMAController::getStatusDump()
+String SMAController::getSMAStatusReadable()
 {
-    // TODO Queue outbound response message
-    return String();
+    String stat_str = 
+                    "========================================\n";
+    stat_str += "Port: " + String((int)devicePort) + "\n"; 
+    stat_str += "Enable: " + String(enabled) + " \n";
+    stat_str += "Mode: " + String((int)currentMode) + "\n";
+    stat_str += "Set Point: " + String(setpoint[(int)currentMode]) + "\n";
+    stat_str += "Output_PWM: " + String(pwm_duty_percent) + "\n";
+    stat_str += "Load_Amps: " + String(curr_val) + " A\n";
+    stat_str += "Load_vdrop: " + String(rld_val) + " V\n";  
+    stat_str += "Load_mohms: " + String(vld_val) + "Ohms\n"; 
+
+    return stat_str;
 }
 
-String SMAController::getStatusReadable()
-{
-    // TODO Queue outbound response message
-    return String();
+
+// Send Status Response based on current Status Mode
+void SMAController::sendSMAStatusResponse(tfnode::DeviceStatusMode mode) {
+    //Serial.println("SMA based response    ");
+    if (mode == tfnode::DeviceStatusMode::STATUS_NONE || !commandProcessor || !master_tfNode->statusInterface) {
+        // No status to send or no interface to send on
+        return;
+    }
+    tfnode::NodeResponse response;
+
+    tfnode::StatusResponse& statusResponse = response.mutable_status_response();
+    statusResponse.set_device(tfnode::Device::DEVICE_NODE); // Set the device sending the response
+    //Serial.println("Sending SMA CMD response...");
+
+
+    switch (mode) {
+        case tfnode::DeviceStatusMode::STATUS_COMPACT: {
+            tfnode::SMAStatusCompact compactStatus = getSMAStatusCompact();
+            statusResponse.mutable_sma_status_compact() = compactStatus;
+            break;
+        }
+        case tfnode::DeviceStatusMode::STATUS_DUMP: {
+            tfnode::SMAStatusDump dumpStatus = getSMAStatusDump();
+            statusResponse.mutable_sma_status_dump() = dumpStatus;
+            break;
+        }
+        case tfnode::DeviceStatusMode::STATUS_DUMP_READABLE: {
+            // Special case to send status straight to serial
+            String readableStatus = getSMAStatusReadable();
+            commandProcessor->sendSerialString(readableStatus);
+            return;
+        }
+        default:
+            // Handle other status modes
+            return;
+    }
+
+    // if (commandProcessor && statusInterface) {
+            commandProcessor->sendResponse(response, master_tfNode->statusInterface);
+                // }
 }
 
 

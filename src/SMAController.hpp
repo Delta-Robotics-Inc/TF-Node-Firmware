@@ -4,6 +4,7 @@
 #include "config.hpp"
 #include "networking/tfnode-messages.h"
 //#include "TFNode.hpp"
+#include "networking/CommandProcessor.hpp"
 
 #include "drivers/ResistiveController.h"
 #include "drivers/GradientTracker.hpp"
@@ -38,10 +39,10 @@ public:
     void CMD_setStatusMode(int _mode);
 
     // Status Logging functions
-    String status();
-    String getStatusCompact();  // TODO change return type to .proto def
-    String getStatusDump();
-    String getStatusReadable();
+    tfnode::SMAStatusCompact getSMAStatusCompact();  // TODO change return type to .proto def
+    tfnode::SMAStatusDump getSMAStatusDump();
+    String getSMAStatusReadable();
+    void sendSMAStatusResponse(tfnode::DeviceStatusMode mode);
 
 
     // Sensor Measurements
@@ -112,7 +113,6 @@ private:
 
     void resetTraining();
     float updateTraining(float rld_mohms);  // Will step through the state machine when in training mode
-
 };
 
 #endif // SMA_CONTROLLER_H

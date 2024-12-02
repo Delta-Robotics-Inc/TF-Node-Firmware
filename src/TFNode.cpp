@@ -80,8 +80,8 @@ void TFNode::update() {
     // Every certain interval (LOG_MS), log/report data to console
     if(millis() - log_timer > LOG_MS) {
         sendStatusResponse(statusMode);
-        //smaController0.sendStatusResponse(statusMode);
-        //smaController1.sendStatusResponse(statusMode);
+        //smaController0.sendSMAStatusResponse(statusMode);
+        //smaController1.sendSMAStatusResponse(statusMode);
         //digitalWrite(STATUS_SOLID_LED, !digitalRead(STATUS_SOLID_LED));
     }
 }
@@ -131,6 +131,8 @@ tfnode::ResponseCode TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::De
             statusMode = tfnode::DeviceStatusMode::STATUS_NONE;
             Serial.println("Sending Single Status response...");
             sendStatusResponse(mode);  // Send a single status response
+            // smaController0.sendSMAStatusResponse(mode);
+            // smaController1.sendSMAStatusResponse(mode);
         }
     }
 
@@ -138,6 +140,7 @@ tfnode::ResponseCode TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::De
     if (device == tfnode::Device::DEVICE_PORT1 || device == tfnode::Device::DEVICE_PORTALL || device == tfnode::Device::DEVICE_ALL) {
         // Set status mode on the specific SMAController
         // Not implemented in this example
+        //smaController0.CMD_setStatusMode(8); // Change datatype
     }
     if(device == tfnode::Device::DEVICE_PORT2 || device == tfnode::Device::DEVICE_PORTALL || device == tfnode::Device::DEVICE_ALL) {
         // Set status mode on the specific SMAController
@@ -176,6 +179,22 @@ tfnode::ResponseCode TFNode::CMD_enableDevice(tfnode::Device device) {
     return tfnode::ResponseCode::RESPONSE_SUCCESS;
 }
 
+tfnode::ResponseCode TFNode::CMD_disableDevice(tfnode::Device device) {
+    if (device == tfnode::Device::DEVICE_PORT1) {
+        smaController0.CMD_setEnable(false);
+    } else if (device == tfnode::Device::DEVICE_PORT2) {
+        smaController1.CMD_setEnable(false);
+    }
+    else if (device == tfnode::Device::DEVICE_ALL || device == tfnode::Device::DEVICE_PORTALL) {
+        smaController0.CMD_setEnable(false);
+        smaController1.CMD_setEnable(false);
+    }
+    // Handle DEVICE_ALL and DEVICE_PORTALL as needed
+
+    return tfnode::ResponseCode::RESPONSE_SUCCESS;
+}
+
+
 // Implement other command handlers similarly
 
 
@@ -186,6 +205,7 @@ tfnode::ResponseCode TFNode::CMD_enableDevice(tfnode::Device device) {
 
 // Send Status Response based on current Status Mode
 void TFNode::sendStatusResponse(tfnode::DeviceStatusMode mode) {
+    //Serial.println("NODE based response    ");
     if (mode == tfnode::DeviceStatusMode::STATUS_NONE || !commandProcessor || !statusInterface) {
         // No status to send or no interface to send on
         return;

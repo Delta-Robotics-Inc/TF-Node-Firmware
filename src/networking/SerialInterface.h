@@ -16,6 +16,12 @@ public:
     bool isConnected() override { return true; }
     void attemptConnection() override {}
 
+    // Serial interfaces has one of the following, CAN has one per device on the network (up to max devices)
+    std::vector<uint8_t> packetData;
+    uint16_t packetLength;
+    ReceptionState state = ReceptionState::WAIT_FOR_START_BYTE;
+
+    void parsePacket(int byte_from_packet);
 };
 
 #endif // SERIAL_INTERFACE_H

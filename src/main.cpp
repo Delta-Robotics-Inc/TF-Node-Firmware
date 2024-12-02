@@ -7,6 +7,7 @@
 
 #include <Arduino.h>
 #include "config.hpp"
+#include "networking/Settings.h"
 #include "globals.hpp"
 
 // Create instances of network interfaces
@@ -25,14 +26,25 @@ void setup() {
     serialInterface = new SerialInterface;
     canInterface = new CANInterface();
 
+    //addresses global
+    NodeSettingsManager IDs;
     // Serial.println("Interfaces created");
 
     // Initialize node with its address
     // TODO this should be different for every device
+    
     // TODO add a unique command for setting address and attach it to Settings
     NodeAddress nodeAddress;
+    
+
     nodeAddress.idType = NodeAddress::IDType::NodeID;  // Default NodeID ID type
-    nodeAddress.id = NODE_ID;  // Node's unique ID specified in Config
+    nodeAddress.id = IDs.getNodeID();  // Node's unique ID specified in Config
+    //Serial.println(nodeAddress.idType);
+    for(int i = 0; i <3; i++) {
+        Serial.print(nodeAddress.id[i]);
+    }
+
+    Serial.println();
 
     master_tfNode = new TFNode(nodeAddress);
     commandProcessor = new CommandProcessor(*master_tfNode);
@@ -46,6 +58,7 @@ void setup() {
 
     master_tfNode->begin();
 
+    //Serial.println(IDs.settings.get_can_id());
 
     // // Add debug actions below
     // master_tfNode->smaController0.CMD_setMode(tfnode::SMAControlMode::MODE_PERCENT);
@@ -54,9 +67,11 @@ void setup() {
     // master_tfNode->smaController1.CMD_setSetpoint(tfnode::SMAControlMode::MODE_PERCENT, 0.2);
     // master_tfNode->CMD_enableDevice(tfnode::Device::DEVICE_ALL);
 
-    // master_tfNode->CMD_setStatusMode(tfnode::Device::DEVICE_NODE, tfnode::DeviceStatusMode::STATUS_COMPACT, &serialInterface);
+    //master_tfNode->CMD_setStatusMode(tfnode::Device::DEVICE_ALL, tfnode::DeviceStatusMode::STATUS_DUMP_READABLE, false, serialInterface);
     //commandProcessor->testCANCommandPacket();
     // commandProcessor->testCANEnableCommandPacket();
+    //IDs.readEEPROM();
+
     Serial.println("Setup complete");
     master_tfNode->init_finished(); // Turn on LED to indicate setup complete
 }
