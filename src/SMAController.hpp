@@ -24,6 +24,10 @@ public:
     void begin();
     void update();
     
+    // For demo to get average resistance
+    float voltage_history[10];
+    float current_history[10];
+    int sample_index;
     
     // SMAController Commands
     void CMD_setEnable(bool state);
@@ -51,6 +55,7 @@ public:
     float readMuscleAmps();
     float readLoadVoltage();
     static float calcResistance(float V1, float V2, float I);
+    //float calcResistance(float V1);
     void measure();
     static void static_measure(SMAController* m);  // Measures with SMAController handle
 
@@ -66,7 +71,7 @@ private:
 
     // PWM and Measurement Delay during PWM while High
     const float PWM_FREQUENCY = 100;            // PWM Frequency
-    const float PWM_MEASURE_DELAY_US = 300;     // PWMSamplerDriver will wait this long before taking a measurement after PWM goes high
+    const float PWM_MEASURE_DELAY_US = 400; //300     // PWMSamplerDriver will wait this long before taking a measurement after PWM goes high
     const float PWM_MEASURE_CYCLE_THRESH = 50;  // During low PWM while enabled, drive signal high after this many cycles to take current measurement
     PWMSamplerDriver* driver;
     

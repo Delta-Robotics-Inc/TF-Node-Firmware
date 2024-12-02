@@ -12,6 +12,10 @@ void SMAController::begin()
     driver = new PWMSamplerDriver(PWM_FREQUENCY, 0.0f, mosfet_pin, PWM_MEASURE_DELAY_US, PWM_MEASURE_CYCLE_THRESH, static_measure, this); // Initialize pwm driver which will handle pwm on the mosfet pin and sampling the sensors
 }
 
+// Test states for muscle algo
+enum power_state { POWER_UNTIL_THRESH, UNPOWERED, UNPOWER_UNTIL_THRESH };
+power_state pstate;
+
 void SMAController::update()
 {
     // #TODO: Handle pulse condition
@@ -37,9 +41,35 @@ void SMAController::update()
         // case DEGREES:  // Need to implement equation to track/return muscle temp (temp will behave different based on 2 conditions: below/above Af)
         case tfnode::SMAControlMode::MODE_OHMS: // Need to implement PID loop (but how to implement with hysterisis curve?)
         {
-            resController->setSetpoint(setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]); // Update setpoint of pid to setpoint of this device for OHMS mode
-            resController->update(rld_val);             // Update pid controller
-            pwm_duty_percent = resController->getOutput();
+            //resController->setSetpoint(setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]); // Update setpoint of pid to setpoint of this device for OHMS mode
+            //resController->update(rld_val);             // Update pid controller
+
+            float diff = abs(rld_val - setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]);
+            float thresh = 10;
+            float maximum = setpoint[(int)tfnode::SMAControlMode::MODE_OHMS] + 40;
+            bool within_thresh = diff < thresh;
+
+            if(pstate == POWER_UNTIL_THRESH && within_thresh) {
+                pstate = UNPOWERED;
+                Serial.println("UNPOWERED");
+            } else if(pstate == UNPOWERED && !within_thresh) {
+                pstate = POWER_UNTIL_THRESH;
+                Serial.println("POWER_UNTIL_THRESH");
+            }
+            else if (pstate == UNPOWER_UNTIL_THRESH && within_thresh) {
+                pstate = UNPOWERED;
+                Serial.println("UNPOWERED");
+            }
+            else if (diff > maximum) {
+                pstate = UNPOWER_UNTIL_THRESH;
+                Serial.println("UNPOWER_UNTIL_THRESH");
+            }
+
+            if(pstate == POWER_UNTIL_THRESH) {
+                pwm_duty_percent = max(1.0, 0.01*diff); // Simple proportional control
+            } else {
+                pwm_duty_percent = 0;
+            }
         }
         break;
         // Eventually add position control (requires force to be known)
@@ -81,6 +111,7 @@ void SMAController::CMD_setEnable(bool state)
 {
     Serial.println("SMAController CMD_setEnable " + String(state));
     outputEnabled = state;
+    pstate = POWER_UNTIL_THRESH;
 
       // Clear the external disable error
       if(outputEnabled)
@@ -181,6 +212,59 @@ float SMAController::getResistance()
 //=============================================================================
 // Sensor Measurement Functions
 //=============================================================================
+
+// void SMAController::measure()
+// {
+//     // Read a single sample of load voltage
+//     float vld_adc_value = analogRead(vld_pin);
+//     float vld_sample = vld_adc_value * vld_scaleFactor + vld_offset;
+//     if (vld_sample < 0.0f && vld_sample > -2.0f)
+//         vld_sample = 0.0f;
+
+//     // Read a single sample of current
+//     float curr_adc_value = analogRead(curr_pin);
+//     float curr_sample = curr_adc_value * VCC / (1023 * AMP_GAIN * R_SNS);
+//     if (curr_sample < 0.0f && curr_sample > -6.0f)
+//         curr_sample = 0.0f;
+
+//     // Store samples in history arrays
+//     voltage_history[sample_index] = vld_sample;
+//     current_history[sample_index] = curr_sample;
+
+//     // Update sample index (circular buffer)
+//     sample_index = (sample_index + 1) % 10;
+
+//     // Update vld_val and curr_val with current samples if needed
+//     vld_val = vld_sample;
+//     curr_val = curr_sample;
+
+//     // Calculate the average resistance based on the last 10 samples
+//     rld_val = calcResistance(master_tfNode->n_vSupply);
+// }
+
+// float SMAController::calcResistance(float V1)
+// {
+//     float res_sum = 0.0f;
+//     int valid_samples = 0;
+
+//     for (int i = 0; i < 10; i++)
+//     {
+//         float V2 = voltage_history[i];
+//         float I = current_history[i];
+
+//         if (I == 0.0f)
+//             continue; // Skip if current is zero
+
+//         float res = 1000.0f * fabs((V1 - V2) / I); // Convert to milliohms if needed
+//         res_sum += res;
+//         valid_samples++;
+//     }
+
+//     if (valid_samples > 0)
+//         return res_sum / valid_samples; // Return average resistance
+//     else
+//         return 9999999999.0f; // Return a high value if no valid samples
+// }
 
 // Runs all sensor measurmentes
 void SMAController::measure()

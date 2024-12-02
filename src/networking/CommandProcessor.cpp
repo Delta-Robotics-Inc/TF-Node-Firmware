@@ -300,7 +300,7 @@ void CommandProcessor::forwardPacket(const Packet& packet, NetworkInterface* exc
 
 // Simply print message over serial
 void CommandProcessor::sendSerialString(String message) {
-    Serial.println(message);
+    Serial.print(message);
 }
 
 

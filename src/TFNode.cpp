@@ -80,6 +80,7 @@ void TFNode::update() {
     // Every certain interval (LOG_MS), log/report data to console
     if(millis() - log_timer > LOG_MS) {
         sendStatusResponse(statusMode);
+        log_timer = millis();
         //smaController0.sendStatusResponse(statusMode);
         //smaController1.sendStatusResponse(statusMode);
         //digitalWrite(STATUS_SOLID_LED, !digitalRead(STATUS_SOLID_LED));
@@ -211,7 +212,7 @@ void TFNode::sendStatusResponse(tfnode::DeviceStatusMode mode) {
 
     tfnode::StatusResponse& statusResponse = response.mutable_status_response();
     statusResponse.set_device(tfnode::Device::DEVICE_NODE); // Set the device sending the response
-    Serial.println("Sending CMD response...");
+    //Serial.println("Sending CMD response...");
 
 
     switch (mode) {
@@ -229,6 +230,7 @@ void TFNode::sendStatusResponse(tfnode::DeviceStatusMode mode) {
             // Special case to send status straight to serial
             String readableStatus = getStatusReadable();
             commandProcessor->sendSerialString(readableStatus);
+        //Serial.println(String(smaController0.getResistance()) + " mOhms");
             return;
         }
         default: {
@@ -289,19 +291,24 @@ tfnode::NodeStatusDump TFNode::getStatusDump() {
 // This is a large amount of data but useful when other side does not understand the TF Node messaging system
 String TFNode::getStatusReadable()
 {
-    String stat_str = 
-                "========================================\n";
-    stat_str += "LOG TIME: " + String(millis() - log_start) + "\n"; // Display time since log start
-    stat_str += "Battery Volts: " + String(n_vSupply, 6) + " V\n";
-    stat_str += "Error State: " + String(n_error, BIN) + "\n";
-    stat_str += "Pot Val: " + String(pot_val, 6) + "\n";
-    stat_str += "========================================\n";
-    stat_str += "SMA Controller 0:\n";
-    stat_str += String(smaController0.getResistance()) + " mOhms\n";
-    stat_str += "Setpoint: " + String(smaController0.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]) + " mOhms";
-    stat_str += "PID Output: " + String(smaController0.resController->getOutput());
-    stat_str += "SMA Controller 1:\n";
-    stat_str += String(smaController1.getResistance()) + " mOhms\n";
+    // String stat_str = 
+    //             "========================================\n";
+    // stat_str += "LOG TIME: " + String(millis() - log_start) + "\n"; // Display time since log start
+    // stat_str += "Battery Volts: " + String(n_vSupply, 6) + " V\n";
+    // stat_str += "Error State: " + String(n_error, BIN) + "\n";
+    // stat_str += "Pot Val: " + String(pot_val, 6) + "\n";
+    // stat_str += "========================================\n";
+    // stat_str += "SMA Controller 0:\n";
+    // stat_str += String(smaController0.getResistance()) + " mOhms\n";
+    // stat_str += "Setpoint: " + String(smaController0.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]) + " mOhms";
+    // stat_str += "PID Output: " + String(smaController0.resController->getOutput());
+    // stat_str += "SMA Controller 1:\n";
+    // stat_str += String(smaController1.getResistance()) + " mOhms\n";
+    // stat_str += "Setpoint: " + String(smaController1.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]) + " mOhms";
+    // stat_str += "PID Output: " + String(smaController1.resController->getOutput());
+
+    // Just debug a single resistance
+    String stat_str = String(smaController0.getResistance()) + " mOhms\n";
     return stat_str;
 }
 
