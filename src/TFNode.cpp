@@ -5,7 +5,7 @@
 
 TFNode::TFNode(const NodeAddress& addr)
     : address(addr),
-    commandProcessor(nullptr), // Initialize to nullptr
+    //commandProcessor(&cp), // Initialize with the address of cp
     statusMode(tfnode::DeviceStatusMode::STATUS_NONE),
     statusInterface(nullptr),
     smaController0(tfnode::Device::DEVICE_PORT1, "M1_PORT0", M1_MOS_TRIG, M1_CURR_RD, M1_VLD_RD, VLD_SCALE_FACTOR_M1, VLD_OFFSET_M1),
@@ -80,8 +80,9 @@ void TFNode::update() {
     // Every certain interval (LOG_MS), log/report data to console
     if(millis() - log_timer > LOG_MS) {
         sendStatusResponse(statusMode);
-        //smaController0.sendSMAStatusResponse(statusMode);
-        //smaController1.sendSMAStatusResponse(statusMode);
+        log_timer = millis();
+        //smaController0.sendStatusResponse(statusMode);
+        //smaController1.sendStatusResponse(statusMode);
         //digitalWrite(STATUS_SOLID_LED, !digitalRead(STATUS_SOLID_LED));
     }
 }
@@ -124,7 +125,6 @@ tfnode::ResponseCode TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::De
         if(repeating) {
             // Set status mode for the node for repeating status
             statusMode = mode;
-           //statusInterface = iface; // Keep track of the interface
         }
         else {
             // Nonrepeating status means set the statusMode to none
@@ -136,15 +136,14 @@ tfnode::ResponseCode TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::De
         }
     }
 
-    // Optionally, handle status mode for SMAControllers
+    // Handle status mode for SMAControllers
     if (device == tfnode::Device::DEVICE_PORT1 || device == tfnode::Device::DEVICE_PORTALL || device == tfnode::Device::DEVICE_ALL) {
-        // Set status mode on the specific SMAController
-        // Not implemented in this example
-        //smaController0.CMD_setStatusMode(8); // Change datatype
+
+        smaController0.CMD_setStatusMode(mode, repeating, iface);
     }
     if(device == tfnode::Device::DEVICE_PORT2 || device == tfnode::Device::DEVICE_PORTALL || device == tfnode::Device::DEVICE_ALL) {
-        // Set status mode on the specific SMAController
-        // Not implemented in this example
+
+        smaController1.CMD_setStatusMode(mode, repeating, iface);
     }
 
     return tfnode::ResponseCode::RESPONSE_SUCCESS;
@@ -179,7 +178,9 @@ tfnode::ResponseCode TFNode::CMD_enableDevice(tfnode::Device device) {
     return tfnode::ResponseCode::RESPONSE_SUCCESS;
 }
 
-tfnode::ResponseCode TFNode::CMD_disableDevice(tfnode::Device device) {
+// Implement other command handlers similarly
+tfnode::ResponseCode TFNode::CMD_disableDevice(tfnode::Device device)
+{
     if (device == tfnode::Device::DEVICE_PORT1) {
         smaController0.CMD_setEnable(false);
     } else if (device == tfnode::Device::DEVICE_PORT2) {
@@ -189,14 +190,9 @@ tfnode::ResponseCode TFNode::CMD_disableDevice(tfnode::Device device) {
         smaController0.CMD_setEnable(false);
         smaController1.CMD_setEnable(false);
     }
-    // Handle DEVICE_ALL and DEVICE_PORTALL as needed
 
     return tfnode::ResponseCode::RESPONSE_SUCCESS;
 }
-
-
-// Implement other command handlers similarly
-
 
 
 //=============================================================================
@@ -208,13 +204,17 @@ void TFNode::sendStatusResponse(tfnode::DeviceStatusMode mode) {
     //Serial.println("NODE based response    ");
     if (mode == tfnode::DeviceStatusMode::STATUS_NONE || !commandProcessor || !statusInterface) {
         // No status to send or no interface to send on
+        /*Serial.println("No status to send or no interface to send on");
+        Serial.println("Mode: " + String(mode == tfnode::DeviceStatusMode::STATUS_NONE ? "STATUS_NONE" : "Other"));
+        Serial.println("CommandProcessor: " + !commandProcessor ? "nullptr" : "Not nullptr");
+        Serial.println("StatusInterface: " + !statusInterface ? "nullptr" : "Not nullptr");*/
         return;
     }
     tfnode::NodeResponse response;
 
     tfnode::StatusResponse& statusResponse = response.mutable_status_response();
     statusResponse.set_device(tfnode::Device::DEVICE_NODE); // Set the device sending the response
-    Serial.println("Sending CMD response...");
+    //Serial.println("Sending CMD response...");
 
 
     switch (mode) {
@@ -232,11 +232,13 @@ void TFNode::sendStatusResponse(tfnode::DeviceStatusMode mode) {
             // Special case to send status straight to serial
             String readableStatus = getStatusReadable();
             commandProcessor->sendSerialString(readableStatus);
+        //Serial.println(String(smaController0.getResistance()) + " mOhms");
             return;
         }
-        default:
+        default: {
             // Handle other status modes
             return;
+        }
     }
 
     // if (commandProcessor && statusInterface) {
@@ -291,15 +293,26 @@ tfnode::NodeStatusDump TFNode::getStatusDump() {
 // This is a large amount of data but useful when other side does not understand the TF Node messaging system
 String TFNode::getStatusReadable()
 {
-    String stat_str = 
-                "========================================\n";
-    stat_str += "LOG TIME: " + String(millis() - log_start) + "\n"; // Display time since log start
-    stat_str += "Battery Volts: " + String(n_vSupply, 6) + " V\n";
-    stat_str += "Error State: " + String(n_error, BIN) + "\n";
-    stat_str += "Pot Val: " + String(pot_val, 6) + "\n";
+    // String stat_str = 
+    //             "========================================\n";
+    // stat_str += "LOG TIME: " + String(millis() - log_start) + "\n"; // Display time since log start
+    // stat_str += "Battery Volts: " + String(n_vSupply, 6) + " V\n";
+    // stat_str += "Error State: " + String(n_error, BIN) + "\n";
+    // stat_str += "Pot Val: " + String(pot_val, 6) + "\n";
+    // stat_str += "========================================\n";
+    // stat_str += "SMA Controller 0:\n";
+    // stat_str += String(smaController0.getResistance()) + " mOhms\n";
+    // stat_str += "Setpoint: " + String(smaController0.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]) + " mOhms";
+    // stat_str += "PID Output: " + String(smaController0.resController->getOutput());
+    // stat_str += "SMA Controller 1:\n";
+    // stat_str += String(smaController1.getResistance()) + " mOhms\n";
+    // stat_str += "Setpoint: " + String(smaController1.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]) + " mOhms";
+    // stat_str += "PID Output: " + String(smaController1.resController->getOutput());
+
+    // Just debug a single resistance
+    String stat_str = String(smaController0.getResistance()) + " mOhms\n";
     return stat_str;
 }
-
 
 
 //=============================================================================

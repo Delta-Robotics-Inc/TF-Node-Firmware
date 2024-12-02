@@ -90,7 +90,7 @@ private:
     // TODO make array of SMAController
     tfnode::DeviceStatusMode statusMode;
     NodeAddress address;
-    CommandProcessor* commandProcessor; // Reference to CommandProcessor
+    //CommandProcessor* commandProcessor; // Reference to CommandProcessor
     tfnode::NodeSettings settings;
 };
 

@@ -138,6 +138,10 @@ void PWMSamplerDriver::setDutyCyclePercent(float percent, bool _enabled) {
     // If the percent hasn't changed, don't alter the timer or duty cycle
     if (percent == duty_cycle_percent && percent < 1.0 && enabled == last_enabled) {
         // The duty cycle is the same as before and not 100%, so no changes
+        if(!last_enabled && enabled) {
+            // If the device was just enabled, start the timer
+            timer.start();
+        }
         return;
     }
 
