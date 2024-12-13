@@ -83,7 +83,7 @@ public:
     float getSupplyVolts();
     float getPotVal();
 
-        
+    NetworkInterface* statusInterface;
 
 
 private:
@@ -92,7 +92,6 @@ private:
     NodeAddress address;
     //CommandProcessor* commandProcessor; // Reference to CommandProcessor
     tfnode::NodeSettings settings;
-    NetworkInterface* statusInterface;
 };
 
 #endif // TF_NODE_H

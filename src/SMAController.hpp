@@ -5,6 +5,7 @@
 #include "networking/tfnode-messages.h"
 #include "networking/NetworkInterface.h"
 //#include "TFNode.hpp"
+#include "networking/CommandProcessor.hpp"
 
 #include "drivers/ResistiveController.h"
 #include "drivers/GradientTracker.hpp"
@@ -37,10 +38,10 @@ public:
     void CMD_setStatusMode(tfnode::DeviceStatusMode _mode, bool repeating, NetworkInterface* iface);
 
     // Status Logging functions
-    void sendStatusResponse();
-    tfnode::SMAStatusCompact getStatusCompact();
-    tfnode::SMAStatusDump getStatusDump();
-    String getStatusReadable();
+    tfnode::SMAStatusCompact getSMAStatusCompact();  // TODO change return type to .proto def
+    tfnode::SMAStatusDump getSMAStatusDump();
+    String getSMAStatusReadable();
+    void sendSMAStatusResponse(tfnode::DeviceStatusMode mode);
 
     // Getters
     float getBatteryVolts();
@@ -121,7 +122,6 @@ private:
 
     void resetTraining();
     float updateTraining(float rld_mohms);  // Will step through the state machine when in training mode
-
 };
 
 #endif // SMA_CONTROLLER_H

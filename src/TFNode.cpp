@@ -131,6 +131,8 @@ tfnode::ResponseCode TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::De
             statusMode = tfnode::DeviceStatusMode::STATUS_NONE;
             Serial.println("Sending Single Status response...");
             sendStatusResponse(mode);  // Send a single status response
+            // smaController0.sendSMAStatusResponse(mode);
+            // smaController1.sendSMAStatusResponse(mode);
         }
     }
 
@@ -171,10 +173,12 @@ tfnode::ResponseCode TFNode::CMD_enableDevice(tfnode::Device device) {
         smaController0.CMD_setEnable(true);
         smaController1.CMD_setEnable(true);
     }
+    // Handle DEVICE_ALL and DEVICE_PORTALL as needed
 
     return tfnode::ResponseCode::RESPONSE_SUCCESS;
 }
 
+// Implement other command handlers similarly
 tfnode::ResponseCode TFNode::CMD_disableDevice(tfnode::Device device)
 {
     if (device == tfnode::Device::DEVICE_PORT1) {
@@ -190,9 +194,6 @@ tfnode::ResponseCode TFNode::CMD_disableDevice(tfnode::Device device)
     return tfnode::ResponseCode::RESPONSE_SUCCESS;
 }
 
-// Implement other command handlers similarly
-
-
 
 //=============================================================================
 // Node Status Functions
@@ -200,6 +201,7 @@ tfnode::ResponseCode TFNode::CMD_disableDevice(tfnode::Device device)
 
 // Send Status Response based on current Status Mode
 void TFNode::sendStatusResponse(tfnode::DeviceStatusMode mode) {
+    //Serial.println("NODE based response    ");
     if (mode == tfnode::DeviceStatusMode::STATUS_NONE || !commandProcessor || !statusInterface) {
         // No status to send or no interface to send on
         /*Serial.println("No status to send or no interface to send on");

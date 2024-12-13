@@ -109,10 +109,12 @@ void SMAController::update()
 
 void SMAController::CMD_setEnable(bool state)
 {
-    Serial.println("SMAController CMD_setEnable " + String(state));
     outputEnabled = state;
     pstate = POWER_UNTIL_THRESH;
-
+    Serial.print("Setting enable: ");
+    Serial.print((int)devicePort);
+    Serial.print(" to ");
+    Serial.println(state);
       // Clear the external disable error
       if(outputEnabled)
         master_tfNode->errClear(ERR_EXTERNAL_INTERRUPT);
@@ -161,28 +163,60 @@ void SMAController::CMD_setStatusMode(tfnode::DeviceStatusMode _mode, bool repea
 // SMAController Status Functions
 //=============================================================================
 
-void SMAController::sendStatusResponse()
+tfnode::SMAStatusCompact SMAController::getSMAStatusCompact()
 {
-    
+  tfnode::SMAStatusCompact status;
+  
+  status.set_device_port(devicePort);
+  status.set_enabled(outputEnabled);
+  status.set_mode(currentMode);
+  status.set_setpoint(setpoint[(int)currentMode]);
+  status.set_output_pwm(pwm_duty_percent);
+  status.set_load_amps(curr_val);
+  status.set_load_mohms(rld_val);
+  status.set_load_vdrop(vld_val);
+  
+  return status;
 }
 
-tfnode::SMAStatusCompact SMAController::getStatusCompact()
+tfnode::SMAStatusDump SMAController::getSMAStatusDump()
 {
-    // TODO return proto object
-    //return String();
-}
+  tfnode::SMAStatusDump status;
+  // Set compact status
+  tfnode::SMAStatusCompact compactStatus = getSMAStatusCompact();
+  status.mutable_compact_status() = compactStatus;
 
-tfnode::SMAStatusDump SMAController::getStatusDump()
-{
-    // TODO return proto object
-    //return String();
-}
-
-String SMAController::getStatusReadable()
-{
+  // Get loaded settings (if any)
+  status.mutable_loaded_settings() = settings;
     // TODO Queue outbound response message
-    return String();
+
+  status.set_vld_scalar(vld_scaleFactor);
+  status.set_vld_offset(vld_offset);
+  status.set_r_sns_ohms(R_SNS);
+  status.set_amp_gain(AMP_GAIN);
+  status.set_af_mohms(Af_mohms);
+  status.delta_mohms();//I am unsure of what going on here
+  status.set_trainState(trainState);
+
+  return status;
 }
+
+String SMAController::getSMAStatusReadable()
+{
+    String stat_str = 
+                    "========================================\n";
+    stat_str += "Port: " + String((int)devicePort) + "\n"; 
+    stat_str += "Enable: " + String(outputEnabled) + " \n";
+    stat_str += "Mode: " + String((int)currentMode) + "\n";
+    stat_str += "Set Point: " + String(setpoint[(int)currentMode]) + "\n";
+    stat_str += "Output_PWM: " + String(pwm_duty_percent) + "\n";
+    stat_str += "Load_Amps: " + String(curr_val) + " A\n";
+    stat_str += "Load_vdrop: " + String(rld_val) + " V\n";  
+    stat_str += "Load_mohms: " + String(vld_val) + "Ohms\n"; 
+
+    return stat_str;
+}
+
 
 //=============================================================================
 // Sensor Value Getters

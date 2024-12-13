@@ -25,17 +25,12 @@ public:
     virtual bool isConnected() = 0;
     virtual void attemptConnection() = 0;
 
-    void parsePacket(int byte_from_packet);
+    void parsePacket(int byte_from_packet, std::vector<uint8_t> *data, ReceptionState *msg_state, uint16_t *packetLength);
     bool receivePacket(Packet& packet);
     bool hasPacket();
     Packet getNextPacket();
 
-    ReceptionState state = ReceptionState::WAIT_FOR_START_BYTE;
-    
-private:
     std::queue<Packet> packetQueue;
-    std::vector<uint8_t> packetData;
-    uint16_t packetLength = 0;
 };
 
 #endif // NETWORK_INTERFACE_H

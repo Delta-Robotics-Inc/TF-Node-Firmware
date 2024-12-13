@@ -2,49 +2,61 @@
 #define SETTING_H
 
 #include <EEPROM.h>
+#include <vector>
+#include "Packet.h"
 #include "tfnode-messages.h"
+#include "WriteBuffer.h"
+#include "ReadBuffer.h"
+
+
+//EEPROM<-->Protobuf<-->Settings
 
 class NodeSettingsManager {
-private:
-    tfnode::NodeSettings* nodeSettings;
-    uint8_t nodeIDAddress;
+    public:
+        //save protobuf info to EEPROM
+        void protobuftoEEPROM(tfnode::NodeSettings ID);
 
-public:
-    // Constructor
-    NodeSettingsManager(tfnode::NodeSettings* settingsPtr, int address);
+        //save EEPROM to protobuf file
+        tfnode::NodeSettings EEPROMtoProtobuf();
 
-    // Load settings from EEPROM into the nodeSettings object
-    void loadSettings();
+        //load Settings from protobuf
+        void loadSettingsfromProtobuf(NodeAddress& ID);
 
-    // Save current settings from nodeSettings to EEPROM
-    void saveCurrentSettings();
+        //save Settings to protobuf
+        tfnode::NodeSettings saveSettingstoProtobuf();
 
-    // Return a pointer to the current node settings
-    tfnode::NodeSettings* getSettings();
+        //reads the EEPROM
+        void readEEPROM();
 
-    // Update the settings and save them to EEPROM
-    void setSettings(tfnode::NodeSettings newSettings);
+        std::vector<uint8_t> getNodeID();
+
+
+        // // Return a pointer to the current node settings
+        // tfnode::NodeSettings* getSettings();
+
+        // // Update the settings and save them to EEPROM
+        // void setSettings(tfnode::NodeSettings newSettings);
 };
 
-class SMASettingsManager {
-private:
-    tfnode::SMAControllerSettings* smaSettings;
+// class SMASettingsManager {
+// private:
+//     tfnode::SMAControllerSettings* smaSettings;
 
-public:
-    // Constructor
-    SMASettingsManager(tfnode::SMAControllerSettings* settingsPtr);
+// public:
+//     // Constructor
+//     SMASettingsManager(tfnode::SMAControllerSettings* settingsPtr);
 
-    // Load settings from EEPROM into the smaSettings object
-    void loadSettings();
+//     // Load settings from EEPROM into the smaSettings object
+//     void loadSettings();
 
-    // Save current settings from smaSettings to EEPROM
-    void saveCurrentSettings();
+//     // Save current settings from smaSettings to EEPROM
+//     void saveCurrentSettings();
 
-    // Return a pointer to the current SMA settings
-    tfnode::SMAControllerSettings* getSettings();
+//     // Return a pointer to the current SMA settings
+//     tfnode::SMAControllerSettings* getSettings();
 
-    // Update the settings and save them to EEPROM
-    void setSettings(tfnode::SMAControllerSettings newSettings);
-};
+//     // Update the settings and save them to EEPROM
+//     void setSettings(tfnode::SMAControllerSettings newSettings);
+// };
 
 #endif // SETTING_H

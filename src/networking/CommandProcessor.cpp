@@ -128,6 +128,7 @@ void CommandProcessor::sendResponse(const tfnode::NodeResponse& response, Networ
 void CommandProcessor::handlePacket(Packet& packet, NetworkInterface* sourceInterface) {
     if (!packet.isValid()) {
         // Invalid packet, discard or log error
+        Serial.println("Invalid packet, will not execute.");
         return;
     }
 
@@ -178,6 +179,7 @@ void CommandProcessor::handleCommand(Packet& packet, NetworkInterface* sourceInt
     // Command not recognized
     else {
         code = tfnode::ResponseCode::RESPONSE_UNSUPPORTED_COMMAND;
+        Serial.println("Command not recognized..");
     }
 
     // Create a response message.  GeneralResponse is the response message for all commands
@@ -198,6 +200,7 @@ void CommandProcessor::handleCommand(Packet& packet, NetworkInterface* sourceInt
 /// @return 
 tfnode::ResponseCode CommandProcessor::executeCommand(tfnode::NodeCommand command, NetworkInterface* sourceInterface) {
 
+    Serial.println("Executing command...");
     tfnode::ResponseCode responseCode = tfnode::ResponseCode::RESPONSE_UNSUPPORTED_COMMAND;
 
     // Debug to show that command is being executed
@@ -207,14 +210,18 @@ tfnode::ResponseCode CommandProcessor::executeCommand(tfnode::NodeCommand comman
     switch (command.get_which_command()) {
         case tfnode::NodeCommand::FieldNumber::RESET:
             responseCode = node.CMD_resetDevice(command.reset().device());
+            //Serial.println("Reset Received");
             break;
         case tfnode::NodeCommand::FieldNumber::ENABLE:
             responseCode = node.CMD_enableDevice(command.enable().device());
+            //Serial.println("Enable received");
             break;
         case tfnode::NodeCommand::FieldNumber::DISABLE:
             responseCode = node.CMD_disableDevice(command.disable().device());
+            //Serial.println("Disable received");
             break;
         case tfnode::NodeCommand::FieldNumber::SET_MODE:
+            //Serial.println("Set Mode Received");
             switch(command.set_mode().device()) {
                 case tfnode::Device::DEVICE_PORT1:
                     node.smaController0.CMD_setMode(command.set_mode().mode());
@@ -236,6 +243,7 @@ tfnode::ResponseCode CommandProcessor::executeCommand(tfnode::NodeCommand comman
             }
             break;
         case tfnode::NodeCommand::FieldNumber::SET_SETPOINT:
+            //Serial.println("Set Setpoint Received");
             switch(command.set_setpoint().device()) {
                 case tfnode::Device::DEVICE_PORT1:
                     node.smaController0.CMD_setSetpoint(command.set_setpoint().mode(), command.set_setpoint().setpoint());
@@ -257,14 +265,17 @@ tfnode::ResponseCode CommandProcessor::executeCommand(tfnode::NodeCommand comman
             }
             break;
         case tfnode::NodeCommand::FieldNumber::SILENCE_NODE:
+            //Serial.println("Silence Node Received");
             // TODO implement logic to silence the node
             responseCode = tfnode::ResponseCode::RESPONSE_SUCCESS;
             break;
         case tfnode::NodeCommand::FieldNumber::CONFIGURE_SETTINGS:
+            //Serial.println("Configure Settings Received");
             // TODO implement logic to configure settings for the node
             responseCode = tfnode::ResponseCode::RESPONSE_SUCCESS;
             break;
         case tfnode::NodeCommand::FieldNumber::STATUS:
+            //Serial.println("Status Received");
             responseCode = node.CMD_setStatusMode(
                 command.status().device(),
                 command.status().mode(),
@@ -275,6 +286,7 @@ tfnode::ResponseCode CommandProcessor::executeCommand(tfnode::NodeCommand comman
         // Handle other commands similarly
         default:
             responseCode = tfnode::ResponseCode::RESPONSE_UNSUPPORTED_COMMAND;
+            Serial.println("Unsupported command.");
             break;
     }
 
@@ -479,7 +491,7 @@ void CommandProcessor::testCANCommandPacket() {
 
         // Set destination ID as needed
         // For simplicity, set destination ID to zero
-        packet.destinationId.id = {0x04, 0x05, 0x06};  // Destination is this device for the test
+        packet.destinationId.id = {0x00, 0x00, 0x03};  // Destination is this device for the test
         packet.destinationId.idType = NodeAddress::IDType::NodeID;
         // Set data
         packet.data.assign(bufferData, bufferData + buffer.get_size());
