@@ -1,5 +1,0 @@
-cd C:\Users\priva\Dropbox\Github\TF-Node-Firmware\lib\EmbeddedProto
-$PROTO_DIR = "C:\Users\priva\Dropbox\Github\TF-Node-Firmware\src\networking"
-$BUILD_DIR = "C:\Users\priva\Dropbox\Github\TF-Node-Firmware\src\networking"
-$PROTO_FILE = "tfnode-messages.proto"
-protoc --plugin=protoc-gen-eams=protoc-gen-eams.bat -I $PROTO_DIR --eams_out=$BUILD_DIR $PROTO_DIR/$PROTO_FILE

@@ -5,12 +5,12 @@
 - Within active development
 
 ### Planned Changes
-- Modify pin assignments to Node v1.0 board layout
-- Refactor `tf-node-firmware.h` into separate files for functions like TF_Muscle, Command, etc
-- Create settings/configuration implementation stored/loaded in EEPROM and updated via command
-- Rewrite command system to align with Python Serial API
-   - Switch from ascii implementation of commands to binary implementation
-- Implement bridge between serial comms and CAN comms
+- [x] Modify pin assignments to Node v1.0 board layout
+- [x] Refactor `tf-node-firmware.h` into separate files for functions like TF_Muscle, Command, etc
+- [ ] Create settings/configuration implementation stored/loaded in EEPROM and updated via command
+- [x] Rewrite command system to align with DeltaLink and ThermoFlex API messages
+   - [x] Switch from ascii implementation of commands to binary implementation
+- [x] Implement bridge between serial comms and CAN comms
 
 
 ### Next TODO
@@ -21,11 +21,15 @@
    - Ideally, this is language agnostic or is an easily translatable format system-system
 - [x] Install EmbeddedProto and build `tfnode-messages.proto` file 
 - [ ] Build Settings system to encapsulate, save, and load settings for the Node and SMAController
+   - Settings still not fully implemented
 - [x] Implement command execution
-- [ ] Implement status response by Node
-- [ ] Implement CANInterface and SerialInterface
-- [ ] Implement command forwarding
-- [ ] Implement command responses by Node
+- [x] Implement status response by Node
+   - [ ] Implement SMAController Status response
+- [x] Implement CANInterface and SerialInterface
+- [x] Implement command forwarding
+- [x] Implement command responses by Node
+- [ ] Implement Heartbeat/event messages in DeltaLink
+   - Use CANOPen as a reference
 
 ---
 
