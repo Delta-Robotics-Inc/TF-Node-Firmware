@@ -1,7 +1,7 @@
 /*=============================================================================
 *
 * ThermoFlex Node Muscle Controller Firmware
-* Author: Mark Dannemiller
+* Authors: Mark Dannemiller, Ayrthon Capili
 *
 *=============================================================================*/
 

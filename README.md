@@ -6,10 +6,11 @@ This folder contains the development of firmware for the muscle controller.  Cur
 
 **IMPORTANT:** You will not be able to use the Arduino IDE to upload this project.  Instead, please install [platformio](https://platformio.org/), which is an Embedded IDE environment for VS Code that is much better for building large-scale Arduino projects.
 
-## `Branch Firmware Version: v1.0.0`
+## `Branch Firmware Version: v1.0.1`
 
 ### Instructions for Push
-- Make sure to update firmware version above and in the `src/main/config` file.
+- Make sure to update firmware version above and in the `src/config.hpp` file.
+- The firmware version must be updated every time a Node exists in the wild with a version of firmware that exists with newly developed code.  Versions should only be released to customers (the wild) after testing and push to the main branch, but if for some reason a version needs to be send quickly then make sure to update the version number after sending it to them.
 
 ---
 

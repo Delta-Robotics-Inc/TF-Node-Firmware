@@ -25,9 +25,7 @@ class NodeSettingsManager {
         //save Settings to protobuf
         tfnode::NodeSettings saveSettingstoProtobuf();
 
-        //reads the EEPROM
-        void readEEPROM();
-
+        //get Node ID from EEPROM at location NODE_ID_LOC
         std::vector<uint8_t> getNodeID();
 
 

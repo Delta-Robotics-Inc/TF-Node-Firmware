@@ -358,7 +358,7 @@ float SMAController::readLoadVoltage()
     //return raw;
 }
 
-// V=IR -> R=V/I
+// V=IR -> R=V/I -> Returns resistance in milliohms
 float SMAController::calcResistance(float V1, float V2, float I)
 {
     if(I == 0.0f)

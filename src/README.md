@@ -24,12 +24,14 @@
    - Settings still not fully implemented
 - [x] Implement command execution
 - [x] Implement status response by Node
-   - [ ] Implement SMAController Status response
+- [ ] Implement SMAController Status response
 - [x] Implement CANInterface and SerialInterface
 - [x] Implement command forwarding
 - [x] Implement command responses by Node
 - [ ] Implement Heartbeat/event messages in DeltaLink
    - Use CANOPen as a reference
+- [ ] Come up with auto update method or push via hex file
+   - Can we open repo to the public?
 
 ---
 

@@ -1,11 +1,15 @@
 #include <EEPROM.h>
+// Check this URL for issued Node addresses: https://www.notion.so/ThermoFlex-Mk-1-Node-2a7bee1b39b440e888bbd483b18146ee
+
+const int startAddress = 4000; // Start address of the Node Address at 4000 to avoid other programs from overwriting it
+int nodeAddress[3] = {1, 0, 0};
 
 void setup()
 {
-
-  EEPROM.update(0, 00);
-  EEPROM.update(1, 27);
-  EEPROM.update(2, 14);
+  // Make sure to reflect startAddress in firmware at src/config.hpp
+  EEPROM.update(startAddress + 0, 00);
+  EEPROM.update(startAddress + 1, 27);
+  EEPROM.update(startAddress + 2, 14);
 
 }
 

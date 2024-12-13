@@ -1,119 +1,103 @@
 #include "Settings.h"
+#include "config.hpp"
 
-        //save protobuf info to EEPROM
-        void protobuftoEEPROM(tfnode::NodeSettings IDs){
-            uint8_t DataBuffer[1000];// temporarily large
-            WriteBuffer loadData(DataBuffer, sizeof(DataBuffer));
+// TODO clean up this functionality
 
-            ::EmbeddedProto::Error load_err =  IDs.serialize(loadData);
+//save protobuf info to EEPROM
+void protobuftoEEPROM(tfnode::NodeSettings IDs){
+    uint8_t DataBuffer[1000];// temporarily large
+    WriteBuffer loadData(DataBuffer, sizeof(DataBuffer));
 
-            // Set the loaded settings Object for the Node to the one that was just serialized
-            //Look at what errors is occuring in this statment
-            if(load_err == ::EmbeddedProto::Error::NO_ERRORS) {
+    ::EmbeddedProto::Error load_err =  IDs.serialize(loadData);
 
-                for (int i = 5; i < sizeof(DataBuffer); i++){
-                    EEPROM.update(i, DataBuffer[i]);
-                }
-            }
-            else{
-                //================================================
-                //delete this before you push it
-                Serial.println("Cum in my pants");
-                //================================================
-            }
+    // Set the loaded settings Object for the Node to the one that was just serialized
+    //Look at what errors is occuring in this statment
+    if(load_err == ::EmbeddedProto::Error::NO_ERRORS) {
 
+        for (int i = 5; i < sizeof(DataBuffer); i++){
+            EEPROM.update(i, DataBuffer[i]);
         }
-
-        //save EEPROM to protobuf file
-        tfnode::NodeSettings EEPROMtoProtobuf(){
-            uint8_t DataBuffer[1000];// temporarily large
-
-            for (int i = 5; i < sizeof(DataBuffer); i++){
-                DataBuffer[i] = EEPROM.read(i);
-                Serial.println(EEPROM.read(i));
-            }
-            
-            ReadBuffer saveData(DataBuffer,sizeof(DataBuffer));
-            tfnode::NodeSettings settings;
-            ::EmbeddedProto::Error save_err = settings.deserialize(saveData);
-
-            if(save_err == ::EmbeddedProto::Error::NO_ERRORS) {
-                //failed to move EEPROM to protobuf
-                //Handle error
-            }
-            else{
-                //================================================
-                //delete this before you push it
-                Serial.println("I am going to kill myself");
-                //================================================
-            }
-
-            return settings;
-        }
-
-        //load Settings from protobuf
-        void loadSettingsfromProtobuf(NodeAddress& ID){
-            uint8_t DataBuffer[1000];// temporarily large
-            WriteBuffer loadData(DataBuffer, sizeof(DataBuffer));
-
-            tfnode::NodeSettings settings;
-            ::EmbeddedProto::Error load_err =  settings.serialize(loadData);
-
-
-            if(load_err == ::EmbeddedProto::Error::NO_ERRORS) {
-
-            }
-            else{
-                //================================================
-                //delete this before you push it
-                Serial.println("blood and stone");
-                //================================================
-            }
-        
-        }
-
-        //save Settings to protobuf
-        tfnode::NodeSettings saveSettingstoProtobuf(){
-            uint8_t DataBuffer[1000];// temporarily large
-            
-            ReadBuffer saveData(DataBuffer,sizeof(DataBuffer));
-            tfnode::NodeSettings settings;
-            ::EmbeddedProto::Error save_err = settings.deserialize(saveData);
-
-            if(save_err == ::EmbeddedProto::Error::NO_ERRORS) {
-                //failed to move EEPROM to protobuf
-                //Handle error
-            }
-            else{
-                //================================================
-                //delete this before you push it
-                Serial.println("cunty bitch");
-                //================================================
-            }
-
-            return settings;
-
-        }
-
-    void NodeSettingsManager::readEEPROM(){
-        for (int i = 0; i < 3; i++)
-        {
-            // Serial.print(i + ": ");
-            Serial.println(EEPROM.read(i));
-        }
-        
+    }
+    else{
+        Serial.println("Error saving settings to EEPROM");
     }
 
-    std::vector<uint8_t> NodeSettingsManager::getNodeID(){
-        std::vector<uint8_t> NODE_ID;
-        NODE_ID.clear();
-        for (int i = 0; i < 3; i++)
-        {
-            NODE_ID.push_back(EEPROM.read(i));
+}
 
-        }
-        return NODE_ID;
+//save EEPROM to protobuf file
+tfnode::NodeSettings EEPROMtoProtobuf(){
+    uint8_t DataBuffer[1000];// temporarily large
+
+    for (int i = 5; i < sizeof(DataBuffer); i++){
+        DataBuffer[i] = EEPROM.read(i);
+        Serial.println(EEPROM.read(i));
     }
+    
+    ReadBuffer saveData(DataBuffer,sizeof(DataBuffer));
+    tfnode::NodeSettings settings;
+    ::EmbeddedProto::Error save_err = settings.deserialize(saveData);
+
+    if(save_err == ::EmbeddedProto::Error::NO_ERRORS) {
+        //failed to move EEPROM to protobuf
+        //Handle error
+    }
+    else{
+        Serial.println("Error loading settings from EEPROM");
+    }
+
+    return settings;
+}
+
+//load Settings from protobuf
+void loadSettingsfromProtobuf(NodeAddress& ID){
+    uint8_t DataBuffer[1000];// temporarily large
+    WriteBuffer loadData(DataBuffer, sizeof(DataBuffer));
+
+    tfnode::NodeSettings settings;
+    ::EmbeddedProto::Error load_err =  settings.serialize(loadData);
+
+
+    if(load_err == ::EmbeddedProto::Error::NO_ERRORS) {
+
+    }
+    else{
+        Serial.println("Error loading settings from protobuf");
+    }
+
+}
+
+//save Settings to protobuf
+tfnode::NodeSettings saveSettingstoProtobuf(){
+    uint8_t DataBuffer[1000];// temporarily large
+    
+    ReadBuffer saveData(DataBuffer,sizeof(DataBuffer));
+    tfnode::NodeSettings settings;
+    ::EmbeddedProto::Error save_err = settings.deserialize(saveData);
+
+    if(save_err == ::EmbeddedProto::Error::NO_ERRORS) {
+        //failed to move EEPROM to protobuf
+        //Handle error
+    }
+    else{
+        //================================================
+        Serial.println("Error saving settings to protobuf");
+        //================================================
+    }
+
+    return settings;
+
+}
+
+std::vector<uint8_t> NodeSettingsManager::getNodeID(){
+std::vector<uint8_t> NODE_ID;
+NODE_ID.clear();
+for (int i = NODE_ID_LOC; i < NODE_ID_LOC+3; i++)
+{
+    NODE_ID.push_back(EEPROM.read(i));
+
+}
+return NODE_ID;
+}
 
 
 // class SMASettingsManagers {
