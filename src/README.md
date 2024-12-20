@@ -32,6 +32,8 @@
    - Use CANOPen as a reference
 - [ ] Come up with auto update method or push via hex file
    - Can we open repo to the public?
+   - Need to determine OTA update solution
+- [ ] Rebuild protobuf for versioning system
 
 ---
 

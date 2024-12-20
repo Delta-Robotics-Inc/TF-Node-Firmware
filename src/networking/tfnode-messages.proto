@@ -17,7 +17,9 @@ syntax = "proto3";
 
 package tfnode;
 
-// Packet Structure
+// TODO DeltaLink Protocol Version 2 will be modeled after CANopen and moved to its own repository
+
+// Packet Structure // TODO remove id types (unclear if they are needed)
 // [Start Byte][Packet Length][Protocol Version][Sender ID Type][Destination ID Type][Sender ID][Destination ID][Data][Checksum]
 //         1               2                 1                  1                             3              3    x           1  | Total = 12 + x
 
@@ -222,8 +224,9 @@ message NodeStatusDump {
   NodeSettings loaded_settings = 2;
 
   // Make sure the following values are not included already in compact status
-  uint32 firmware_version = 3;
-  uint32 firmware_subversion = 4;
+  uint32 firmware_version_major = 3;
+  uint32 firmware_version_minor = 4;
+  uint32 firmware_version_patch = 13; // TODO can this be 5?
   uint32 board_version = 5;
   uint32 board_subversion = 6;
   uint32 muscle_cnt = 7;
