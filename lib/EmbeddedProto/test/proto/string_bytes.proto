@@ -1,0 +1,67 @@
+/*
+ *  Copyright (C) 2020-2024 Embedded AMS B.V. - All Rights Reserved
+ *
+ *  This file is part of Embedded Proto.
+ *
+ *  Embedded Proto is open source software: you can redistribute it and/or 
+ *  modify it under the terms of the GNU General Public License as published 
+ *  by the Free Software Foundation, version 3 of the license.
+ *
+ *  Embedded Proto  is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with Embedded Proto. If not, see <https://www.gnu.org/licenses/>.
+ *
+ *  For commercial and closed source application please visit:
+ *  <https://EmbeddedProto.com/license/>.
+ *
+ *  Embedded AMS B.V.
+ *  Info:
+ *    info at EmbeddedProto dot com
+ *
+ *  Postal address:
+ *    Atoomweg 2
+ *    1627 LE, Hoorn
+ *    the Netherlands
+ */
+
+ // This file is used to test the string and bytes fields.
+
+syntax = "proto3";
+
+message text
+{
+  string txt = 1;
+}
+
+message raw_bytes
+{
+  bytes b = 1;
+}
+
+message string_or_bytes
+{
+  oneof s_or_b
+  {
+    string txt = 1;
+    bytes b = 2;
+  }
+
+  // These variables are here to test if the templete parameters are generated correctly.
+  text nested_text = 3;
+  raw_bytes nested_bytes = 4;
+}
+
+message repeated_string_bytes
+{
+  repeated string array_of_txt = 1;
+  repeated bytes array_of_bytes = 2;
+
+  // These variables are here to test if the templete parameters are generated correctly.
+  text nested_text = 3;
+  raw_bytes nested_bytes = 4;
+}
+

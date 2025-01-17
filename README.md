@@ -1,6 +1,13 @@
 Welcome to the Delta Robotics ThermoFlex repository.  Here contains the development of the firmware for the ThermoFlex Node muscle controller.  Currently, this software is deployed to an Arduino Minima.  The microcontroller is configured to utilize our ThermoFlex Node PCB Shield.
 
----
+**IMPORTANT:** You will not be able to use the Arduino IDE to upload this project.  Instead, please install [platformio](https://platformio.org/), which is an Embedded IDE environment for VS Code that is much better for building large-scale Arduino projects.
+
+## `Branch Firmware Version: v1.0.1`
+
+### Instructions for Push
+- Make sure to update firmware version above and in the `src/config.hpp` file.
+- You cannot push code to the main branch without updating the firmware version.
+- The firmware version must be updated every time a Node exists in the wild with a version of firmware that exists with newly developed code.  Versions should only be released to customers (the wild) after testing and push to the main branch.  We will come up with a process of sending beta versions (perhaps a `vX.X.X-beta` tag)
 
 
 # Node Commands
@@ -30,15 +37,15 @@ The below commands that specify `<device> .. (default all)` will work without pa
 
 Here are some example commands to display the syntax:
 
-```
+```bash
 
-> set-mode m1 volts      //sets muscle 1 mode to volts
-> set-setpoint all volts 5.0 //sets all muscles
-> set-enable m2 true      //enables m2
-> status         //status for all devices
-> status m1      //status for just m1
-> reset all      //resets all devices
-> reset          //resets all devices
-> reset m3       //resets just m3
+> set-mode m1 volts           # sets muscle 1 mode to volts
+> set-setpoint all volts 5.0  # sets all muscles
+> set-enable m2 true          # enables m2
+> status                      # status for all devices
+> status m1                   # status for just m1
+> reset all                   # resets all devices
+> reset                       # resets all devices
+> reset m3                    # resets just m3
 
 ```
