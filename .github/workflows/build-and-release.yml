@@ -1,0 +1,64 @@
+name: Build and Release Firmware
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Read firmware version from config.hpp
+        id: get_version
+        run: |
+          if [ -f config.hpp ]; then
+            version_str=$(grep 'CFG_FIRMWARE_VERSION' src/config.hpp | sed -n 's/.*"\(.*\)".*/\1/p')
+            if [ -z "$version_str" ]; then
+              echo "No CFG_FIRMWARE_VERSION found. Fail."
+              exit 1
+            else
+              echo "version=$version_str" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "src/config.hpp not found. Failing."
+            exit 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.x'
+
+      - name: Install PlatformIO
+        run: |
+          pip install platformio
+
+      - name: Build Firmware
+        run: |
+          platformio run
+        # If it fails, the job fails and won't proceed to release
+
+      - name: Show artifacts (for debugging)
+        run: ls -R .pio/build/
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: v${{ steps.get_version.outputs.version }}
+          release_name: "Firmware v${{ steps.get_version.outputs.version }}"
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: .pio/build/<YOUR_ENV_NAME>/firmware.hex  # or .bin, depending on your build
+          asset_name: firmware_${{ steps.get_version.outputs.version }}.hex
+          asset_content_type: application/octet-stream
+          token: ${{ secrets.GITHUB_TOKEN }}
