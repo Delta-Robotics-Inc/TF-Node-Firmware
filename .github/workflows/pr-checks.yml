@@ -19,7 +19,7 @@ jobs:
         id: old_version
         run: |
           # We'll temporarily save config.hpp from main into old_config.hpp
-          if git show origin/main:config.hpp > old_config.hpp; then
+          if git show origin/main:src/config.hpp > old_config.hpp; then
             # Parse out the string inside the quotes for CFG_FIRMWARE_VERSION
             version_str=$(grep 'CFG_FIRMWARE_VERSION' old_config.hpp | sed -n 's/.*"\(.*\)".*/\1/p')
             if [ -z "$version_str" ]; then
@@ -35,9 +35,9 @@ jobs:
       - name: Read new version (from PR)
         id: new_version
         run: |
-          if [ -f config.hpp ]; then
+          if [ -f src/config.hpp ]; then
             # Parse out the new version
-            version_str=$(grep 'CFG_FIRMWARE_VERSION' config.hpp | sed -n 's/.*"\(.*\)".*/\1/p')
+            version_str=$(grep 'CFG_FIRMWARE_VERSION' src/config.hpp | sed -n 's/.*"\(.*\)".*/\1/p')
             if [ -z "$version_str" ]; then
               echo "No CFG_FIRMWARE_VERSION found. Fail."
               exit 1
@@ -45,7 +45,7 @@ jobs:
               echo "new_version=$version_str" >> $GITHUB_OUTPUT
             fi
           else
-            echo "config.hpp not found in PR. Failing."
+            echo "src/config.hpp not found in PR. Failing."
             exit 1
           fi
 
