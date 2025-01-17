@@ -72,6 +72,9 @@ jobs:
       - name: Install PlatformIO
         run: pip install platformio
 
+      - name: Install attr package
+        run: sudo apt-get install -y attr
+
       - name: Compile Firmware (Smoke Test)
         run: |
           platformio run
