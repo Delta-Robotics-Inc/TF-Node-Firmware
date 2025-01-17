@@ -10,7 +10,8 @@ This folder contains the development of firmware for the muscle controller.  Cur
 
 ### Instructions for Push
 - Make sure to update firmware version above and in the `src/config.hpp` file.
-- The firmware version must be updated every time a Node exists in the wild with a version of firmware that exists with newly developed code.  Versions should only be released to customers (the wild) after testing and push to the main branch, but if for some reason a version needs to be send quickly then make sure to update the version number after sending it to them.
+- You cannot push code to the main branch without updating the firmware version.
+- The firmware version must be updated every time a Node exists in the wild with a version of firmware that exists with newly developed code.  Versions should only be released to customers (the wild) after testing and push to the main branch.  We will come up with a process of sending beta versions (perhaps a `vX.X.X-beta` tag)
 
 ---
 

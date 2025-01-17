@@ -99,6 +99,6 @@
   "C_Cpp_Runner.showCompilationTime": false,
   "C_Cpp_Runner.useLinkTimeOptimization": false,
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
-  "cmake.sourceDirectory": "C:/Users/maxth/Thermo_CAN/TF-Node-Firmware/lib/EmbeddedProto",
+  "cmake.sourceDirectory": "C:/Users/priva/Dropbox/Github/TF-Node-Firmware/.pio/libdeps/uno_r4_minima/Unity",
   "C_Cpp.errorSquiggles": "enabled"
 }

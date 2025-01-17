@@ -34,6 +34,12 @@
    - Can we open repo to the public?
    - Need to determine OTA update solution
 - [ ] Rebuild protobuf for versioning system
+- [ ] Overheat detection with resistance method
+- [ ] Resistance control (model in python first)
+
+
+## Reach Goals
+- [ ] Look at ROS & microRos, CANOpen and see if either of these frameworks would be easy to move to.
 
 ---
 
