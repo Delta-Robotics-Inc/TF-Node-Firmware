@@ -3,7 +3,7 @@
 #define GLOBALS_HPP
 
 #include "networking/SerialInterface.h" // Include the header file for SerialInterface
-#include "networking/CANInterface.h"    // Include the header file for CANInterface
+#include "networking/CanInterface.h"    // Include the header file for CanInterface
 #include "TFNode.hpp"                     // Include the header file for TFNode
 #include "networking/CommandProcessor.hpp"   
 
