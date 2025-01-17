@@ -9,7 +9,6 @@ Welcome to the Delta Robotics ThermoFlex repository.  Here contains the developm
 - You cannot push code to the main branch without updating the firmware version.
 - The firmware version must be updated every time a Node exists in the wild with a version of firmware that exists with newly developed code.  Versions should only be released to customers (the wild) after testing and push to the main branch.  We will come up with a process of sending beta versions (perhaps a `vX.X.X-beta` tag)
 
----
 
 # Node Commands
 

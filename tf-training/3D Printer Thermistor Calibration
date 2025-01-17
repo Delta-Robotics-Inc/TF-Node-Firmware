@@ -1,0 +1,51 @@
+const int analogPin = A0;         // Analog input pin connected to the voltage divider
+const int R_fixed = 10000;        // Fixed resistor value in ohms (10kΩ)
+const float Vcc = 5.0;            // Supply voltage in volts
+
+const int readingsPerSample = 50; // Number of readings per sample
+const float alpha = 0.1;          // Smoothing factor for EMA (between 0 and 1)
+
+float emaResistance = 0;          // Exponential moving average of resistance
+bool firstSample = true;          // Flag to check if this is the first sample
+
+void setup() {
+  Serial.begin(9600);
+  analogReadResolution(14);       // Set ADC resolution to 14 bits (0 to 16383)
+}
+
+void loop() {
+  float totalAnalogValue = 0;
+
+  // Take multiple readings and sum them
+  for (int i = 0; i < readingsPerSample; i++) {
+    totalAnalogValue += analogRead(analogPin);
+    delay(1); // Small delay to stabilize readings (optional)
+  }
+
+  // Calculate the average analog value
+  float averageAnalogValue = totalAnalogValue / readingsPerSample;
+
+  // Convert the average analog value to voltage
+  float V_A0 = (averageAnalogValue / 16383.0) * Vcc;
+
+  // Calculate the thermistor resistance using the voltage divider formula
+  float R_thermistor = R_fixed * V_A0 / (Vcc - V_A0);
+
+  // Apply Exponential Moving Average
+  if (firstSample) {
+    emaResistance = R_thermistor;
+    firstSample = false;
+  } else {
+    emaResistance = alpha * R_thermistor + (1 - alpha) * emaResistance;
+  }
+
+  // Output the live and smoothed resistance to the Serial Monitor
+  Serial.print("Live Resistance: ");
+  Serial.print(R_thermistor);
+  Serial.print(" ohms, Smoothed Resistance: ");
+  Serial.print(emaResistance);
+  Serial.println(" ohms");
+
+  // Wait for 500 milliseconds before taking the next reading
+  delay(500);
+}

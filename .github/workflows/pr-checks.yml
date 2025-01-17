@@ -1,0 +1,78 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-version-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code (PR branch)
+        uses: actions/checkout@v3
+
+      - name: Fetch base branch (main)
+        run: git fetch origin main --depth=1
+
+      - name: Read old version (from main)
+        id: old_version
+        run: |
+          # We'll temporarily save config.hpp from main into old_config.hpp
+          if git show origin/main:src/config.hpp > old_config.hpp; then
+            # Parse out the string inside the quotes for CFG_FIRMWARE_VERSION
+            version_str=$(grep 'CFG_FIRMWARE_VERSION' old_config.hpp | sed -n 's/.*"\(.*\)".*/\1/p')
+            if [ -z "$version_str" ]; then
+              echo "old_version=0.0.0" >> $GITHUB_OUTPUT
+            else
+              echo "old_version=$version_str" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "No config.hpp in main branch, defaulting old_version=0.0.0"
+            echo "old_version=0.0.0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Read new version (from PR)
+        id: new_version
+        run: |
+          if [ -f src/config.hpp ]; then
+            # Parse out the new version
+            version_str=$(grep 'CFG_FIRMWARE_VERSION' src/config.hpp | sed -n 's/.*"\(.*\)".*/\1/p')
+            if [ -z "$version_str" ]; then
+              echo "No CFG_FIRMWARE_VERSION found. Fail."
+              exit 1
+            else
+              echo "new_version=$version_str" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "src/config.hpp not found in PR. Failing."
+            exit 1
+          fi
+
+      - name: Validate version increment
+        run: |
+          OLD_VERSION="${{ steps.old_version.outputs.old_version }}"
+          NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+
+          echo "Old version: $OLD_VERSION"
+          echo "New version: $NEW_VERSION"
+
+          if [ "$NEW_VERSION" = "$OLD_VERSION" ]; then
+            echo "❌ Version has not been incremented. Rejecting PR."
+            exit 1
+          else
+            echo "✅ Version has changed, proceeding."
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.x'
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Compile Firmware (Smoke Test)
+        run: |
+          platformio run
+          # If this fails, the job fails => the PR cannot be merged
