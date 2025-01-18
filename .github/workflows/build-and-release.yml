@@ -15,7 +15,7 @@ jobs:
       - name: Read firmware version from config.hpp
         id: get_version
         run: |
-          if [ -f config.hpp ]; then
+          if [ -f src/config.hpp ]; then
             version_str=$(grep 'CFG_FIRMWARE_VERSION' src/config.hpp | sed -n 's/.*"\(.*\)".*/\1/p')
             if [ -z "$version_str" ]; then
               echo "No CFG_FIRMWARE_VERSION found. Fail."
@@ -35,6 +35,9 @@ jobs:
       - name: Install PlatformIO
         run: |
           pip install platformio
+          
+      - name: Install attr package
+        run: sudo apt-get install -y attr
 
       - name: Build Firmware
         run: |
