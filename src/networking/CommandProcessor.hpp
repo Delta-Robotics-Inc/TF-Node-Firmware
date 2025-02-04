@@ -25,6 +25,7 @@ public:
     std::vector<NetworkInterface *> getInterfaces();
     void process();
     void sendResponse(const tfnode::NodeResponse& response, NetworkInterface* iface);
+    void sendHeartbeat();
     void sendSerialString(String message);
 
     // Test Command Packet Generation
@@ -36,7 +37,13 @@ private:
     TFNode& node;
     std::vector<NetworkInterface*> interfaces;
 
-    void handlePacket(Packet& packet, NetworkInterface* sourceInterface);
+    // For tracking Heartbeat timeouts. Packets will be sent and received at these intervals or else the node will be disabled.
+    unsigned long lastReceiveMillis;
+    unsigned long lastSendMillis;
+    static const unsigned long HEARTBEAT_INTERVAL = 2000;  // 2 seconds between sent packets (send heartbeat if exceeded)
+    static const unsigned long HEARTBEAT_TIMEOUT = 2500;  // 2.5 seconds between received packets from master (disable node if exceeded)
+
+    void handlePacket(Packet& packet, NetworkInterface* sourceInterface, bool &isFromMaster);
     tfnode::NodeCommand parseCommandPacket(const Packet& packet);
     void handleCommand(Packet &packet, NetworkInterface* sourceInterface);
     tfnode::ResponseCode executeCommand(tfnode::NodeCommand command, NetworkInterface *sourceInterface);

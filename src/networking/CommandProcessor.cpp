@@ -54,17 +54,28 @@ std::vector<NetworkInterface*> CommandProcessor::getInterfaces() {
 }
 
 void CommandProcessor::process() {
+    static bool isFromMaster = false;
+    unsigned long now = millis();
+
+    // Check receive heartbeat from master timeout
+    if ((now - lastReceiveMillis) > HEARTBEAT_TIMEOUT) {
+        node.CMD_disableDevice(tfnode::Device::DEVICE_ALL);
+        // Reset timer so we don't repeatedly disable
+        lastReceiveMillis = now;
+    }
+
+    // Check send heartbeat timeout
+    if ((now - lastSendMillis) > HEARTBEAT_INTERVAL) {
+        // Build and send heartbeat packet
+        sendHeartbeat();
+        lastSendMillis = now;
+    }
+
     for (auto iface : interfaces) {
         Packet packet;
-
         if (iface->receivePacket(packet)) {
-            // Debug to console the full readable contents of packet
-            // Serial.print("\Received Packet over ");
-            // Serial.print(iface->getName().c_str());
-            // Serial.println(": ");
-            // Serial.println(packet.toString());  // Debug display outgoing packet
-            
-            handlePacket(packet, iface);
+            handlePacket(packet, iface, isFromMaster);
+            if(isFromMaster) lastReceiveMillis = now;  // Register heartbeat from master
         }
     }
 }
@@ -96,8 +107,8 @@ void CommandProcessor::sendResponse(const tfnode::NodeResponse& response, Networ
         packet.senderId = node.getAddress(); // Node's address
         packet.senderId.idType = node.getAddress().idType;
 
-        // Set destination ID as needed
-        // For simplicity, set destination ID to zero
+        // Set destination ID as master (0.0.0)
+        // TODO track the master address and set it here
         packet.destinationId.id = {0x0, 0x0, 0x0};
         packet.destinationId.idType = NodeAddress::IDType::NodeID;
         //packet.destinationId.id.clear();
@@ -120,16 +131,52 @@ void CommandProcessor::sendResponse(const tfnode::NodeResponse& response, Networ
     } else {
         // Handle serialization error
     }
+    lastSendMillis = millis();  // Reset the send timer after sending a response
+}
+
+void CommandProcessor::sendHeartbeat() {
+    // Create a Packet with empty data
+    Packet packet;
+
+    // Set sender ID as this node's address
+    packet.senderId = node.getAddress();
+    packet.senderId.idType = node.getAddress().idType;
+
+    // Set destination ID as master (0.0.0)
+    packet.destinationId.id = {0x0, 0x0, 0x0};
+    packet.destinationId.idType = NodeAddress::IDType::NodeID;
+
+    // Empty data field
+    packet.data.clear();
+
+    // Calculate packet length and checksum
+    packet.packetLength = packet.calculatePacketLength();
+    packet.checksum = packet.calculateChecksum();
+
+    // Send the packet on all interfaces
+    for (auto iface : interfaces) {
+        iface->sendPacket(packet);
+    }
 }
 
 /// @brief Handles a packet received from a network interface, forwarding or executing commands as needed
 /// @param packet Contains the data received from the network interface
 /// @param sourceInterface The network interface that the packet was received from
-void CommandProcessor::handlePacket(Packet& packet, NetworkInterface* sourceInterface) {
+void CommandProcessor::handlePacket(Packet& packet, NetworkInterface* sourceInterface, bool &isFromMaster) {
     if (!packet.isValid()) {
         // Invalid packet, discard or log error
         Serial.println("Invalid packet, will not execute.");
         return;
+    }
+
+    // Master address is 0.0.0
+    if(packet.senderId.id[0] == 0x00 && 
+       packet.senderId.id[1] == 0x00 && 
+       packet.senderId.id[2] == 0x00){
+        isFromMaster = true;
+    }
+    else{
+        isFromMaster = false;
     }
 
     // Broadcast packets are handled by all nodes, so they are processed and forwarded
@@ -378,7 +425,8 @@ void CommandProcessor::testSendCommandPacket() {
 
         // Now, handle the same packet that was constructed to test packet handling
         Serial.println("Handling packet...\n");
-        handlePacket(packet, getInterfaceByName("SerialInterface"));
+        bool temp = false;
+        handlePacket(packet, getInterfaceByName("SerialInterface"), temp);
     } else {
         // Handle serialization error
         Serial.println("Error: Failed to serialize command");
