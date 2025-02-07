@@ -10,12 +10,15 @@
 #define DEBUG  // Define if wanting serial debug statements
 
 // Global objects are defined in main.cpp
-extern SerialInterface* serialInterface;
+inline SerialInterface* serialInterface;
 // Assume CANInterface and SPIInterface are implemented similarly
-extern CANInterface* canInterface;
+inline CANInterface* canInterface;
 // SPIInterface spiInterface;
 
-extern TFNode* master_tfNode;
-extern CommandProcessor* commandProcessor;
+inline TFNode* master_tfNode;
+inline CommandProcessor* commandProcessor;
+
+inline NodeAddress nodeAddress;
+
 
 #endif // GLOBALS_HPP

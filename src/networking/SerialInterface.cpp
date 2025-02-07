@@ -52,6 +52,26 @@ std::string SerialInterface::getName() const {
 }
 
 void SerialInterface::parsePacket(int byte_from_packet){
+    // Ascii command parsing
+    // First handle the ASCII state machine independently.
+    if (byte_from_packet == '/') {
+        // Start new ASCII command. Reset ascii state.
+        asciiMode = true;
+        asciiBuffer = "";
+    }
+    if (asciiMode) {
+        if (byte_from_packet == '\n') {
+            asciiMode = false;
+            // Command is complete, enqueue it.
+            asciiCommandQueue.push(asciiBuffer);
+            asciiBuffer = "";
+        } else {
+            asciiBuffer += (char)byte_from_packet;
+        }
+    }
+
+    // Both ASCII and DeltaLink are handled because the system cannot know which one is being used.
+    // DeltaLink packet parsing
     switch (state) {
         case ReceptionState::WAIT_FOR_START_BYTE:
             //Serial.println("Waiting for start byte");
@@ -61,6 +81,7 @@ void SerialInterface::parsePacket(int byte_from_packet){
                 state = ReceptionState::READ_LENGTH;
             }
             break;
+            // TODO add case for ascii command entered with '/' prefix and completed with '\n'
 
         case ReceptionState::READ_LENGTH:
             //Serial.println("Reading length");
@@ -92,4 +113,16 @@ void SerialInterface::parsePacket(int byte_from_packet){
             break;
     }
 
+}
+
+// Check if there is an ascii command available in the queue
+bool SerialInterface::hasAsciiCommand() {
+    return !asciiCommandQueue.empty();
+}
+
+// Get the next ascii command from the queue
+String SerialInterface::getNextAsciiCommand() {
+        String cmd = asciiCommandQueue.front();
+        asciiCommandQueue.pop();
+        return cmd;
 }

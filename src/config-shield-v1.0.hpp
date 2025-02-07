@@ -13,7 +13,8 @@
 //=============================================================================
 
 const uint8_t MUSCLE_CNT = 2;
-const char SHIELD_VERSION[] = "1.0";
+const uint8_t SHIELD_VERSION_MAJOR = 1;
+const uint8_t SHIELD_VERSION_MINOR = 0;
 
 const uint8_t SMA_CONTROLLER_CNT = 2;
 const float VCC = 5.0;              // [V] Maximum readable value.  Should be 5.0 V but will vary slightly with the voltage regulator output

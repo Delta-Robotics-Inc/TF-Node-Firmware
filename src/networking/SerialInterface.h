@@ -7,6 +7,9 @@
 #include <vector>
 #include <queue>
 
+/**
+ * @brief Interface for serial communication. Handles both DeltaLink and ASCII commands.
+ */
 class SerialInterface : public NetworkInterface {
 public:
     void sendPacket(const Packet& packet) override;
@@ -22,6 +25,16 @@ public:
     ReceptionState state = ReceptionState::WAIT_FOR_START_BYTE;
 
     void parsePacket(int byte_from_packet);
+
+    // Ascii command handling
+    bool hasAsciiCommand();
+    String getNextAsciiCommand();
+
+private:
+    // State for ASCII commands:
+    bool asciiMode = false;
+    String asciiBuffer;
+    std::queue<String> asciiCommandQueue;
 };
 
 #endif // SERIAL_INTERFACE_H

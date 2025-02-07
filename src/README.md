@@ -28,12 +28,32 @@
 - [x] Implement CANInterface and SerialInterface
 - [x] Implement command forwarding
 - [x] Implement command responses by Node
+
+
+### v1.0.1 Changes
+- [x] Change Deltalink syntax for firmware version to MAJOR.MINOR.PATCH
+- [x] Fix build issues with platformio on Ubuntu
+
+
+### IN PROGRESS v1.0.2 Changes
+- [ ] Add slash commands for normal ascii communication from PC to device
+
+### IN PROGRESS v1.0.3 Changes
+- [ ] Create settings/configuration implementation stored/loaded in EEPROM and updated via command
 - [ ] Implement Heartbeat/event messages in DeltaLink
    - Use CANOPen as a reference
 - [ ] Come up with auto update method or push via hex file
    - Can we open repo to the public?
    - Need to determine OTA update solution
-- [ ] Rebuild protobuf for versioning system
+- [ ] Base protobuf files on DeltaLink repository as the common location for protocol definitions
+   - Add an action to check if firmware is behind DeltaLink version
+
+
+### Backlog Changes
+- [ ] Move header files to `include/` to adhere to common C++ practices
+- [ ] Build Settings system to encapsulate, save, and load settings for the Node and SMAController
+   - Settings still not fully implemented
+- [ ] Implement SMAController Status response
 - [ ] Overheat detection with resistance method
 - [ ] Resistance control (model in python first)
 

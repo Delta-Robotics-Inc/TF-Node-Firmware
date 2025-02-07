@@ -41,6 +41,8 @@ private:
     void handleCommand(Packet &packet, NetworkInterface* sourceInterface);
     tfnode::ResponseCode executeCommand(tfnode::NodeCommand command, NetworkInterface *sourceInterface);
     void forwardPacket(const Packet& packet, NetworkInterface* excludeInterface = nullptr);
+
+    void handleAsciiCommand(String commandStr);  // TODO add handing of ascii command received over serial
 };
 
 #endif // COMMAND_PROCESSOR_H
