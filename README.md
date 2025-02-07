@@ -2,7 +2,7 @@ Welcome to the Delta Robotics ThermoFlex repository.  Here contains the developm
 
 **IMPORTANT:** You will not be able to use the Arduino IDE to upload this project.  Instead, please install [platformio](https://platformio.org/), which is an Embedded IDE environment for VS Code that is much better for building large-scale Arduino projects.
 
-## `Branch Firmware Version: v1.0.1`
+## `Branch Firmware Version: v1.0.2`
 
 ### Instructions for Push
 - Make sure to update firmware version above and in the `src/config.hpp` file.
