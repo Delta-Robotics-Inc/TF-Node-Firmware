@@ -7,9 +7,12 @@
 #include <vector>
 
 // Common configuration parameters
+
 const char CFG_FIRMWARE_VERSION[] = "1.1.0";  // Increment before pull request to main branch
-//no longer a need to hard code in a NODE_ID
-//const std::vector<uint8_t> NODE_ID = {0x01, 0x02, 0x03};
+const int CFG_FIRMWARE_VERSION_MAJOR = 1;
+const int CFG_FIRMWARE_VERSION_MINOR = 1;
+const int CFG_FIRMWARE_VERSION_PATCH = 0;
+
 const int NODE_ID_LOC = 4000; // EEPROM location where the node ID is stored (read-only)
 
 const int SIGNAL_TIMEOUT =              2000;  // Amount of time (ms) between receiving master commands before auto-disable

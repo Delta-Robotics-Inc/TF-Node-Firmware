@@ -27,10 +27,12 @@
  */
 
 #include "CommandProcessor.hpp"
+#include "SerialInterface.h"
 #include "SMAController.hpp"
 #include "TFNode.hpp" // Include the full definition of TFNode
 #include "ReadBuffer.h"
 #include "WriteBuffer.h"
+#include "globals.hpp"
 
 CommandProcessor::CommandProcessor(TFNode& node)
     : node(node) {}
@@ -76,6 +78,16 @@ void CommandProcessor::process() {
         if (iface->receivePacket(packet)) {
             handlePacket(packet, iface, isFromMaster);
             if(isFromMaster) lastReceiveMillis = now;  // Register heartbeat from master
+
+        }
+
+        // If the interface is a SerialInterface, check for ascii commands.
+        if (iface->getName() == "SerialInterface") {
+            SerialInterface* serialIface = static_cast<SerialInterface*>(iface);
+            while (serialIface->hasAsciiCommand()) {
+                String asciiCmd = serialIface->getNextAsciiCommand();
+                handleAsciiCommand(asciiCmd);
+            }
         }
     }
 }
@@ -270,11 +282,11 @@ tfnode::ResponseCode CommandProcessor::executeCommand(tfnode::NodeCommand comman
         case tfnode::NodeCommand::FieldNumber::SET_MODE:
             //Serial.println("Set Mode Received");
             switch(command.set_mode().device()) {
-                case tfnode::Device::DEVICE_PORT1:
+                case tfnode::Device::DEVICE_PORT0:
                     node.smaController0.CMD_setMode(command.set_mode().mode());
                     responseCode = tfnode::ResponseCode::RESPONSE_SUCCESS;
                     break;
-                case tfnode::Device::DEVICE_PORT2:
+                case tfnode::Device::DEVICE_PORT1:
                     node.smaController1.CMD_setMode(command.set_mode().mode());
                     responseCode = tfnode::ResponseCode::RESPONSE_SUCCESS;
                     break;
@@ -292,11 +304,11 @@ tfnode::ResponseCode CommandProcessor::executeCommand(tfnode::NodeCommand comman
         case tfnode::NodeCommand::FieldNumber::SET_SETPOINT:
             //Serial.println("Set Setpoint Received");
             switch(command.set_setpoint().device()) {
-                case tfnode::Device::DEVICE_PORT1:
+                case tfnode::Device::DEVICE_PORT0:
                     node.smaController0.CMD_setSetpoint(command.set_setpoint().mode(), command.set_setpoint().setpoint());
                     responseCode = tfnode::ResponseCode::RESPONSE_SUCCESS;
                     break;
-                case tfnode::Device::DEVICE_PORT2:
+                case tfnode::Device::DEVICE_PORT1:
                     node.smaController1.CMD_setSetpoint(command.set_setpoint().mode(), command.set_setpoint().setpoint());
                     responseCode = tfnode::ResponseCode::RESPONSE_SUCCESS;
                     break;
@@ -345,7 +357,6 @@ void CommandProcessor::forwardPacket(const Packet& packet, NetworkInterface* exc
     for (auto iface : interfaces) {
         if (iface != excludeInterface) {
             // If Network ID Type and Network ID are specified, forward only to matching interface
-            // Implement logic based on your network addressing
             iface->sendPacket(packet);
 
             // Debug to console the full readable contents of packet
@@ -357,11 +368,268 @@ void CommandProcessor::forwardPacket(const Packet& packet, NetworkInterface* exc
     }
 }
 
+void CommandProcessor::handleAsciiCommand(String commandStr)
+{
+    // Lambda to get node address prefix.
+    auto addrPrefix = [&]() -> String {
+        return "\n(" + String(node.getAddress().id[0]) + "." + String(node.getAddress().id[1]) + "." + String(node.getAddress().id[2]) + ") ";
+    };
+
+    // Ensure the command starts with '/'.
+    if (!commandStr.startsWith("/"))
+    {
+        sendSerialString(addrPrefix() + "Error: Command must start with '/'");
+        return;
+    }
+    commandStr.remove(0, 1);
+
+    // Split the command string by spaces into tokens.
+    std::vector<String> tokens;
+    {
+        int startIndex = 0;
+        while (true)
+        {
+            int spaceIndex = commandStr.indexOf(' ', startIndex);
+            if (spaceIndex == -1)
+            {
+                String token = commandStr.substring(startIndex);
+                if (token.length() > 0)
+                    tokens.push_back(token);
+                break;
+            }
+            else
+            {
+                String token = commandStr.substring(startIndex, spaceIndex);
+                if (token.length() > 0)
+                    tokens.push_back(token);
+                startIndex = spaceIndex + 1;
+            }
+        }
+    }
+    if (tokens.empty())
+    {
+        sendSerialString(addrPrefix() + "Error: Empty command string");
+        return;
+    }
+
+    // Helper lambdas to parse device and mode strings.
+    auto parseDevice = [&](const String &devStr) -> tfnode::Device {
+        // Valid device identifiers:
+        if (devStr == "all")      return tfnode::Device::DEVICE_ALL;
+        if (devStr == "node")     return tfnode::Device::DEVICE_NODE;
+        if (devStr == "portall")  return tfnode::Device::DEVICE_PORTALL;
+        // Sometimes referred to as "M1" or "port0"
+        if (devStr == "m1" || devStr == "port0") return tfnode::Device::DEVICE_PORT0;
+        // Sometimes referred to as "M2" or "port1"
+        if (devStr == "m2" || devStr == "port1") return tfnode::Device::DEVICE_PORT1;
+        // Not recognized
+        return (tfnode::Device)(-1);
+    };
+    auto parseMode = [&](const String &modeStr) -> tfnode::SMAControlMode {
+        if (modeStr == "percent") return tfnode::SMAControlMode::MODE_PERCENT;
+        if (modeStr == "amps")    return tfnode::SMAControlMode::MODE_AMPS;
+        if (modeStr == "volts")   return tfnode::SMAControlMode::MODE_VOLTS;
+        if (modeStr == "ohms")    return tfnode::SMAControlMode::MODE_OHMS;
+        return tfnode::SMAControlMode::MODE_PERCENT; // default
+    };
+
+    tfnode::NodeCommand nodeCmd;
+    tfnode::ResponseCode result = tfnode::ResponseCode::RESPONSE_UNSUPPORTED_COMMAND;
+    String cmd = tokens[0];
+
+    // -------------------- reset --------------------
+    if (cmd == "reset")
+    {
+        tfnode::ResetCommand resetCmd;
+        if (tokens.size() > 1)
+        {
+            auto dev = parseDevice(tokens[1]);
+            if (dev == (tfnode::Device)(-1)) // Undefined device
+            {
+                sendSerialString(addrPrefix() + "Error: Unknown device for reset command");
+                return;
+            }
+            resetCmd.set_device(dev);
+        }
+        else
+        {
+            resetCmd.set_device(tfnode::Device::DEVICE_ALL);
+        }
+        nodeCmd.set_reset(resetCmd);
+    }
+    // -------------------- set-enable --------------------
+    else if (cmd == "set-enable")
+    {
+        if (tokens.size() <= 2)
+        {
+            sendSerialString(addrPrefix() + "Error: set-enable command requires device and state parameters");
+            return;
+        }
+        auto dev = parseDevice(tokens[1]);
+        if (dev == (tfnode::Device)(-1)) // Undefined device
+        {
+            sendSerialString(addrPrefix() + "Error: Unknown device in set-enable command");
+            return;
+        }
+        if (!(tokens[2] == "true" || tokens[2] == "false"))
+        {
+            sendSerialString(addrPrefix() + "Error: set-enable command requires 'true' or 'false' for the state");
+            return;
+        }
+        if (tokens[2] == "true")
+        {
+            tfnode::EnableCommand enableCmd;
+            enableCmd.set_device(dev);
+            nodeCmd.set_enable(enableCmd);
+        }
+        else
+        {
+            tfnode::DisableCommand disableCmd;
+            disableCmd.set_device(dev);
+            nodeCmd.set_disable(disableCmd);
+        }
+    }
+    // -------------------- set-mode --------------------
+    else if (cmd == "set-mode")
+    {
+        if (tokens.size() <= 2)
+        {
+            sendSerialString(addrPrefix() + "Error: set-mode command requires device and mode parameters");
+            return;
+        }
+        auto dev = parseDevice(tokens[1]);
+        if (dev == (tfnode::Device)(-1))
+        {
+            sendSerialString(addrPrefix() + "Error: Unknown device in set-mode command");
+            return;
+        }
+        if (tokens[2] != "percent" && tokens[2] != "amps" &&
+            tokens[2] != "volts"   && tokens[2] != "ohms")
+        {
+            sendSerialString(addrPrefix() + "Error: Unknown mode in set-mode command");
+            return;
+        }
+        tfnode::SetModeCommand modeCmd;
+        modeCmd.set_device(dev);
+        modeCmd.set_mode(parseMode(tokens[2]));
+        nodeCmd.set_set_mode(modeCmd);
+    }
+    // -------------------- set-setpoint --------------------
+    else if (cmd == "set-setpoint")
+    {
+        if (tokens.size() <= 3)
+        {
+            sendSerialString(addrPrefix() + "Error: set-setpoint command requires device, mode, and setpoint parameters");
+            return;
+        }
+        auto dev = parseDevice(tokens[1]);
+        if (dev == (tfnode::Device)(-1))
+        {
+            sendSerialString(addrPrefix() + "Error: Unknown device in set-setpoint command");
+            return;
+        }
+        if (tokens[2] != "percent" && tokens[2] != "amps" &&
+            tokens[2] != "volts"   && tokens[2] != "ohms")
+        {
+            sendSerialString(addrPrefix() + "Error: Unknown mode in set-setpoint command");
+            return;
+        }
+        float val = tokens[3].toFloat();
+        if (val == 0.0f && tokens[3] != "0" && tokens[3] != "0.0")
+        {
+            sendSerialString(addrPrefix() + "Error: Invalid setpoint value in set-setpoint command");
+            return;
+        }
+        tfnode::SetSetpointCommand setpointCmd;
+        setpointCmd.set_device(dev);
+        setpointCmd.set_mode(parseMode(tokens[2]));
+        setpointCmd.set_setpoint(val);
+        nodeCmd.set_set_setpoint(setpointCmd);
+    }
+    // -------------------- status --------------------
+    else if (cmd == "status")
+    {
+        tfnode::GetStatusCommand statusCmd;
+        if (tokens.size() > 1)
+        {
+            auto dev = parseDevice(tokens[1]);
+            if (dev == (tfnode::Device)(-1))
+            {
+                sendSerialString(addrPrefix() + "Error: Unknown device in status command");
+                return;
+            }
+            statusCmd.set_device(dev);
+        }
+        else
+        {
+            statusCmd.set_device(tfnode::Device::DEVICE_ALL);
+        }
+        // Ascii command for status will always be in readable mode.
+        statusCmd.set_mode(tfnode::DeviceStatusMode::STATUS_DUMP_READABLE);
+        nodeCmd.set_status(statusCmd);
+    }
+    else if (cmd == "help")
+    {
+        const char* helpLines[] = {
+            "\n========================================",
+            "Available Commands:",
+            "/help                - Display this help message",
+            "/reset [device]      - Reset the specified device (default: all)",
+            "/set-enable <device> <true|false> - Enable or disable a device",
+            "/set-mode <device> <percent|amps|volts|ohms> - Set the mode for a device",
+            "/set-setpoint <device> <percent|amps|volts|ohms> <value> - Set the setpoint for a device",
+            "/status [device]     - Get the status of a device (default: all)"
+        };
+        const int numLines = sizeof(helpLines) / sizeof(helpLines[0]);
+        String helpMsg;
+        for (int i = 0; i < numLines; i++) {
+            helpMsg += helpLines[i];
+            helpMsg += "\n";
+        }
+        sendSerialString(helpMsg);
+        return;
+    }
+    else
+    {
+        sendSerialString(addrPrefix() + "Error: Unsupported command '" + cmd + "'");
+        return;
+    }
+
+    // If a valid command was built, execute it.
+    if (nodeCmd.get_which_command() != tfnode::NodeCommand::FieldNumber::NOT_SET)
+    {
+        result = executeCommand(nodeCmd, getInterfaceByName("SerialInterface"));
+
+        // Build and send response.
+        tfnode::NodeResponse resp;
+        tfnode::GeneralResponse genResp;
+        genResp.set_device(tfnode::Device::DEVICE_NODE);
+        genResp.set_response_code(result);
+        genResp.set_received_cmd(tfnode::FunctionCode::FUNCTION_ENABLE);
+        resp.set_general_response(genResp);
+
+        // Convert response to a string, adding a new line before the response.
+        String responseString = addrPrefix() +
+                                "Received: Device:" + String((int)genResp.get_device()) +
+                                ", Code:" + String((int)genResp.get_response_code()) +
+                                ", Cmd:" + String((int)genResp.get_received_cmd());
+        sendSerialString(responseString);
+    }
+}
+
 // Simply print message over serial
 void CommandProcessor::sendSerialString(String message) {
     Serial.print(message);
 }
 
+
+
+
+
+
+//=============================================================================
+// Internal Test Functions
+//=============================================================================
 
 /// @brief Test function to send a command to the PC.  Not used in production.
 ///        Use this function to determine the format of the command packet.

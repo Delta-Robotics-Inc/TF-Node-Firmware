@@ -12,8 +12,7 @@ Welcome to the Delta Robotics ThermoFlex repository.  Here contains the developm
 
 # Node Commands
 
-
-The following are the currently supported commands on the ThermoFlex Node controller.  To execute these commands, do the following:
+There are 2 methods for controlling the Node. One is through the [ThermoFlex-Python-API](https://github.com/Delta-Robotics-Inc/ThermoFlex-Python-API), which you can find instructions for on its repository. The second is through the following ASCII commands. To execute these commands, do the following:
 
 1. Connect the TF Node via USB 
 2. Open a serial console with a baud rate of 115200
@@ -25,13 +24,12 @@ The below commands that specify `<device> .. (default all)` will work without pa
 
 | Command      | Parameters                                                                                         | Description                                                            |
 | ------------ | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| reset        | \<device\> = all, m1, m2 .. etc (default all)                                                      | stops device and resets the device settings to defaults                |
-| set-enable   | \<device> = all, m1, m2 .. etc<br>\<state> = true, false                                           | enables/disables the mosfet of one or all devices                      |
-| set-mode     | \<device> = all, m1, m2 .. etc<br>\<mode> = percent, amps, volts, degrees                          | sets the operating mode of one or all devices                          |
-| set-setpoint | \<device> = all, m1, m2 .. etc<br>\<mode> = percent, amps, volts, degrees<br>\<setpoint> = `float` | sets the value for one or all devices' setpoints at the specified mode |
-| status       | \<device\> = all, m1, m2 .. etc (default all)                                                      | displays system info of one or all devices (including the Node itself) |
-| stop         | \<device\> = all, m1, m2 .. etc (default all)
-| log-mode     | \<device\> = all, node, m1, m2 .. etc<br>\<mode> = 0, 1, etc                                       | sets continuous logging mode for device (0 for no logging)
+| /help        |                                                                                                    | display available commands
+| /reset       | \<device\> = all, m1, m2 .. etc (default all)                                                      | stops device and resets the device settings to defaults                |
+| /set-enable  | \<device> = all, m1, m2 .. etc<br>\<state> = true, false                                           | enables/disables the mosfet of one or all devices                      |
+| /set-mode    | \<device> = all, m1, m2 .. etc<br>\<mode> = percent, amps, volts, ohms                             | sets the operating mode of one or all devices                          |
+| /set-setpoint| \<device> = all, m1, m2 .. etc<br>\<mode> = percent, amps, volts, ohms<br>\<setpoint> = `float`    | sets the value for one or all devices' setpoints at the specified mode |
+| /status      | \<device\> = all, m1, m2 .. etc (default all)                                                      | displays system info of one or all devices (including the Node itself) |
 
 ## Input Examples
 
@@ -39,13 +37,14 @@ Here are some example commands to display the syntax:
 
 ```bash
 
-> set-mode m1 volts           # sets muscle 1 mode to volts
-> set-setpoint all volts 5.0  # sets all muscles
-> set-enable m2 true          # enables m2
-> status                      # status for all devices
-> status m1                   # status for just m1
-> reset all                   # resets all devices
-> reset                       # resets all devices
-> reset m3                    # resets just m3
+/help                        # display help message
+/set-mode m1 volts           # sets muscle 1 mode to volts
+/set-setpoint all volts 5.0  # sets all muscles
+/set-enable m2 true          # enables m2
+/status                      # status for all devices
+/status m1                   # status for just m1
+/reset all                   # resets all devices
+/reset                       # resets all devices
+/reset m3                    # resets just m3
 
 ```

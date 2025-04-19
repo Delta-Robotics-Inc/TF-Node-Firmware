@@ -10,14 +10,14 @@
 #include "networking/Settings.h"
 #include "globals.hpp"
 
-// Create instances of network interfaces
-SerialInterface* serialInterface;
-// Assume CANInterface and SPIInterface are implemented similarly
-CANInterface* canInterface;
-// SPIInterface spiInterface;
+// // Create instances of network interfaces
+// SerialInterface* serialInterface;
+// // Assume CANInterface and SPIInterface are implemented similarly
+// CANInterface* canInterface;
+// // SPIInterface spiInterface;
 
-TFNode* master_tfNode;
-CommandProcessor* commandProcessor;
+// TFNode* master_tfNode;
+// CommandProcessor* commandProcessor;
 
 void setup() {
     Serial.begin(115200);
@@ -34,7 +34,6 @@ void setup() {
     // TODO this should be different for every device
     
     // TODO add a unique command for setting address and attach it to Settings
-    NodeAddress nodeAddress;
     
 
     nodeAddress.idType = NodeAddress::IDType::NodeID;  // Default NodeID ID type

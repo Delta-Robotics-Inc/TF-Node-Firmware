@@ -49,8 +49,8 @@ enum class Device : uint32_t
   DEVICE_ALL = 0,
   DEVICE_NODE = 1,
   DEVICE_PORTALL = 2,
-  DEVICE_PORT1 = 3,
-  DEVICE_PORT2 = 4
+  DEVICE_PORT0 = 3,
+  DEVICE_PORT1 = 4
 };
 
 enum class DeviceStatusMode : uint32_t
@@ -3577,8 +3577,9 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
     {
       set_compact_status(rhs.get_compact_status());
       set_loaded_settings(rhs.get_loaded_settings());
-      set_firmware_version(rhs.get_firmware_version());
-      set_firmware_subversion(rhs.get_firmware_subversion());
+      set_firmware_version_major(rhs.get_firmware_version_major());
+      set_firmware_version_minor(rhs.get_firmware_version_minor());
+      set_firmware_version_patch(rhs.get_firmware_version_patch());
       set_board_version(rhs.get_board_version());
       set_board_subversion(rhs.get_board_subversion());
       set_muscle_cnt(rhs.get_muscle_cnt());
@@ -3593,8 +3594,9 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
     {
       set_compact_status(rhs.get_compact_status());
       set_loaded_settings(rhs.get_loaded_settings());
-      set_firmware_version(rhs.get_firmware_version());
-      set_firmware_subversion(rhs.get_firmware_subversion());
+      set_firmware_version_major(rhs.get_firmware_version_major());
+      set_firmware_version_minor(rhs.get_firmware_version_minor());
+      set_firmware_version_patch(rhs.get_firmware_version_patch());
       set_board_version(rhs.get_board_version());
       set_board_subversion(rhs.get_board_subversion());
       set_muscle_cnt(rhs.get_muscle_cnt());
@@ -3612,8 +3614,8 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
       NOT_SET = 0,
       COMPACT_STATUS = 1,
       LOADED_SETTINGS = 2,
-      FIRMWARE_VERSION = 3,
-      FIRMWARE_SUBVERSION = 4,
+      FIRMWARE_VERSION_MAJOR = 3,
+      FIRMWARE_VERSION_MINOR = 4,
       BOARD_VERSION = 5,
       BOARD_SUBVERSION = 6,
       MUSCLE_CNT = 7,
@@ -3621,15 +3623,17 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
       VRD_SCALAR = 9,
       VRD_OFFSET = 10,
       MAX_CURRENT = 11,
-      MIN_V_SUPPLY = 12
+      MIN_V_SUPPLY = 12,
+      FIRMWARE_VERSION_PATCH = 13
     };
 
     NodeStatusDump& operator=(const NodeStatusDump& rhs)
     {
       set_compact_status(rhs.get_compact_status());
       set_loaded_settings(rhs.get_loaded_settings());
-      set_firmware_version(rhs.get_firmware_version());
-      set_firmware_subversion(rhs.get_firmware_subversion());
+      set_firmware_version_major(rhs.get_firmware_version_major());
+      set_firmware_version_minor(rhs.get_firmware_version_minor());
+      set_firmware_version_patch(rhs.get_firmware_version_patch());
       set_board_version(rhs.get_board_version());
       set_board_subversion(rhs.get_board_subversion());
       set_muscle_cnt(rhs.get_muscle_cnt());
@@ -3645,8 +3649,9 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
     {
       set_compact_status(rhs.get_compact_status());
       set_loaded_settings(rhs.get_loaded_settings());
-      set_firmware_version(rhs.get_firmware_version());
-      set_firmware_subversion(rhs.get_firmware_subversion());
+      set_firmware_version_major(rhs.get_firmware_version_major());
+      set_firmware_version_minor(rhs.get_firmware_version_minor());
+      set_firmware_version_patch(rhs.get_firmware_version_patch());
       set_board_version(rhs.get_board_version());
       set_board_subversion(rhs.get_board_subversion());
       set_muscle_cnt(rhs.get_muscle_cnt());
@@ -3674,21 +3679,29 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
     inline const NodeSettings& get_loaded_settings() const { return loaded_settings_; }
     inline const NodeSettings& loaded_settings() const { return loaded_settings_; }
 
-    static constexpr char const* FIRMWARE_VERSION_NAME = "firmware_version";
-    inline void clear_firmware_version() { firmware_version_.clear(); }
-    inline void set_firmware_version(const uint32_t& value) { firmware_version_ = value; }
-    inline void set_firmware_version(const uint32_t&& value) { firmware_version_ = value; }
-    inline uint32_t& mutable_firmware_version() { return firmware_version_.get(); }
-    inline const uint32_t& get_firmware_version() const { return firmware_version_.get(); }
-    inline uint32_t firmware_version() const { return firmware_version_.get(); }
+    static constexpr char const* FIRMWARE_VERSION_MAJOR_NAME = "firmware_version_major";
+    inline void clear_firmware_version_major() { firmware_version_major_.clear(); }
+    inline void set_firmware_version_major(const uint32_t& value) { firmware_version_major_ = value; }
+    inline void set_firmware_version_major(const uint32_t&& value) { firmware_version_major_ = value; }
+    inline uint32_t& mutable_firmware_version_major() { return firmware_version_major_.get(); }
+    inline const uint32_t& get_firmware_version_major() const { return firmware_version_major_.get(); }
+    inline uint32_t firmware_version_major() const { return firmware_version_major_.get(); }
 
-    static constexpr char const* FIRMWARE_SUBVERSION_NAME = "firmware_subversion";
-    inline void clear_firmware_subversion() { firmware_subversion_.clear(); }
-    inline void set_firmware_subversion(const uint32_t& value) { firmware_subversion_ = value; }
-    inline void set_firmware_subversion(const uint32_t&& value) { firmware_subversion_ = value; }
-    inline uint32_t& mutable_firmware_subversion() { return firmware_subversion_.get(); }
-    inline const uint32_t& get_firmware_subversion() const { return firmware_subversion_.get(); }
-    inline uint32_t firmware_subversion() const { return firmware_subversion_.get(); }
+    static constexpr char const* FIRMWARE_VERSION_MINOR_NAME = "firmware_version_minor";
+    inline void clear_firmware_version_minor() { firmware_version_minor_.clear(); }
+    inline void set_firmware_version_minor(const uint32_t& value) { firmware_version_minor_ = value; }
+    inline void set_firmware_version_minor(const uint32_t&& value) { firmware_version_minor_ = value; }
+    inline uint32_t& mutable_firmware_version_minor() { return firmware_version_minor_.get(); }
+    inline const uint32_t& get_firmware_version_minor() const { return firmware_version_minor_.get(); }
+    inline uint32_t firmware_version_minor() const { return firmware_version_minor_.get(); }
+
+    static constexpr char const* FIRMWARE_VERSION_PATCH_NAME = "firmware_version_patch";
+    inline void clear_firmware_version_patch() { firmware_version_patch_.clear(); }
+    inline void set_firmware_version_patch(const uint32_t& value) { firmware_version_patch_ = value; }
+    inline void set_firmware_version_patch(const uint32_t&& value) { firmware_version_patch_ = value; }
+    inline uint32_t& mutable_firmware_version_patch() { return firmware_version_patch_.get(); }
+    inline const uint32_t& get_firmware_version_patch() const { return firmware_version_patch_.get(); }
+    inline uint32_t firmware_version_patch() const { return firmware_version_patch_.get(); }
 
     static constexpr char const* BOARD_VERSION_NAME = "board_version";
     inline void clear_board_version() { board_version_.clear(); }
@@ -3769,14 +3782,19 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
         return_value = loaded_settings_.serialize_with_id(static_cast<uint32_t>(FieldNumber::LOADED_SETTINGS), buffer, false);
       }
 
-      if((0U != firmware_version_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      if((0U != firmware_version_major_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
       {
-        return_value = firmware_version_.serialize_with_id(static_cast<uint32_t>(FieldNumber::FIRMWARE_VERSION), buffer, false);
+        return_value = firmware_version_major_.serialize_with_id(static_cast<uint32_t>(FieldNumber::FIRMWARE_VERSION_MAJOR), buffer, false);
       }
 
-      if((0U != firmware_subversion_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      if((0U != firmware_version_minor_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
       {
-        return_value = firmware_subversion_.serialize_with_id(static_cast<uint32_t>(FieldNumber::FIRMWARE_SUBVERSION), buffer, false);
+        return_value = firmware_version_minor_.serialize_with_id(static_cast<uint32_t>(FieldNumber::FIRMWARE_VERSION_MINOR), buffer, false);
+      }
+
+      if((0U != firmware_version_patch_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
+      {
+        return_value = firmware_version_patch_.serialize_with_id(static_cast<uint32_t>(FieldNumber::FIRMWARE_VERSION_PATCH), buffer, false);
       }
 
       if((0U != board_version_.get()) && (::EmbeddedProto::Error::NO_ERRORS == return_value))
@@ -3843,12 +3861,16 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
             return_value = loaded_settings_.deserialize_check_type(buffer, wire_type);
             break;
 
-          case FieldNumber::FIRMWARE_VERSION:
-            return_value = firmware_version_.deserialize_check_type(buffer, wire_type);
+          case FieldNumber::FIRMWARE_VERSION_MAJOR:
+            return_value = firmware_version_major_.deserialize_check_type(buffer, wire_type);
             break;
 
-          case FieldNumber::FIRMWARE_SUBVERSION:
-            return_value = firmware_subversion_.deserialize_check_type(buffer, wire_type);
+          case FieldNumber::FIRMWARE_VERSION_MINOR:
+            return_value = firmware_version_minor_.deserialize_check_type(buffer, wire_type);
+            break;
+
+          case FieldNumber::FIRMWARE_VERSION_PATCH:
+            return_value = firmware_version_patch_.deserialize_check_type(buffer, wire_type);
             break;
 
           case FieldNumber::BOARD_VERSION:
@@ -3914,8 +3936,9 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
     {
       clear_compact_status();
       clear_loaded_settings();
-      clear_firmware_version();
-      clear_firmware_subversion();
+      clear_firmware_version_major();
+      clear_firmware_version_minor();
+      clear_firmware_version_patch();
       clear_board_version();
       clear_board_subversion();
       clear_muscle_cnt();
@@ -3938,11 +3961,14 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
         case FieldNumber::LOADED_SETTINGS:
           name = LOADED_SETTINGS_NAME;
           break;
-        case FieldNumber::FIRMWARE_VERSION:
-          name = FIRMWARE_VERSION_NAME;
+        case FieldNumber::FIRMWARE_VERSION_MAJOR:
+          name = FIRMWARE_VERSION_MAJOR_NAME;
           break;
-        case FieldNumber::FIRMWARE_SUBVERSION:
-          name = FIRMWARE_SUBVERSION_NAME;
+        case FieldNumber::FIRMWARE_VERSION_MINOR:
+          name = FIRMWARE_VERSION_MINOR_NAME;
+          break;
+        case FieldNumber::FIRMWARE_VERSION_PATCH:
+          name = FIRMWARE_VERSION_PATCH_NAME;
           break;
         case FieldNumber::BOARD_VERSION:
           name = BOARD_VERSION_NAME;
@@ -4030,8 +4056,9 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
 
       left_chars = compact_status_.to_string(left_chars, indent_level + 2, COMPACT_STATUS_NAME, true);
       left_chars = loaded_settings_.to_string(left_chars, indent_level + 2, LOADED_SETTINGS_NAME, false);
-      left_chars = firmware_version_.to_string(left_chars, indent_level + 2, FIRMWARE_VERSION_NAME, false);
-      left_chars = firmware_subversion_.to_string(left_chars, indent_level + 2, FIRMWARE_SUBVERSION_NAME, false);
+      left_chars = firmware_version_major_.to_string(left_chars, indent_level + 2, FIRMWARE_VERSION_MAJOR_NAME, false);
+      left_chars = firmware_version_minor_.to_string(left_chars, indent_level + 2, FIRMWARE_VERSION_MINOR_NAME, false);
+      left_chars = firmware_version_patch_.to_string(left_chars, indent_level + 2, FIRMWARE_VERSION_PATCH_NAME, false);
       left_chars = board_version_.to_string(left_chars, indent_level + 2, BOARD_VERSION_NAME, false);
       left_chars = board_subversion_.to_string(left_chars, indent_level + 2, BOARD_SUBVERSION_NAME, false);
       left_chars = muscle_cnt_.to_string(left_chars, indent_level + 2, MUSCLE_CNT_NAME, false);
@@ -4066,8 +4093,9 @@ class NodeStatusDump final: public ::EmbeddedProto::MessageInterface
 
       NodeStatusCompact compact_status_;
       NodeSettings loaded_settings_;
-      EmbeddedProto::uint32 firmware_version_ = 0U;
-      EmbeddedProto::uint32 firmware_subversion_ = 0U;
+      EmbeddedProto::uint32 firmware_version_major_ = 0U;
+      EmbeddedProto::uint32 firmware_version_minor_ = 0U;
+      EmbeddedProto::uint32 firmware_version_patch_ = 0U;
       EmbeddedProto::uint32 board_version_ = 0U;
       EmbeddedProto::uint32 board_subversion_ = 0U;
       EmbeddedProto::uint32 muscle_cnt_ = 0U;

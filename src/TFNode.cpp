@@ -8,8 +8,8 @@ TFNode::TFNode(const NodeAddress& addr)
     //commandProcessor(&cp), // Initialize with the address of cp
     statusMode(tfnode::DeviceStatusMode::STATUS_NONE),
     statusInterface(nullptr),
-    smaController0(tfnode::Device::DEVICE_PORT1, "M1_PORT0", M1_MOS_TRIG, M1_CURR_RD, M1_VLD_RD, VLD_SCALE_FACTOR_M1, VLD_OFFSET_M1),
-    smaController1(tfnode::Device::DEVICE_PORT2, "M2_PORT1", M2_MOS_TRIG, M2_CURR_RD, M2_VLD_RD, VLD_SCALE_FACTOR_M2, VLD_OFFSET_M2),
+    smaController0(tfnode::Device::DEVICE_PORT0, "M1_PORT0", M1_MOS_TRIG, M1_CURR_RD, M1_VLD_RD, VLD_SCALE_FACTOR_M1, VLD_OFFSET_M1),
+    smaController1(tfnode::Device::DEVICE_PORT1, "M2_PORT1", M2_MOS_TRIG, M2_CURR_RD, M2_VLD_RD, VLD_SCALE_FACTOR_M2, VLD_OFFSET_M2),
     n_error(0xFF), // Assuming all errors are cleared at start
     n_vSupply(0.0f),
     pot_val(0.0f),
@@ -137,11 +137,11 @@ tfnode::ResponseCode TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::De
     }
 
     // Handle status mode for SMAControllers
-    if (device == tfnode::Device::DEVICE_PORT1 || device == tfnode::Device::DEVICE_PORTALL || device == tfnode::Device::DEVICE_ALL) {
+    if (device == tfnode::Device::DEVICE_PORT0 || device == tfnode::Device::DEVICE_PORTALL || device == tfnode::Device::DEVICE_ALL) {
 
         smaController0.CMD_setStatusMode(mode, repeating, iface);
     }
-    if(device == tfnode::Device::DEVICE_PORT2 || device == tfnode::Device::DEVICE_PORTALL || device == tfnode::Device::DEVICE_ALL) {
+    if(device == tfnode::Device::DEVICE_PORT1 || device == tfnode::Device::DEVICE_PORTALL || device == tfnode::Device::DEVICE_ALL) {
 
         smaController1.CMD_setStatusMode(mode, repeating, iface);
     }
@@ -153,10 +153,10 @@ tfnode::ResponseCode TFNode::CMD_resetDevice(tfnode::Device device) {
     if (device == tfnode::Device::DEVICE_NODE || device == tfnode::Device::DEVICE_ALL) {
         // Reset node-specific settings
     }
-    if (device == tfnode::Device::DEVICE_PORT1 || device == tfnode::Device::DEVICE_ALL || device == tfnode::Device::DEVICE_PORTALL) {
+    if (device == tfnode::Device::DEVICE_PORT0 || device == tfnode::Device::DEVICE_ALL || device == tfnode::Device::DEVICE_PORTALL) {
         smaController0.CMD_reset();
     }
-    if (device == tfnode::Device::DEVICE_PORT2 || device == tfnode::Device::DEVICE_ALL || device == tfnode::Device::DEVICE_PORTALL) {
+    if (device == tfnode::Device::DEVICE_PORT1 || device == tfnode::Device::DEVICE_ALL || device == tfnode::Device::DEVICE_PORTALL) {
         smaController1.CMD_reset();
     }
 
@@ -164,9 +164,9 @@ tfnode::ResponseCode TFNode::CMD_resetDevice(tfnode::Device device) {
 }
 
 tfnode::ResponseCode TFNode::CMD_enableDevice(tfnode::Device device) {
-    if (device == tfnode::Device::DEVICE_PORT1) {
+    if (device == tfnode::Device::DEVICE_PORT0) {
         smaController0.CMD_setEnable(true);
-    } else if (device == tfnode::Device::DEVICE_PORT2) {
+    } else if (device == tfnode::Device::DEVICE_PORT1) {
         smaController1.CMD_setEnable(true);
     }
     else if (device == tfnode::Device::DEVICE_ALL || device == tfnode::Device::DEVICE_PORTALL) {
@@ -181,9 +181,9 @@ tfnode::ResponseCode TFNode::CMD_enableDevice(tfnode::Device device) {
 // Implement other command handlers similarly
 tfnode::ResponseCode TFNode::CMD_disableDevice(tfnode::Device device)
 {
-    if (device == tfnode::Device::DEVICE_PORT1) {
+    if (device == tfnode::Device::DEVICE_PORT0) {
         smaController0.CMD_setEnable(false);
-    } else if (device == tfnode::Device::DEVICE_PORT2) {
+    } else if (device == tfnode::Device::DEVICE_PORT1) {
         smaController1.CMD_setEnable(false);
     }
     else if (device == tfnode::Device::DEVICE_ALL || device == tfnode::Device::DEVICE_PORTALL) {
@@ -274,8 +274,11 @@ tfnode::NodeStatusDump TFNode::getStatusDump() {
     // Set other detailed fields
     //status.set_firmware_version(CFG_FIRMWARE_VERSION);
     //status.set_board_version(SHIELD_VERSION);
-    status.set_firmware_version(0);
-    status.set_board_version(0);
+    status.set_firmware_version_major(CFG_FIRMWARE_VERSION_MAJOR);
+    status.set_firmware_version_minor(CFG_FIRMWARE_VERSION_MINOR);
+    status.set_firmware_version_patch(CFG_FIRMWARE_VERSION_PATCH);
+    uint32_t board_version = ((uint32_t)SHIELD_VERSION_MAJOR << 8) | ((uint32_t)SHIELD_VERSION_MINOR);
+    status.set_board_version(board_version);
     status.set_muscle_cnt(SMA_CONTROLLER_CNT); // Number of SMAControllers
     status.set_log_interval_ms(LOG_MS);
     status.set_vrd_scalar(VRD_SCALE_FACTOR);
@@ -293,24 +296,49 @@ tfnode::NodeStatusDump TFNode::getStatusDump() {
 // This is a large amount of data but useful when other side does not understand the TF Node messaging system
 String TFNode::getStatusReadable()
 {
-    // String stat_str = 
-    //             "========================================\n";
-    // stat_str += "LOG TIME: " + String(millis() - log_start) + "\n"; // Display time since log start
-    // stat_str += "Battery Volts: " + String(n_vSupply, 6) + " V\n";
-    // stat_str += "Error State: " + String(n_error, BIN) + "\n";
-    // stat_str += "Pot Val: " + String(pot_val, 6) + "\n";
-    // stat_str += "========================================\n";
-    // stat_str += "SMA Controller 0:\n";
-    // stat_str += String(smaController0.getResistance()) + " mOhms\n";
-    // stat_str += "Setpoint: " + String(smaController0.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]) + " mOhms";
-    // stat_str += "PID Output: " + String(smaController0.resController->getOutput());
-    // stat_str += "SMA Controller 1:\n";
-    // stat_str += String(smaController1.getResistance()) + " mOhms\n";
-    // stat_str += "Setpoint: " + String(smaController1.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]) + " mOhms";
-    // stat_str += "PID Output: " + String(smaController1.resController->getOutput());
+    // Helper lambda to convert SMAControlMode to a string
+    auto modeToStr = [](tfnode::SMAControlMode mode) -> String {
+        switch(mode) {
+            case tfnode::SMAControlMode::MODE_PERCENT: return "MODE_PERCENT";
+            case tfnode::SMAControlMode::MODE_AMPS:    return "MODE_AMPS";
+            case tfnode::SMAControlMode::MODE_VOLTS:   return "MODE_VOLTS";
+            case tfnode::SMAControlMode::MODE_OHMS:    return "MODE_OHMS";
+            case tfnode::SMAControlMode::MODE_TRAIN:   return "MODE_TRAIN";
+            default:                                   return "UNKNOWN";
+        }
+    };
 
-    // Just debug a single resistance
-    String stat_str = String(smaController0.getResistance()) + " mOhms\n";
+    String stat_str = 
+                "========================================\n";
+    stat_str += "TF Node Status Dump\n";
+    stat_str += "========================================\n";
+    stat_str += "Node Address: " + String(address.id[0]) + "." + String(address.id[1]) + "." + String(address.id[2]) + "\n";
+    stat_str += "Firmware Version: " + String(CFG_FIRMWARE_VERSION) + "\n";
+    stat_str += "Board Version: " + String(SHIELD_VERSION_MAJOR) + "." + String(SHIELD_VERSION_MINOR) + "\n";
+    stat_str += "Uptime: " + String(millis() / 1000) + " s\n";
+    stat_str += "LOG TIME: " + String(millis() - log_start) + "\n"; // Display time since log start
+    stat_str += "Battery Volts: " + String(n_vSupply, 6) + " V\n";
+    stat_str += "Error State: " + String(n_error, BIN) + "\n";
+    stat_str += "Pot Val: " + String(pot_val, 6) + "\n";
+    stat_str += "========================================\n";
+    stat_str += "SMA Controller 0:\n";
+    stat_str += "Load Resistance: " + String(smaController0.getResistance()) + " mOhms\n";
+    stat_str += "Load Current: " + String(smaController0.getMuscleAmps()) + " A\n";
+    stat_str += "Mode: " + modeToStr(smaController0.getMode()) + "\n";
+    stat_str += "Setpoint: " + String(smaController0.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]) + " mOhms\n";
+    stat_str += "Enabled: " + String(smaController0.getEnabled()) + "\n";
+    stat_str += "PWM Output: " + String(smaController0.getOutput()) + "\n";
+    stat_str += "PID Output: " + String(smaController0.resController->getOutput()) + "\n";
+    stat_str += "========================================\n";
+    stat_str += "SMA Controller 1:\n";
+    stat_str += "Load Resistance: " + String(smaController1.getResistance()) + " mOhms\n";
+    stat_str += "Load Current: " + String(smaController1.getMuscleAmps()) + " A\n";
+    stat_str += "Mode: " + modeToStr(smaController1.getMode()) + "\n";
+    stat_str += "Setpoint: " + String(smaController1.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]) + " mOhms\n";
+    stat_str += "Enabled: " + String(smaController1.getEnabled()) + "\n";
+    stat_str += "PWM Output: " + String(smaController1.getOutput()) + "\n";
+    stat_str += "PID Output: " + String(smaController1.resController->getOutput()) + "\n";
+
     return stat_str;
 }
 

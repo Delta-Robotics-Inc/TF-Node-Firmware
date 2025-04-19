@@ -242,6 +242,10 @@ float SMAController::getResistance()
     return rld_val;
 }
 
+tfnode::SMAControlMode SMAController::getMode()
+{
+    return currentMode;
+}
 
 //=============================================================================
 // Sensor Measurement Functions

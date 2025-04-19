@@ -43,12 +43,10 @@
 - [ ] Come up with auto update method or push via hex file
    - Can we open repo to the public? - Yes
    - Need to determine OTA update solution
-- [ ] Create settings/configuration implementation stored/loaded in EEPROM and updated via command
-   - [ ] CAN bus ID
 
 
 ### Backlog Changes
-
+- [ ] Move header files to `include/` to adhere to common C++ practices
 - [ ] Build Settings system to encapsulate, save, and load settings for the Node and SMAController
    - Settings still not fully implemented
 - [ ] Overheat detection with resistance method

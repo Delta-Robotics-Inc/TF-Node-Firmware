@@ -49,6 +49,11 @@ public:
     float getLoadVolts();
     float getResistance();
 
+    tfnode::SMAControlMode getMode();
+    bool getEnabled() { return outputEnabled; }
+    float getOutput() { return pwm_duty_percent; }
+    
+
     float setpoint[(int)tfnode::SMAControlMode::MODE_CNT];
     ResistiveController* resController;
 
