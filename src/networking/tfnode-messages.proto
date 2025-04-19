@@ -265,4 +265,5 @@ message SMAStatusDump {
   uint32 trainState = 9;
   // TODO Include additional detailed fields
   // Fields will include pin definitions, all configured modes and setpoints, and important internal variables
+  // Include internal CLC/PID controller variables
 }

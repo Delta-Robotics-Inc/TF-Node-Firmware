@@ -25,28 +25,36 @@
 - [x] Fix build issues with platformio on Ubuntu
 
 
-### IN PROGRESS v1.0.2 Changes
-- [ ] Create settings/configuration implementation stored/loaded in EEPROM and updated via command
-- [ ] Add slash commands for normal ascii communication from PC to device
+### IN PROGRESS v1.1.0 Changes
+- [x] Add slash commands for normal ascii communication from PC to device
+   - [x] Add standard set from v0.2 firmware predating DeltaLink
+   - [ ] "/about" ascii command to get firmware version and board ID
 - [ ] Implement Heartbeat/event messages in DeltaLink
    - Use CANOPen as a reference
    - [x] Decide and document heartbeat structure
+      - Empty DeltaLink packet counts as heartbeat
    - [x] Implement structure in firmware
-   - [ ] Test with python library 
+   - [ ] Test with python library
+   - [ ] Have toggle in order to disable for ascii commands
+      - [ ] "/heartbeat" ascii command to send a heartbeat signal
+      - [ ] "/heartbeat off" to turn heartbeat off
+      - [ ] "/heartbeat on" to tuen heartbeat on
+- [ ] Implement SMAController Status response
 - [ ] Come up with auto update method or push via hex file
-   - Can we open repo to the public?
+   - Can we open repo to the public? - Yes
    - Need to determine OTA update solution
-- [ ] Base protobuf files on DeltaLink repository as the common location for protocol definitions
-   - Add an action to check if firmware is behind DeltaLink version
+- [ ] Create settings/configuration implementation stored/loaded in EEPROM and updated via command
+   - [ ] CAN bus ID
 
 
 ### Backlog Changes
 
 - [ ] Build Settings system to encapsulate, save, and load settings for the Node and SMAController
    - Settings still not fully implemented
-- [ ] Implement SMAController Status response
 - [ ] Overheat detection with resistance method
 - [ ] Resistance control (model in python first)
+- [ ] Base protobuf files on DeltaLink repository as the common location for protocol definitions
+   - Add an action to check if firmware is behind DeltaLink version
 - [ ] Overhaul DeltaLink to align with lessons from CANOpen and ROS. See notion.
 
 
