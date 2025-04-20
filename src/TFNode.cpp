@@ -119,9 +119,10 @@ void TFNode::toggleRGBStatusLED() {
 
 tfnode::ResponseCode TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::DeviceStatusMode mode, bool repeating, NetworkInterface* iface) {
 
+    statusInterface = iface; // Share the same interface for Node and SMAControllers
+
     // For now, we assume device is DEVICE_NODE or DEVICE_ALL
     if (device == tfnode::Device::DEVICE_NODE || device == tfnode::Device::DEVICE_ALL) {
-        statusInterface = iface;
         if(repeating) {
             // Set status mode for the node for repeating status
             statusMode = mode;
@@ -129,7 +130,7 @@ tfnode::ResponseCode TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::De
         else {
             // Nonrepeating status means set the statusMode to none
             statusMode = tfnode::DeviceStatusMode::STATUS_NONE;
-            Serial.println("Sending Single Status response...");
+            // Serial.println("Sending Single Status response...");
             sendStatusResponse(mode);  // Send a single status response
             // smaController0.sendSMAStatusResponse(mode);
             // smaController1.sendSMAStatusResponse(mode);
@@ -152,6 +153,7 @@ tfnode::ResponseCode TFNode::CMD_setStatusMode(tfnode::Device device, tfnode::De
 tfnode::ResponseCode TFNode::CMD_resetDevice(tfnode::Device device) {
     if (device == tfnode::Device::DEVICE_NODE || device == tfnode::Device::DEVICE_ALL) {
         // Reset node-specific settings
+        Serial.println("Resetting Node");
     }
     if (device == tfnode::Device::DEVICE_PORT0 || device == tfnode::Device::DEVICE_ALL || device == tfnode::Device::DEVICE_PORTALL) {
         smaController0.CMD_reset();
@@ -320,24 +322,24 @@ String TFNode::getStatusReadable()
     stat_str += "Battery Volts: " + String(n_vSupply, 6) + " V\n";
     stat_str += "Error State: " + String(n_error, BIN) + "\n";
     stat_str += "Pot Val: " + String(pot_val, 6) + "\n";
-    stat_str += "========================================\n";
-    stat_str += "SMA Controller 0:\n";
-    stat_str += "Load Resistance: " + String(smaController0.getResistance()) + " mOhms\n";
-    stat_str += "Load Current: " + String(smaController0.getMuscleAmps()) + " A\n";
-    stat_str += "Mode: " + modeToStr(smaController0.getMode()) + "\n";
-    stat_str += "Setpoint: " + String(smaController0.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]) + " mOhms\n";
-    stat_str += "Enabled: " + String(smaController0.getEnabled()) + "\n";
-    stat_str += "PWM Output: " + String(smaController0.getOutput()) + "\n";
-    stat_str += "PID Output: " + String(smaController0.resController->getOutput()) + "\n";
-    stat_str += "========================================\n";
-    stat_str += "SMA Controller 1:\n";
-    stat_str += "Load Resistance: " + String(smaController1.getResistance()) + " mOhms\n";
-    stat_str += "Load Current: " + String(smaController1.getMuscleAmps()) + " A\n";
-    stat_str += "Mode: " + modeToStr(smaController1.getMode()) + "\n";
-    stat_str += "Setpoint: " + String(smaController1.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]) + " mOhms\n";
-    stat_str += "Enabled: " + String(smaController1.getEnabled()) + "\n";
-    stat_str += "PWM Output: " + String(smaController1.getOutput()) + "\n";
-    stat_str += "PID Output: " + String(smaController1.resController->getOutput()) + "\n";
+    // stat_str += "========================================\n";
+    // stat_str += "SMA Controller 0:\n";
+    // stat_str += "Load Resistance: " + String(smaController0.getResistance()) + " mOhms\n";
+    // stat_str += "Load Current: " + String(smaController0.getMuscleAmps()) + " A\n";
+    // stat_str += "Mode: " + modeToStr(smaController0.getMode()) + "\n";
+    // stat_str += "Setpoint: " + String(smaController0.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]) + " mOhms\n";
+    // stat_str += "Enabled: " + String(smaController0.getEnabled()) + "\n";
+    // stat_str += "PWM Output: " + String(smaController0.getOutput()) + "\n";
+    // stat_str += "PID Output: " + String(smaController0.resController->getOutput()) + "\n";
+    // stat_str += "========================================\n";
+    // stat_str += "SMA Controller 1:\n";
+    // stat_str += "Load Resistance: " + String(smaController1.getResistance()) + " mOhms\n";
+    // stat_str += "Load Current: " + String(smaController1.getMuscleAmps()) + " A\n";
+    // stat_str += "Mode: " + modeToStr(smaController1.getMode()) + "\n";
+    // stat_str += "Setpoint: " + String(smaController1.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]) + " mOhms\n";
+    // stat_str += "Enabled: " + String(smaController1.getEnabled()) + "\n";
+    // stat_str += "PWM Output: " + String(smaController1.getOutput()) + "\n";
+    // stat_str += "PID Output: " + String(smaController1.resController->getOutput()) + "\n";
 
     return stat_str;
 }

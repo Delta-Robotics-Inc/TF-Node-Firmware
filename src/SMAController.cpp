@@ -74,7 +74,8 @@ void SMAController::update()
         break;
         // Eventually add position control (requires force to be known)
         case tfnode::SMAControlMode::MODE_TRAIN:
-            pwm_duty_percent = updateTraining(rld_val); // Convert to mohms
+            // pwm_duty_percent = updateTraining(rld_val); // Convert to mohms
+            commandProcessor->sendSerialString("Training Mode is not implemented");
             break;
         // Deprecating mode manual for now (not included in .proto)
         // case tfnode::SMAControlMode::MODE_MANUAL:
@@ -111,8 +112,8 @@ void SMAController::CMD_setEnable(bool state)
 {
     outputEnabled = state;
     pstate = POWER_UNTIL_THRESH;
-    Serial.print("Setting enable: ");
-    Serial.print((int)devicePort);
+    Serial.print("\nSetting enable: ");
+    Serial.print(getPortString());
     Serial.print(" to ");
     Serial.println(state);
       // Clear the external disable error
@@ -121,7 +122,7 @@ void SMAController::CMD_setEnable(bool state)
 
       if((currentMode == tfnode::SMAControlMode::MODE_TRAIN || 
           currentMode == tfnode::SMAControlMode::MODE_OHMS) && outputEnabled) {
-        Serial.println("SMAController Resetting Training");
+        // Serial.println("SMAController Resetting Training");
         resetTraining();
         resController->Reset();
       }
@@ -149,13 +150,66 @@ void SMAController::CMD_reset()
 {
     CMD_setEnable(false);
     CMD_setMode(tfnode::SMAControlMode::MODE_PERCENT);
+    CMD_setSetpoint(tfnode::SMAControlMode::MODE_PERCENT, 0);
     // Reset timer and pulse vals*****************************************
 }
 
 // TODO Change "mode" to represent status message type and implement a "repeating" var
 void SMAController::CMD_setStatusMode(tfnode::DeviceStatusMode _mode, bool repeating, NetworkInterface *iface)
 {
-    statusMode = _mode;
+
+    if(repeating) {
+        // Set status mode for the node for repeating status
+        statusMode = _mode;
+    }
+    else {
+        // Nonrepeating status means set the statusMode to none
+        statusMode = tfnode::DeviceStatusMode::STATUS_NONE;
+        // Serial.println("Sending Single Status response...");
+        sendStatusResponse(_mode);  // Send a single status response
+    }
+}
+
+// Send Status Response based on current Status Mode
+void SMAController::sendStatusResponse(tfnode::DeviceStatusMode mode) {
+    //Serial.println("NODE based response    ");
+    if (mode == tfnode::DeviceStatusMode::STATUS_NONE || !commandProcessor || !master_tfNode->statusInterface) {
+        // No status to send or no interface to send on
+        Serial.println("No status to send or no interface to send on");
+        Serial.println("Mode: " + String(mode == tfnode::DeviceStatusMode::STATUS_NONE ? "STATUS_NONE" : "Other"));
+        Serial.println("CommandProcessor: " + !commandProcessor ? "nullptr" : "Not nullptr");
+        Serial.println("StatusInterface: " + !master_tfNode->statusInterface ? "nullptr" : "Not nullptr");
+        return;
+    }
+    tfnode::NodeResponse response;
+
+    tfnode::StatusResponse& statusResponse = response.mutable_status_response();
+    statusResponse.set_device(tfnode::Device::DEVICE_NODE); // Set the device sending the response
+    //Serial.println("Sending CMD response...");
+
+
+    switch (mode) {
+        case tfnode::DeviceStatusMode::STATUS_COMPACT: {
+            tfnode::SMAStatusCompact compactStatus = getSMAStatusCompact();
+            statusResponse.mutable_sma_status_compact() = compactStatus;
+            break;
+        }
+        case tfnode::DeviceStatusMode::STATUS_DUMP: {
+            tfnode::SMAStatusDump dumpStatus = getSMAStatusDump();
+            statusResponse.mutable_sma_status_dump() = dumpStatus;
+            break;
+        }
+        case tfnode::DeviceStatusMode::STATUS_DUMP_READABLE: {
+            // Special case to send status straight to serial
+            String readableStatus = getSMAStatusReadable();
+            commandProcessor->sendSerialString(readableStatus);
+            return;
+        }
+        default: {
+            // Handle other status modes
+            return;
+        }
+    }
 }
 
 
@@ -205,9 +259,9 @@ String SMAController::getSMAStatusReadable()
 {
     String stat_str = 
                     "========================================\n";
-    stat_str += "Port: " + String((int)devicePort) + "\n"; 
+    stat_str += "SMA Controller: " + getPortString() + "\n"; 
     stat_str += "Enable: " + String(outputEnabled) + " \n";
-    stat_str += "Mode: " + String((int)currentMode) + "\n";
+    stat_str += "Mode: " + getModeString() + "\n";
     stat_str += "Set Point: " + String(setpoint[(int)currentMode]) + "\n";
     stat_str += "Output_PWM: " + String(pwm_duty_percent) + "\n";
     stat_str += "Load_Amps: " + String(curr_val) + " A\n";
@@ -386,75 +440,120 @@ void SMAController::resetTraining()
     train_timer = millis(); // reeset timer
 }
 
-// Will step through the state machine when in training mode
-float SMAController::updateTraining(float rld_mohms)
+// // Will step through the state machine when in training mode
+// float SMAController::updateTraining(float rld_mohms)
+// {
+//     switch(trainState) {
+//         case MARTENSITE: {  // STATE: Heating (Martensite phase)
+//           // I am thinking that a rolling average would be good. Track rolling average of 10 samples and when it has been decreasing for a few cycles then go to next state
+//           resistTracker->addData(rld_mohms);
+
+//           if(resistTracker->oldestGradIndex != currentGradIndex) {
+//             currentGradIndex = resistTracker->oldestGradIndex;
+//             // Get the gradient direction from data tracker
+//             GradientDirection dir = resistTracker->getCurrentDir();
+//             dir_tracker += dir == POSITIVE ? 1 :
+//                             dir == NEGATIVE ? -1 : 0;
+
+//             // Condition for next state (resistance decreases for DIR_TRIGGER intervals)
+//             if(dir_tracker > 0)
+//               dir_tracker = 0;
+//             else if(dir_tracker < -DIR_TRIGGER) {
+//               trainState = PHASE_TRANSITION;
+//               dir_tracker = 0;
+//             }
+//           }
+//           //return setpoint pwm value
+//           return setpoint[(int)tfnode::SMAControlMode::MODE_TRAIN];
+//         }
+//         case PHASE_TRANSITION: {  // STATE: Heating (Pre Austenite Finished Temp)
+//           // The same thing with a rolling average; wait until it has been increasing for a few cycles and find bottom of dip (set bottom to Af_mohms)
+//           resistTracker->addData(rld_mohms);
+//           dataPointsSinceAustenite++;
+
+//           if(resistTracker->oldestGradIndex != currentGradIndex) {
+//             currentGradIndex = resistTracker->oldestGradIndex;
+//             // Get the gradient direction from data tracker
+//             GradientDirection dir = resistTracker->getCurrentDir();
+//             dir_tracker += dir == POSITIVE ? 1 :
+//                           dir == NEGATIVE ? -1 : 0;
+
+//             // Condition for next state (wait for dir_tracker to increase over threshold)
+//             if(dir_tracker < 0)
+//               dir_tracker = 0;
+//             else if(dir_tracker > DIR_TRIGGER) {
+//               trainState = POST_AF;
+//               // #TODO Convert this function to getLocalMinimum from current position backward.  This oldestGradIndex should get current position
+//               int startIndex = resistTracker->oldestGradIndex + ((dataPointsSinceAustenite / (gradWidth-1)) + 1);
+//               startIndex = startIndex < 0 ? 0 : startIndex; // Get oldest data if transition was lost
+//               Af_mohms = resistTracker->getLocalMinimum(startIndex, resistTracker->oldestGradIndex);
+//               dir_tracker = 0;
+//             }
+//           }
+//           // Return setpoint pwm value
+//           return setpoint[(int)tfnode::SMAControlMode::MODE_TRAIN];
+//         }
+//         case POST_AF: {  // STATE: Heating (Post Austenite finished Temp)
+//           // Compare change in ohms to desired delta_mohms
+//           float delta_mohms_real = (rld_mohms - Af_mohms); // mohms
+//           // When ohms exceeds (Af_ohms + delta_ohms), start training timer. Flash LED while at temp
+//           // Return PID (with max value) to mitigate error between desired temperature and set temperature
+
+//           // Timer Condition
+//           return 0.01; // Just cut power for now.
+//           // #TODO add resistance control measures at this point
+//         }
+//         // STATE: Finished
+//         case TRAIN_FINISH: {
+//           CMD_setEnable(false); // When time exceeds training time, hold LED solid, disable, and do not enable until told to do so
+//           // Set LED color
+//           return 0;
+//         }
+//       }
+//       return 0;
+// }
+
+// Returns a string of the current mode
+String SMAController::getModeString()
 {
-    switch(trainState) {
-        case MARTENSITE: {  // STATE: Heating (Martensite phase)
-          // I am thinking that a rolling average would be good. Track rolling average of 10 samples and when it has been decreasing for a few cycles then go to next state
-          resistTracker->addData(rld_mohms);
+  String mode_str;
+  switch(currentMode) {
+    case tfnode::SMAControlMode::MODE_PERCENT:
+      mode_str = "Percent";
+      break;
+    case tfnode::SMAControlMode::MODE_AMPS:
+      mode_str = "Amps";
+      break;
+    case tfnode::SMAControlMode::MODE_VOLTS:
+      mode_str = "Volts";
+      break;
+    case tfnode::SMAControlMode::MODE_OHMS:
+      mode_str = "Ohms";
+      break;
+    case tfnode::SMAControlMode::MODE_TRAIN:
+      mode_str = "Train";
+      break;
+    default:
+      mode_str = "Unknown";
+      break;
+  }
+  return mode_str;
+}
 
-          if(resistTracker->oldestGradIndex != currentGradIndex) {
-            currentGradIndex = resistTracker->oldestGradIndex;
-            // Get the gradient direction from data tracker
-            GradientDirection dir = resistTracker->getCurrentDir();
-            dir_tracker += dir == POSITIVE ? 1 :
-                            dir == NEGATIVE ? -1 : 0;
-
-            // Condition for next state (resistance decreases for DIR_TRIGGER intervals)
-            if(dir_tracker > 0)
-              dir_tracker = 0;
-            else if(dir_tracker < -DIR_TRIGGER) {
-              trainState = PHASE_TRANSITION;
-              dir_tracker = 0;
-            }
-          }
-          //return setpoint pwm value
-          return setpoint[(int)tfnode::SMAControlMode::MODE_TRAIN];
-        }
-        case PHASE_TRANSITION: {  // STATE: Heating (Pre Austenite Finished Temp)
-          // The same thing with a rolling average; wait until it has been increasing for a few cycles and find bottom of dip (set bottom to Af_mohms)
-          resistTracker->addData(rld_mohms);
-          dataPointsSinceAustenite++;
-
-          if(resistTracker->oldestGradIndex != currentGradIndex) {
-            currentGradIndex = resistTracker->oldestGradIndex;
-            // Get the gradient direction from data tracker
-            GradientDirection dir = resistTracker->getCurrentDir();
-            dir_tracker += dir == POSITIVE ? 1 :
-                          dir == NEGATIVE ? -1 : 0;
-
-            // Condition for next state (wait for dir_tracker to increase over threshold)
-            if(dir_tracker < 0)
-              dir_tracker = 0;
-            else if(dir_tracker > DIR_TRIGGER) {
-              trainState = POST_AF;
-              // #TODO Convert this function to getLocalMinimum from current position backward.  This oldestGradIndex should get current position
-              int startIndex = resistTracker->oldestGradIndex + ((dataPointsSinceAustenite / (gradWidth-1)) + 1);
-              startIndex = startIndex < 0 ? 0 : startIndex; // Get oldest data if transition was lost
-              Af_mohms = resistTracker->getLocalMinimum(startIndex, resistTracker->oldestGradIndex);
-              dir_tracker = 0;
-            }
-          }
-          // Return setpoint pwm value
-          return setpoint[(int)tfnode::SMAControlMode::MODE_TRAIN];
-        }
-        case POST_AF: {  // STATE: Heating (Post Austenite finished Temp)
-          // Compare change in ohms to desired delta_mohms
-          float delta_mohms_real = (rld_mohms - Af_mohms); // mohms
-          // When ohms exceeds (Af_ohms + delta_ohms), start training timer. Flash LED while at temp
-          // Return PID (with max value) to mitigate error between desired temperature and set temperature
-
-          // Timer Condition
-          return 0.01; // Just cut power for now.
-          // #TODO add resistance control measures at this point
-        }
-        // STATE: Finished
-        case TRAIN_FINISH: {
-          CMD_setEnable(false); // When time exceeds training time, hold LED solid, disable, and do not enable until told to do so
-          // Set LED color
-          return 0;
-        }
-      }
-      return 0;
+// Returns a string of the port number
+String SMAController::getPortString()
+{
+  String port_str;
+  switch(devicePort) {
+    case tfnode::Device::DEVICE_PORT0:
+      port_str = "Port 0";
+      break;
+    case tfnode::Device::DEVICE_PORT1:
+      port_str = "Port 1";
+      break;
+    default:
+      port_str = "Unknown";
+      break;
+  }
+  return port_str;
 }

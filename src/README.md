@@ -28,27 +28,31 @@
 ### IN PROGRESS v1.1.0 Changes
 - [x] Add slash commands for normal ascii communication from PC to device
    - [x] Add standard set from v0.2 firmware predating DeltaLink
-   - [ ] "/about" ascii command to get firmware version and board ID
-- [ ] Implement Heartbeat/event messages in DeltaLink
+   - [x] "/about" ascii command to get firmware version and board ID
+   - [ ] Update README to present both /command and DeltaLink methods of communicattion
+- [x] Implement Heartbeat/event messages in DeltaLink
    - Use CANOPen as a reference
    - [x] Decide and document heartbeat structure
       - Empty DeltaLink packet counts as heartbeat
    - [x] Implement structure in firmware
-   - [ ] Test with python library
-   - [ ] Have toggle in order to disable for ascii commands
-      - [ ] "/heartbeat" ascii command to send a heartbeat signal
-      - [ ] "/heartbeat off" to turn heartbeat off
-      - [ ] "/heartbeat on" to tuen heartbeat on
-- [ ] Implement SMAController Status response
-- [ ] Come up with auto update method or push via hex file
-   - Can we open repo to the public? - Yes
-   - Need to determine OTA update solution
+   - [x] Test with python library
+   - [x] Have toggle in order to disable for ascii commands
+      - [x] "/heartbeat" ascii command to send a heartbeat signal
+      - [x] "/heartbeat off" to turn heartbeat off
+      - [x] "/heartbeat on" to turn heartbeat on
+- [~] Implement SMAController Status response
+- [] Come up with auto update method or push via hex file
+   - [x] Can we open repo to the public? - Yes
+   - [ ] Create Simple Update Process and Automatic Updating Script
 
 
 ### Backlog Changes
+- [ ] Add /serial-debug ASCII command to enable verbose debug output (with levels: NONE, ERROR, WARNING, INFO, DEBUG)
 - [ ] Move header files to `include/` to adhere to common C++ practices
 - [ ] Build Settings system to encapsulate, save, and load settings for the Node and SMAController
    - Settings still not fully implemented
+   - [ ] Add heartbeat mode to DeltaLink and implement as a Node setting
+- [ ] Store firmware upload timestamp in EEPROM
 - [ ] Overheat detection with resistance method
 - [ ] Resistance control (model in python first)
 - [ ] Base protobuf files on DeltaLink repository as the common location for protocol definitions

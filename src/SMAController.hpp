@@ -37,6 +37,8 @@ public:
     void CMD_reset();
     void CMD_setStatusMode(tfnode::DeviceStatusMode _mode, bool repeating, NetworkInterface* iface);
 
+    void sendStatusResponse(tfnode::DeviceStatusMode mode);
+
     // Status Logging functions
     tfnode::SMAStatusCompact getSMAStatusCompact();  // TODO change return type to .proto def
     tfnode::SMAStatusDump getSMAStatusDump();
@@ -127,6 +129,11 @@ private:
 
     void resetTraining();
     float updateTraining(float rld_mohms);  // Will step through the state machine when in training mode
+
+
+    // Utility Functions
+    String getModeString();
+    String getPortString();
 };
 
 #endif // SMA_CONTROLLER_H

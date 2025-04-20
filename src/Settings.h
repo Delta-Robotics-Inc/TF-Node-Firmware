@@ -3,10 +3,10 @@
 
 #include <EEPROM.h>
 #include <vector>
-#include "Packet.h"
-#include "tfnode-messages.h"
-#include "WriteBuffer.h"
-#include "ReadBuffer.h"
+#include "networking/Packet.h"
+#include "networking/tfnode-messages.h"
+#include "networking/WriteBuffer.h"
+#include "networking/ReadBuffer.h"
 
 
 //EEPROM<-->Protobuf<-->Settings

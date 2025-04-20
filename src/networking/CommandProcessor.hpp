@@ -38,8 +38,9 @@ private:
     std::vector<NetworkInterface*> interfaces;
 
     // For tracking Heartbeat timeouts. Packets will be sent and received at these intervals or else the node will be disabled.
-    unsigned long lastReceiveMillis;
-    unsigned long lastSendMillis;
+    unsigned long lastReceiveMillis = 0;
+    unsigned long lastSendMillis = 0;
+    bool heartbeatEnabled = true;  // Default to enabled
     static const unsigned long HEARTBEAT_INTERVAL = 2000;  // 2 seconds between sent packets (send heartbeat if exceeded)
     static const unsigned long HEARTBEAT_TIMEOUT = 2500;  // 2.5 seconds between received packets from master (disable node if exceeded)
 

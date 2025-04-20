@@ -191,6 +191,7 @@ message StatusResponse {
 // Settings Configuration for the Node device
 message NodeSettings {
   uint32 can_id = 1;
+  bool heartbeat_enabled = 2;  // Safety feature to disable node if no heartbeat is received from master for too long (enabled by default)
   // Add other node-specific configuration settings
 }
 
@@ -263,6 +264,8 @@ message SMAStatusDump {
   float af_mohms = 7;
   float delta_mohms = 8;
   uint32 trainState = 9;
+  uint32 vld_raw = 10;
+  uint32 curr_raw = 11;
   // TODO Include additional detailed fields
   // Fields will include pin definitions, all configured modes and setpoints, and important internal variables
   // Include internal CLC/PID controller variables

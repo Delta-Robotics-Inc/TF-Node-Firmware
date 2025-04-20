@@ -7,7 +7,7 @@
 
 #include <Arduino.h>
 #include "config.hpp"
-#include "networking/Settings.h"
+#include "Settings.h"
 #include "globals.hpp"
 
 // // Create instances of network interfaces
@@ -22,7 +22,7 @@
 void setup() {
     Serial.begin(115200);
     delay(1000);
-    Serial.println("Setup starting");
+    Serial.println("Begin setup...");
     serialInterface = new SerialInterface();
     canInterface = new CANInterface();
 
@@ -39,9 +39,8 @@ void setup() {
     nodeAddress.idType = NodeAddress::IDType::NodeID;  // Default NodeID ID type
     nodeAddress.id = IDs.getNodeID();  // Node's unique ID specified in Config
     //Serial.println(nodeAddress.idType);
-    for(int i = 0; i <3; i++) {
-        Serial.print(nodeAddress.id[i]);
-    }
+
+    Serial.println("Node ID: " + String(nodeAddress.id[0]) + "." + String(nodeAddress.id[1]) + "." + String(nodeAddress.id[2]));
 
     Serial.println();
 

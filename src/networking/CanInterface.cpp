@@ -43,22 +43,22 @@ void CANInterface::receiveData()
     {
         msg = CAN.read();
         // Debug================================================================================================
-        Serial.print("Received CAN Message: ");
-        Serial.print(msg.id);
-        Serial.print(" ");
-        for (int i = 0; i < msg.data_length; i++)
-        {
-            Serial.print(msg.data[i]);
-            Serial.print(" ");
-        }
-        Serial.println();
+        // Serial.print("Received CAN Message: ");
+        // Serial.print(msg.id);
+        // Serial.print(" ");
+        // for (int i = 0; i < msg.data_length; i++)
+        // {
+        //     Serial.print(msg.data[i]);
+        //     Serial.print(" ");
+        // }
+        // Serial.println();
         //======================================================================================================
         // Find or create a buffer for this CAN ID
         int bufferIndex = findOrCreateBuffer(msg.id);
 
         if (bufferIndex < 0) {
             // No buffer available, skip this message
-            Serial.println("No buffer available for CAN");
+            // Serial.println("No buffer available for CAN");
             continue;
         }
         
@@ -88,7 +88,7 @@ void CANInterface::parsePacket(int byte_from_packet, std::vector<uint8_t> *data,
                 data->clear();
                 data->push_back(byte_from_packet);
                 *msg_state = ReceptionState::READ_LENGTH;
-                Serial.println("Reading length...");
+                // Serial.println("Reading length...");
             }
             break;
 
@@ -98,7 +98,7 @@ void CANInterface::parsePacket(int byte_from_packet, std::vector<uint8_t> *data,
             if (data->size() == 3) { // Start byte + 2 length bytes
                 *packetLength = (data->at(1) << 8) | data->at(2);
                 *msg_state = ReceptionState::READ_PACKET;
-                Serial.println("Reading Packet...");
+                // Serial.println("Reading Packet...");
             }
             break;
 
@@ -114,15 +114,15 @@ void CANInterface::parsePacket(int byte_from_packet, std::vector<uint8_t> *data,
                 Packet packet;
                 if (packet.parse(*data)) {
                     packetQueue.push(packet);
-                    Serial.println("Packet received");
+                    // Serial.println("Packet received");
                 } else {
-                    Serial.println("Invalid packet");
+                    // Serial.println("Invalid packet");
                 }
                 *msg_state = ReceptionState::WAIT_FOR_START_BYTE;
-                Serial.println("Packet Parsed...");
+                // Serial.println("Packet Parsed...");
             }
             else if (data->size() > 3 + *packetLength) {
-                Serial.println("Error: Packet size mismatch. Resetting...");
+                // Serial.println("Error: Packet size mismatch. Resetting...");
                 data->clear();
                 *msg_state = ReceptionState::WAIT_FOR_START_BYTE;
             }
@@ -144,12 +144,12 @@ void CANInterface::sendPacket(const Packet &packet)
         uint8_t chunkSize = std::min(static_cast<size_t>(8), rawData.size() - i);
 
         // Debug Sent CANMsg Data======================================
-         Serial.println("Sending CAN message: ");
-         for(int j = 0; j < chunkSize; j++) {
-             Serial.print(rawData[i + j]);
-             Serial.print(" ");
-         }
-         Serial.println();
+         // Serial.println("Sending CAN message: ");
+         // for(int j = 0; j < chunkSize; j++) {
+         //     Serial.print(rawData[i + j]);
+         //     Serial.print(" ");
+         // }
+         // Serial.println();
         //============================================================
 
         CanMsg msg(CanStandardId(CAN_ID), chunkSize, rawData.data() + i);

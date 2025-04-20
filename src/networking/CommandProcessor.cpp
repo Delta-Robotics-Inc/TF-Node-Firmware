@@ -60,14 +60,15 @@ void CommandProcessor::process() {
     unsigned long now = millis();
 
     // Check receive heartbeat from master timeout
-    if ((now - lastReceiveMillis) > HEARTBEAT_TIMEOUT) {
+    if (heartbeatEnabled && (now - lastReceiveMillis) > HEARTBEAT_TIMEOUT) {
         node.CMD_disableDevice(tfnode::Device::DEVICE_ALL);
         // Reset timer so we don't repeatedly disable
         lastReceiveMillis = now;
+        sendSerialString("Heartbeat timeout, disabling all devices. Use /heartbeat off to disable this feature.");
     }
 
     // Check send heartbeat timeout
-    if ((now - lastSendMillis) > HEARTBEAT_INTERVAL) {
+    if (heartbeatEnabled && (now - lastSendMillis) > HEARTBEAT_INTERVAL) { // TODO add enable/disable heartbeat to DeltaLink protobuf config
         // Build and send heartbeat packet
         sendHeartbeat();
         lastSendMillis = now;
@@ -85,8 +86,10 @@ void CommandProcessor::process() {
         if (iface->getName() == "SerialInterface") {
             SerialInterface* serialIface = static_cast<SerialInterface*>(iface);
             while (serialIface->hasAsciiCommand()) {
+                // Serial.println("Ascii command received");
                 String asciiCmd = serialIface->getNextAsciiCommand();
                 handleAsciiCommand(asciiCmd);
+                lastReceiveMillis = now;  // Also register heartbeat in ASCII
             }
         }
     }
@@ -378,7 +381,7 @@ void CommandProcessor::handleAsciiCommand(String commandStr)
     // Ensure the command starts with '/'.
     if (!commandStr.startsWith("/"))
     {
-        sendSerialString(addrPrefix() + "Error: Command must start with '/'");
+        sendSerialString(addrPrefix() + "Error parsing ASCII: Command must start with '/'");
         return;
     }
     commandStr.remove(0, 1);
@@ -437,8 +440,40 @@ void CommandProcessor::handleAsciiCommand(String commandStr)
     tfnode::ResponseCode result = tfnode::ResponseCode::RESPONSE_UNSUPPORTED_COMMAND;
     String cmd = tokens[0];
 
+
+    // Next, translate the ASCII command into a DeltaLink protobuf message and execute with executeCommand()
+
+    // -------------------- about --------------------
+    if (cmd == "about")
+    {
+        // Send a string response with the firmware version, node ID, and timestamp
+        String response = addrPrefix() + 
+                         "Firmware: " + String(CFG_FIRMWARE_VERSION) + 
+                         "\nNode ID: " + String(node.getAddress().id[0]) + "." + String(node.getAddress().id[1]) + "." + String(node.getAddress().id[2]) + 
+                         "\nTimestamp: NONE";// TODO add timestamp
+        sendSerialString(response);
+    }
+    // -------------------- heartbeat --------------------
+    else if (cmd == "heartbeat")
+    {
+        if (tokens.size() > 1) {
+            if (tokens[1] == "on") {
+                heartbeatEnabled = true;
+                sendSerialString(addrPrefix() + "Heartbeat enabled\m");
+            } else if (tokens[1] == "off") {
+                heartbeatEnabled = false;
+                sendSerialString(addrPrefix() + "Heartbeat disabled\n");
+            } else {
+                sendSerialString(addrPrefix() + "Error: Invalid heartbeat command. Use 'on' or 'off'");
+            }
+        } else {
+            // Just send a heartbeat immediately
+            sendHeartbeat();
+            sendSerialString(addrPrefix() + "Heartbeat sent");
+        }
+    }
     // -------------------- reset --------------------
-    if (cmd == "reset")
+    else if (cmd == "reset")
     {
         tfnode::ResetCommand resetCmd;
         if (tokens.size() > 1)
@@ -478,12 +513,14 @@ void CommandProcessor::handleAsciiCommand(String commandStr)
         }
         if (tokens[2] == "true")
         {
+            sendSerialString(addrPrefix() + "Enabling " + tokens[1] + '\n');
             tfnode::EnableCommand enableCmd;
             enableCmd.set_device(dev);
             nodeCmd.set_enable(enableCmd);
         }
         else
         {
+            sendSerialString(addrPrefix() + "Disabling " + tokens[1] + '\n');
             tfnode::DisableCommand disableCmd;
             disableCmd.set_device(dev);
             nodeCmd.set_disable(disableCmd);
@@ -571,9 +608,12 @@ void CommandProcessor::handleAsciiCommand(String commandStr)
     else if (cmd == "help")
     {
         const char* helpLines[] = {
-            "\n========================================",
+            "addrPrefix()\n",
+            "========================================",
             "Available Commands:",
             "/help                - Display this help message",
+            "/about               - Display information about the node (firmware version, node ID, timestamp)",
+            "/heartbeat [on|off]  - Send a heartbeat or enable/disable automatic heartbeats",
             "/reset [device]      - Reset the specified device (default: all)",
             "/set-enable <device> <true|false> - Enable or disable a device",
             "/set-mode <device> <percent|amps|volts|ohms> - Set the mode for a device",

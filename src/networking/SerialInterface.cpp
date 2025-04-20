@@ -58,9 +58,11 @@ void SerialInterface::parsePacket(int byte_from_packet){
         // Start new ASCII command. Reset ascii state.
         asciiMode = true;
         asciiBuffer = "";
+        // Serial.println("Start of ascii command");
     }
     if (asciiMode) {
         if (byte_from_packet == '\n') {
+            // Serial.println("End of ascii command");
             asciiMode = false;
             // Command is complete, enqueue it.
             asciiCommandQueue.push(asciiBuffer);
@@ -104,6 +106,7 @@ void SerialInterface::parsePacket(int byte_from_packet){
                 Packet packet;
                 if (packet.parse(packetData)) {
                     packetQueue.push(packet);
+                    asciiMode = false; // Reset ascii mode after receiving a DeltaLink packet
                     // Serial.println("Packet received");
                 } else {
                     // Serial.println("Invalid packet");
