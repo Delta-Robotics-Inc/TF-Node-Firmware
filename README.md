@@ -12,7 +12,8 @@ Welcome to the Delta Robotics ThermoFlex repository.  Here contains the developm
 
 # Node Commands
 
-There are 2 methods for controlling the Node. One is through the [ThermoFlex-Python-API](https://github.com/Delta-Robotics-Inc/ThermoFlex-Python-API), which you can find instructions for on its repository. The second is through the following ASCII commands. To execute these commands, do the following:
+There are 2 methods for controlling the Node. One is through the [ThermoFlex-Python-API](https://github.com/Delta-Robotics-Inc/ThermoFlex-Python-API), which you can find instructions for on its repository. This method is recommended as the easiest to use and develop with.
+The second is through the following ASCII commands. This method is the fastest and best for troubleshooting the controller when python isn't working out. To execute these commands, do the following:
 
 1. Connect the TF Node via USB 
 2. Open a serial console with a baud rate of 115200
@@ -20,16 +21,18 @@ There are 2 methods for controlling the Node. One is through the [ThermoFlex-Pyt
 4. Execute commands in lowercase with a space in between parameters (see example below table)
 
 
-The below commands that specify `<device> .. (default all)` will work without parameters and default execute on all devices.
+The below commands that specify `<device> .. (default: all)` will work without parameters and default to all devices.
 
-| Command      | Parameters                                                                                         | Description                                                            |
-| ------------ | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| /help        |                                                                                                    | display available commands
-| /reset       | \<device\> = all, m1, m2 .. etc (default all)                                                      | stops device and resets the device settings to defaults                |
-| /set-enable  | \<device> = all, m1, m2 .. etc<br>\<state> = true, false                                           | enables/disables the mosfet of one or all devices                      |
-| /set-mode    | \<device> = all, m1, m2 .. etc<br>\<mode> = percent, amps, volts, ohms                             | sets the operating mode of one or all devices                          |
-| /set-setpoint| \<device> = all, m1, m2 .. etc<br>\<mode> = percent, amps, volts, ohms<br>\<setpoint> = `float`    | sets the value for one or all devices' setpoints at the specified mode |
-| /status      | \<device\> = all, m1, m2 .. etc (default all)                                                      | displays system info of one or all devices (including the Node itself) |
+| Command       | Parameters                                                       | Description                                                         |
+|---------------|------------------------------------------------------------------|---------------------------------------------------------------------|
+| /help         | (none)                                                           | Display available commands                                          |
+| /about        | (none)                                                           | Display firmware version, node ID, and timestamp                    |
+| /reset        | `<device>` (default: all &#124; node &#124; m1 &#124; m2)                                         | Stop and reset the specified device(s)                              |
+| /set-enable   | `<device>`, `<state>` (`true` &#124; `false`)                    | Enable or disable the specified device(s)                           |
+| /set-mode     | `<device>`, `<mode>` (`percent` &#124; `amps` &#124; `volts` &#124; `ohms`) | Set the operating mode for the specified device(s)                  |
+| /set-setpoint | `<device>`, `<mode>`, `<value>` (`float`)                        | Set the setpoint value for the specified device(s)                  |
+| /status       | `<device>` (default: all &#124; node &#124; m1 &#124; m2)                                        | Display status of the specified device(s), including the Node       |
+| /heartbeat    | `[on` &#124; `off]` _(optional)_                                   | Send a heartbeat manually or toggle automatic heartbeats            |
 
 ## Input Examples
 
@@ -38,6 +41,7 @@ Here are some example commands to display the syntax:
 ```bash
 
 /help                        # display help message
+/about                       # display firmware version, node ID, and timestamp
 /set-mode m1 volts           # sets muscle 1 mode to volts
 /set-setpoint all volts 5.0  # sets all muscles
 /set-enable m2 true          # enables m2
@@ -46,5 +50,10 @@ Here are some example commands to display the syntax:
 /reset all                   # resets all devices
 /reset                       # resets all devices
 /reset m3                    # resets just m3
+
+# Heartbeat commands
+/heartbeat                   # send a heartbeat immediately
+/heartbeat on                # enable automatic heartbeat
+/heartbeat off               # disable automatic heartbeat
 
 ```
