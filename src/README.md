@@ -41,9 +41,17 @@
       - [x] "/heartbeat off" to turn heartbeat off
       - [x] "/heartbeat on" to turn heartbeat on
 - [~] Implement SMAController Status response
-- [] Come up with auto update method or push via hex file
+- [ ] Come up with auto update method or push via hex file
    - [x] Can we open repo to the public? - Yes
    - [ ] Create Simple Update Process and Automatic Updating Script
+- [ ] LED Codes
+   - [ ] Connected (with heartbeat) - Orange
+   - [ ] Disconnected - Red
+   - [ ] Heartbeat disabled - Blue
+   - [ ] Enabled - Green
+   - [ ] On target - Green/White
+- [ ] Working Current Control mode
+   - The current mode needs to be debugged so that it will work properly based on closed-loop feedback with the current sense function
 
 
 ### Backlog Changes

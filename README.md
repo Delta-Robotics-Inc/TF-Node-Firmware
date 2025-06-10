@@ -42,8 +42,9 @@ Here are some example commands to display the syntax:
 
 /help                        # display help message
 /about                       # display firmware version, node ID, and timestamp
-/set-mode m1 volts           # sets muscle 1 mode to volts
-/set-setpoint all volts 5.0  # sets all muscles
+/set-mode m1 percent         # sets muscle 1 mode to volts
+/set-setpoint m1 percent 0.4 # sets muscle 1 to 40% power 
+/set-setpoint all volts 5.0  # sets all muscles to 5.0 volts
 /set-enable m2 true          # enables m2
 /status                      # status for all devices
 /status m1                   # status for just m1
