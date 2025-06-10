@@ -28,6 +28,9 @@ public:
     void sendHeartbeat();
     void sendSerialString(String message);
 
+    bool isHeartbeatEnabled() const;
+    bool isConnected() const;
+
     // Test Command Packet Generation
     void testSendCommandPacket();
     void testCANCommandPacket();

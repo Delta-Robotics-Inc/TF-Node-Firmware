@@ -741,6 +741,17 @@ void CommandProcessor::testSendCommandPacket() {
     }
 }
 
+bool CommandProcessor::isHeartbeatEnabled() const {
+    return heartbeatEnabled;
+}
+
+bool CommandProcessor::isConnected() const {
+    if(!heartbeatEnabled) {
+        return true;
+    }
+    return (millis() - lastReceiveMillis) <= HEARTBEAT_TIMEOUT;
+}
+
 /// @brief Test function to send a command to the PC.  Not used in production.
 ///        Use this function to determine the format of the command packet.
 void CommandProcessor::testCANEnableCommandPacket() {

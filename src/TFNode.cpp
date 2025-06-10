@@ -2,6 +2,7 @@
 #include "SMAController.hpp"
 #include "TFNode.hpp"
 #include "config.hpp"
+#include <cmath>
 
 TFNode::TFNode(const NodeAddress& addr)
     : address(addr),
@@ -48,9 +49,7 @@ void TFNode::begin() {
 }
 
 void TFNode::init_finished() {
-    digitalWrite(STATUS_RGB_RED, LOW);
-    digitalWrite(STATUS_RGB_GREEN, HIGH);
-    digitalWrite(STATUS_RGB_BLUE, HIGH);
+    setRGBStatusLED(COLOR_RED);
 }
 
 
@@ -66,6 +65,7 @@ void TFNode::update() {
     //Serial.println("TFNode::update() - Finished SMAController::update()");
 
     checkErrs();
+    updateStatusLED();
 
     // Check auxillary gpio
     // TODO change to interrupt
@@ -88,27 +88,90 @@ void TFNode::update() {
 }
 
 void TFNode::toggleRGBStatusLED() {
+    ledState =  (ledState == COLOR_RED) ? COLOR_GREEN :
+                (ledState == COLOR_GREEN) ? COLOR_BLUE :
+                COLOR_RED;
 
-    ledState =  (ledState == RED) ? GREEN :
-                (ledState == GREEN) ? BLUE :
-                RED;
+    setRGBStatusLED(ledState);
+}
 
-    switch(ledState) {
-        case RED:
+void TFNode::setRGBStatusLED(StatusLEDColorState color) {
+    switch(color) {
+        case COLOR_OFF:
+            digitalWrite(STATUS_RGB_RED, HIGH);
+            digitalWrite(STATUS_RGB_GREEN, HIGH);
+            digitalWrite(STATUS_RGB_BLUE, HIGH);
+            break;
+        case COLOR_RED:
             digitalWrite(STATUS_RGB_RED, LOW);
             digitalWrite(STATUS_RGB_GREEN, HIGH);
             digitalWrite(STATUS_RGB_BLUE, HIGH);
             break;
-        case GREEN:
+        case COLOR_GREEN:
             digitalWrite(STATUS_RGB_RED, HIGH);
             digitalWrite(STATUS_RGB_GREEN, LOW);
             digitalWrite(STATUS_RGB_BLUE, HIGH);
             break;
-        case BLUE:
+        case COLOR_BLUE:
             digitalWrite(STATUS_RGB_RED, HIGH);
             digitalWrite(STATUS_RGB_GREEN, HIGH);
             digitalWrite(STATUS_RGB_BLUE, LOW);
             break;
+        case COLOR_ORANGE:
+            digitalWrite(STATUS_RGB_RED, LOW);
+            digitalWrite(STATUS_RGB_GREEN, LOW);
+            digitalWrite(STATUS_RGB_BLUE, HIGH);
+            break;
+        case COLOR_WHITE:
+            digitalWrite(STATUS_RGB_RED, LOW);
+            digitalWrite(STATUS_RGB_GREEN, LOW);
+            digitalWrite(STATUS_RGB_BLUE, LOW);
+            break;
+    }
+    ledState = color;
+}
+
+void TFNode::updateStatusLED() {
+    if(!commandProcessor) return;
+
+    // Heartbeat disabled -> blue
+    if(!commandProcessor->isHeartbeatEnabled()) {
+        setRGBStatusLED(COLOR_BLUE);
+        return;
+    }
+
+    bool connected = commandProcessor->isConnected();
+    bool anyEnabled = smaController0.getEnabled() || smaController1.getEnabled();
+
+    bool onTarget = false;
+    if(anyEnabled) {
+        bool m0_on = false;
+        bool m1_on = false;
+        if(smaController0.getMode() == tfnode::SMAControlMode::MODE_OHMS) {
+            float diff = fabsf(smaController0.getResistance() -
+                             smaController0.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]);
+            m0_on = diff < 10.0f;
+        }
+        if(smaController1.getMode() == tfnode::SMAControlMode::MODE_OHMS) {
+            float diff = fabsf(smaController1.getResistance() -
+                             smaController1.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]);
+            m1_on = diff < 10.0f;
+        }
+        onTarget = m0_on && m1_on;
+    }
+
+    if(!connected) {
+        setRGBStatusLED(COLOR_RED);
+    } else if(onTarget) {
+        if(millis() - ledBlinkTimer > 500) {
+            ledBlinkTimer = millis();
+            ledBlinkState = !ledBlinkState;
+        }
+        setRGBStatusLED(ledBlinkState ? COLOR_WHITE : COLOR_GREEN);
+    } else if(anyEnabled) {
+        setRGBStatusLED(COLOR_GREEN);
+    } else {
+        setRGBStatusLED(COLOR_ORANGE);
     }
 }
 

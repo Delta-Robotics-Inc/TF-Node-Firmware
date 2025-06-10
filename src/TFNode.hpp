@@ -19,9 +19,12 @@ enum NodeError {
 };
 
 enum StatusLEDColorState {
-    RED,
-    GREEN,
-    BLUE
+    COLOR_OFF,
+    COLOR_RED,
+    COLOR_GREEN,
+    COLOR_BLUE,
+    COLOR_ORANGE,
+    COLOR_WHITE
 };
 
 
@@ -70,7 +73,9 @@ public:
     // Callbacks
     void optButtonStopFunc();
     void toggleRGBStatusLED();
-    StatusLEDColorState ledState = RED;
+    void setRGBStatusLED(StatusLEDColorState color);
+    void updateStatusLED();
+    StatusLEDColorState ledState = COLOR_RED;
 
     // Error handling
     // TODO implement better error processing
@@ -92,6 +97,9 @@ private:
     NodeAddress address;
     //CommandProcessor* commandProcessor; // Reference to CommandProcessor
     tfnode::NodeSettings settings;
+
+    unsigned long ledBlinkTimer = 0;
+    bool ledBlinkState = false;
 };
 
 #endif // TF_NODE_H
