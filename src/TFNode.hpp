@@ -24,7 +24,8 @@ enum StatusLEDColorState {
     COLOR_GREEN,
     COLOR_BLUE,
     COLOR_ORANGE,
-    COLOR_WHITE
+    COLOR_WHITE,
+    COLOR_MAGENTA
 };
 
 

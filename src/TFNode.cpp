@@ -134,6 +134,11 @@ void TFNode::setRGBStatusLED(StatusLEDColorState color) {
             digitalWrite(STATUS_RGB_GREEN, LOW);
             digitalWrite(STATUS_RGB_BLUE, LOW);
             break;
+        case COLOR_MAGENTA:
+            digitalWrite(STATUS_RGB_RED, LOW);
+            digitalWrite(STATUS_RGB_GREEN, HIGH);
+            digitalWrite(STATUS_RGB_BLUE, LOW);
+            break;
     }
     ledState = color;
 }
@@ -141,46 +146,48 @@ void TFNode::setRGBStatusLED(StatusLEDColorState color) {
 void TFNode::updateStatusLED() {
     if(!commandProcessor) return;
 
-    // Heartbeat disabled -> blue
+    StatusLEDColorState netColor;
     if(!commandProcessor->isHeartbeatEnabled()) {
-        setRGBStatusLED(COLOR_BLUE);
-        return;
-    }
-
-    bool connected = commandProcessor->isConnected();
-    bool anyEnabled = smaController0.getEnabled() || smaController1.getEnabled();
-
-    bool onTarget = false;
-    if(anyEnabled) {
-        bool m0_on = false;
-        bool m1_on = false;
-        if(smaController0.getMode() == tfnode::SMAControlMode::MODE_OHMS) {
-            float diff = fabsf(smaController0.getResistance() -
-                             smaController0.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]);
-            m0_on = diff < 10.0f;
-        }
-        if(smaController1.getMode() == tfnode::SMAControlMode::MODE_OHMS) {
-            float diff = fabsf(smaController1.getResistance() -
-                             smaController1.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]);
-            m1_on = diff < 10.0f;
-        }
-        onTarget = (smaController0.getEnabled() && m0_on) ||
-                   (smaController1.getEnabled() && m1_on);
-    }
-
-    if(!connected) {
-        setRGBStatusLED(COLOR_RED);
-    } else if(onTarget) {
-        if(millis() - ledBlinkTimer > 500) {
-            ledBlinkTimer = millis();
-            ledBlinkState = !ledBlinkState;
-        }
-        setRGBStatusLED(ledBlinkState ? COLOR_WHITE : COLOR_GREEN);
-    } else if(anyEnabled) {
-        setRGBStatusLED(COLOR_GREEN);
+        netColor = COLOR_BLUE;
+    } else if(commandProcessor->isConnected()) {
+        netColor = COLOR_ORANGE;
     } else {
-        setRGBStatusLED(COLOR_ORANGE);
+        netColor = COLOR_RED;
     }
+
+    bool m0_target = false;
+    bool m1_target = false;
+    if(smaController0.getEnabled() &&
+       smaController0.getMode() == tfnode::SMAControlMode::MODE_OHMS) {
+        float diff = fabsf(smaController0.getResistance() -
+                         smaController0.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]);
+        m0_target = diff < 10.0f;
+    }
+    if(smaController1.getEnabled() &&
+       smaController1.getMode() == tfnode::SMAControlMode::MODE_OHMS) {
+        float diff = fabsf(smaController1.getResistance() -
+                         smaController1.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]);
+        m1_target = diff < 10.0f;
+    }
+
+    StatusLEDColorState targetColor;
+    if(m0_target && m1_target) {
+        targetColor = COLOR_GREEN;
+    } else if(m0_target) {
+        targetColor = COLOR_MAGENTA;
+    } else if(m1_target) {
+        targetColor = COLOR_WHITE;
+    } else {
+        targetColor = COLOR_OFF;
+    }
+
+    unsigned long now = millis();
+    if(now - ledBlinkTimer > 500) {
+        ledBlinkTimer = now;
+        ledBlinkState = !ledBlinkState;
+    }
+
+    setRGBStatusLED(ledBlinkState ? netColor : targetColor);
 }
 
 void TFNode::signalPacketReceived() {
