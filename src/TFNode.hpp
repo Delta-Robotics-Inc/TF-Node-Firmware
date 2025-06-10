@@ -72,9 +72,12 @@ public:
 
     // Callbacks
     void optButtonStopFunc();
-    void toggleRGBStatusLED();
+    void toggleRGBStatusLED(StatusLEDColorState colorA = COLOR_RED,
+                            StatusLEDColorState colorB = COLOR_GREEN);
     void setRGBStatusLED(StatusLEDColorState color);
     void updateStatusLED();
+    void signalPacketReceived();
+    void updatePacketLED();
     StatusLEDColorState ledState = COLOR_RED;
 
     // Error handling
@@ -100,6 +103,7 @@ private:
 
     unsigned long ledBlinkTimer = 0;
     bool ledBlinkState = false;
+    unsigned long packetLedTimer = 0;
 };
 
 #endif // TF_NODE_H

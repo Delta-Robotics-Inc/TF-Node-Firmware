@@ -31,6 +31,9 @@ void TFNode::begin() {
     pinMode(STATUS_RGB_GREEN, OUTPUT);
     pinMode(STATUS_RGB_BLUE, OUTPUT);
 
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, LOW);
+
     pinMode(STATUS_SOLID_LED, OUTPUT);
     digitalWrite(STATUS_SOLID_LED, LOW);  // This pin currently goes high on errors
 
@@ -66,6 +69,7 @@ void TFNode::update() {
 
     checkErrs();
     updateStatusLED();
+    updatePacketLED();
 
     // Check auxillary gpio
     // TODO change to interrupt
@@ -87,11 +91,13 @@ void TFNode::update() {
     }
 }
 
-void TFNode::toggleRGBStatusLED() {
-    ledState =  (ledState == COLOR_RED) ? COLOR_GREEN :
-                (ledState == COLOR_GREEN) ? COLOR_BLUE :
-                COLOR_RED;
-
+void TFNode::toggleRGBStatusLED(StatusLEDColorState colorA,
+                                StatusLEDColorState colorB) {
+    if(ledState != colorA && ledState != colorB) {
+        ledState = colorA;
+    } else {
+        ledState = (ledState == colorA) ? colorB : colorA;
+    }
     setRGBStatusLED(ledState);
 }
 
@@ -172,6 +178,18 @@ void TFNode::updateStatusLED() {
         setRGBStatusLED(COLOR_GREEN);
     } else {
         setRGBStatusLED(COLOR_ORANGE);
+    }
+}
+
+void TFNode::signalPacketReceived() {
+    digitalWrite(LED_BUILTIN, HIGH);
+    packetLedTimer = millis() + 50; // keep LED on for 50 ms
+}
+
+void TFNode::updatePacketLED() {
+    if(packetLedTimer && millis() > packetLedTimer) {
+        digitalWrite(LED_BUILTIN, LOW);
+        packetLedTimer = 0;
     }
 }
 
