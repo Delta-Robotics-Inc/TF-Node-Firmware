@@ -58,3 +58,15 @@ Here are some example commands to display the syntax:
 /heartbeat off               # disable automatic heartbeat
 
 ```
+
+### LED Status Codes
+
+- **Orange** – Node is connected and waiting for commands
+- **Red** – Connection to the host has timed out
+- **Blue** – Heartbeat messages are disabled
+- **Green** – At least one SMA controller is enabled
+- **Green/White Blink** – One or more enabled SMA controllers are on target
+
+The solid status LED emits short pulse sequences to show which SMA controllers
+are enabled: one pulse for SMAController1, two pulses for SMAController2 and
+three pulses when both are active.

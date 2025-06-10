@@ -70,6 +70,7 @@ void TFNode::update() {
     checkErrs();
     updateStatusLED();
     updatePacketLED();
+    updateActiveLED();
 
     // Check auxillary gpio
     // TODO change to interrupt
@@ -163,7 +164,8 @@ void TFNode::updateStatusLED() {
                              smaController1.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]);
             m1_on = diff < 10.0f;
         }
-        onTarget = m0_on && m1_on;
+        onTarget = (smaController0.getEnabled() && m0_on) ||
+                   (smaController1.getEnabled() && m1_on);
     }
 
     if(!connected) {
@@ -190,6 +192,53 @@ void TFNode::updatePacketLED() {
     if(packetLedTimer && millis() > packetLedTimer) {
         digitalWrite(LED_BUILTIN, LOW);
         packetLedTimer = 0;
+    }
+}
+
+void TFNode::updateActiveLED() {
+    if(n_error != 0xFF) {
+        // Error indicator overrides activity patterns
+        return;
+    }
+
+    bool en0 = smaController0.getEnabled();
+    bool en1 = smaController1.getEnabled();
+
+    if(!en0 && !en1) {
+        activityLedStep = 0;
+        digitalWrite(STATUS_SOLID_LED, LOW);
+        return;
+    }
+
+    uint8_t pulseCount = en0 && en1 ? 3 : en0 ? 1 : 2;
+    unsigned long now = millis();
+
+    if(activityLedStep == 0) {
+        activityLedPulses = pulseCount * 2; // on/off steps
+        activityLedStep = 1;
+        activityLedPause = false;
+        activityLedTimer = now;
+        digitalWrite(STATUS_SOLID_LED, HIGH);
+        return;
+    }
+
+    if(activityLedStep <= activityLedPulses) {
+        if(now - activityLedTimer >= 100) {
+            activityLedTimer = now;
+            bool state = digitalRead(STATUS_SOLID_LED);
+            digitalWrite(STATUS_SOLID_LED, state ? LOW : HIGH);
+            activityLedStep++;
+            if(activityLedStep > activityLedPulses) {
+                digitalWrite(STATUS_SOLID_LED, LOW);
+            }
+        }
+    } else {
+        if(!activityLedPause) {
+            activityLedPause = true;
+            activityLedTimer = now;
+        } else if(now - activityLedTimer >= 500) {
+            activityLedStep = 0;
+        }
     }
 }
 

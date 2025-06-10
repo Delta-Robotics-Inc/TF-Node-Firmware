@@ -78,6 +78,7 @@ public:
     void updateStatusLED();
     void signalPacketReceived();
     void updatePacketLED();
+    void updateActiveLED();
     StatusLEDColorState ledState = COLOR_RED;
 
     // Error handling
@@ -104,6 +105,10 @@ private:
     unsigned long ledBlinkTimer = 0;
     bool ledBlinkState = false;
     unsigned long packetLedTimer = 0;
+    unsigned long activityLedTimer = 0;
+    uint8_t activityLedStep = 0;
+    uint8_t activityLedPulses = 0;
+    bool activityLedPause = false;
 };
 
 #endif // TF_NODE_H
