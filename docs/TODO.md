@@ -50,8 +50,19 @@
    - [ ] Heartbeat disabled - Blue
    - [ ] Enabled - Green
    - [ ] On target - Green/White
-- [ ] Working Current Control mode
-   - The current mode needs to be debugged so that it will work properly based on closed-loop feedback with the current sense function
+- [x] Working Current Control mode
+   - [x] Replaced problematic proportional-only MODE_AMPS with PID-based CurrentController
+   - [x] Implemented CurrentController class using MiniPID with safety limits (0-75% PWM)
+   - [x] Integrated CurrentController into SMAController with proper state management
+   - [x] Added basic unit tests (test/test_current_controller.cpp)
+   - **Next Steps:**
+     - [x] **CRITICAL FIX**: Scale current measurement by PWM duty cycle (peak current → average current)
+     - [ ] Verify unit tests compile and run successfully
+     - [ ] Bench test with actual hardware to verify PWM response tracks requested current
+     - [ ] Tune PID gains (currently KP=0.1, KI=0.02, KD=0.01) based on system response
+     - [ ] Address 5A current sensor offset in readMuscleAmps() if calibration is needed
+     - [ ] Consider implementing protobuf-based PID gain configuration (in SMAControllerSettings)
+     - [ ] Consider hardware low-pass filtering for true average current measurement
 
 
 ### Backlog Changes

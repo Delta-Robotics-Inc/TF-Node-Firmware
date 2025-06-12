@@ -202,6 +202,9 @@ message SMAControllerSettings {
   float rctrl_kp = 3;
   float rctrl_ki = 4;
   float rctrl_kd = 5;
+  float cctrl_kp = 6; // TODO build protobuf
+  float cctrl_ki = 7; // TODO build protobuf
+  float cctrl_kd = 8; // TODO build protobuf
   // Add other SMAController-specific configuration settings
 }
 

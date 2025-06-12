@@ -9,6 +9,7 @@ void SMAController::begin()
 {
     resistTracker = new GradientTracker(gradWidth, gradSize, flatThreshold, timeStep_ms);
     resController = new ResistiveController(0.0, KP_rc, KI_rc, KD_rc);                                                                    // Initialize resistive PID controller
+    currController = new CurrentController(0.0, KP_cc, KI_cc, KD_cc);                                                                   // Initialize current PID controller
     driver = new PWMSamplerDriver(PWM_FREQUENCY, 0.0f, mosfet_pin, PWM_MEASURE_DELAY_US, PWM_MEASURE_CYCLE_THRESH, static_measure, this); // Initialize pwm driver which will handle pwm on the mosfet pin and sampling the sensors
 }
 
@@ -35,8 +36,14 @@ void SMAController::update()
             pwm_duty_percent = setpoint[(int)tfnode::SMAControlMode::MODE_VOLTS] / master_tfNode->n_vSupply; // When controlling for volts, the ratio of setpoint/supply will be percentage of power to deliver
             break;
         // TODO: Implement other control modes
-        case tfnode::SMAControlMode::MODE_AMPS:                                        // Need to implement PID loop
-            pwm_duty_percent = setpoint[(int)tfnode::SMAControlMode::MODE_AMPS] / curr_val; // Simplest current control is just pulsing the peak current at a rate which matches setpoint current
+        case tfnode::SMAControlMode::MODE_AMPS:                                        // PID-based current control
+            // Scale measured current by PWM duty cycle to get average current delivered to load
+            // This compensates for measuring peak current during PWM "on" time only
+            float avg_current = curr_val * pwm_duty_percent;
+            
+            currController->setSetpoint(setpoint[(int)tfnode::SMAControlMode::MODE_AMPS]); // Update setpoint of pid to setpoint of this device for AMPS mode
+            currController->update(avg_current);             // Update pid controller with duty-cycle-scaled current measurement
+            pwm_duty_percent = currController->getOutput(); // Get PID output for PWM duty cycle
             break;
         // case DEGREES:  // Need to implement equation to track/return muscle temp (temp will behave different based on 2 conditions: below/above Af)
         case tfnode::SMAControlMode::MODE_OHMS: // Need to implement PID loop (but how to implement with hysterisis curve?)
@@ -121,10 +128,12 @@ void SMAController::CMD_setEnable(bool state)
         master_tfNode->errClear(ERR_EXTERNAL_INTERRUPT);
 
       if((currentMode == tfnode::SMAControlMode::MODE_TRAIN || 
-          currentMode == tfnode::SMAControlMode::MODE_OHMS) && outputEnabled) {
+          currentMode == tfnode::SMAControlMode::MODE_OHMS ||
+          currentMode == tfnode::SMAControlMode::MODE_AMPS) && outputEnabled) {
         // Serial.println("SMAController Resetting Training");
         resetTraining();
         resController->Reset();
+        currController->Reset();
       }
 }
 

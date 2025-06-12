@@ -8,6 +8,7 @@
 #include "networking/CommandProcessor.hpp"
 
 #include "drivers/ResistiveController.h"
+#include "drivers/CurrentController.h"
 #include "drivers/GradientTracker.hpp"
 
 class PWMSamplerDriver;  // Forward Declaration
@@ -58,6 +59,7 @@ public:
 
     float setpoint[(int)tfnode::SMAControlMode::MODE_CNT];
     ResistiveController* resController;
+    CurrentController* currController;
 
     // Sensor Measurements
     float readMuscleAmps();
@@ -95,6 +97,9 @@ private:
 
     // For OHMS control mode, a PID controller will be used to control output PWM to minimize error to a setpoint resistance
     const float KP_rc = 0.05, KI_rc = 0.0, KD_rc = 0.0;
+
+    // For AMPS control mode, a PID controller will be used to control output PWM to minimize error to a setpoint current
+    const float KP_cc = 0.1, KI_cc = 0.02, KD_cc = 0.01;
 
     // Control Settings
     bool outputEnabled = false;
