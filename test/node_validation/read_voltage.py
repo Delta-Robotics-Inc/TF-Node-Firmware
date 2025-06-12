@@ -4,19 +4,17 @@ import time
 import thermoflex as tf
 
 
-def sample_voltage(nodes, duration=10, interval=0.1, out_file='voltage_readings.csv'):
+def sample_voltage(nodes, duration=10.0, interval=0.1, out_file="voltage_readings.csv"):
     start = time.time()
-    with open(out_file, 'w', newline='') as csvfile:
+    with open(out_file, "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
-        header = ['timestamp', 'node_id', 'supply_voltage']
-        writer.writerow(header)
+        writer.writerow(["timestamp", "node_id", "supply_voltage"])
         while time.time() - start < duration:
-            tf.update()  # run network background tasks
-            for net in tf.controls.NodeNet.netlist:
-                for node in net.node_list:
-                    node.status('compact')
-                    status = node.node_status.get('volt_supply')
-                    writer.writerow([time.time(), ''.join(f'{b:02X}' for b in node.node_id), status])
+            for node in nodes:
+                node.status("compact")
+                v = node.node_status.get("volt_supply")
+                nid = ".".join(str(b) for b in node.id)
+                writer.writerow([time.time(), nid, v])
             time.sleep(interval)
 
 
@@ -31,7 +29,8 @@ def main():
     for net in nets:
         net.refreshDevices()
 
-    sample_voltage(nets, args.duration, args.interval, args.outfile)
+    node_list = [node for net in nets for node in net.node_list]
+    sample_voltage(node_list, args.duration, args.interval, args.outfile)
     tf.endAll()
 
 

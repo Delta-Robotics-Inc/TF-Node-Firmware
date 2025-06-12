@@ -4,20 +4,18 @@ import time
 import thermoflex as tf
 
 
-def sample_current(nodes, duration=10, interval=0.1, outfile='no_load_current.csv'):
+def sample_current(nodes, duration=10.0, interval=0.1, outfile="no_load_current.csv"):
     start = time.time()
-    with open(outfile, 'w', newline='') as csvfile:
+    with open(outfile, "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
-        header = ['timestamp', 'node_id', 'muscle', 'load_amps']
-        writer.writerow(header)
+        writer.writerow(["timestamp", "node_id", "muscle", "load_amps"])
         while time.time() - start < duration:
-            tf.update()
-            for net in tf.controls.NodeNet.netlist:
-                for node in net.node_list:
-                    for key, muscle in node.muscles.items():
-                        node.status('compact')
-                        amps = muscle.SMA_status['load_amps'][0] if muscle.SMA_status['load_amps'] else None
-                        writer.writerow([time.time(), ''.join(f'{b:02X}' for b in node.node_id), key, amps])
+            for node in nodes:
+                node.status("compact")
+                for key, muscle in node.muscles.items():
+                    amps = muscle.SMA_status['load_amps'][0] if muscle.SMA_status['load_amps'] else None
+                    nid = ".".join(str(b) for b in node.id)
+                    writer.writerow([time.time(), nid, key, amps])
             time.sleep(interval)
 
 
@@ -32,7 +30,8 @@ def main():
     for net in nets:
         net.refreshDevices()
 
-    sample_current(nets, args.duration, args.interval, args.outfile)
+    node_list = [node for net in nets for node in net.node_list]
+    sample_current(node_list, args.duration, args.interval, args.outfile)
     tf.endAll()
 
 

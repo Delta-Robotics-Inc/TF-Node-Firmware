@@ -4,53 +4,58 @@ import time
 import thermoflex as tf
 
 
-def run_current_pulse(nodes, target_amp, pulse_time=2.0, duration=10.0, interval=0.1, outfile='current_pulse.csv'):
-    start = time.time()
-    with open(outfile, 'w', newline='') as csvfile:
+def run_current_steps(nodes, setpoints, hold_time=1.0, interval=0.1, outfile="current_pulse.csv"):
+    with open(outfile, "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(['timestamp', 'node_id', 'muscle', 'load_amps'])
+        writer.writerow(["timestamp", "node_id", "muscle", "setpoint", "load_amps"])
 
-        # Configure muscles
-        for net in nodes:
-            for node in net.node_list:
-                for musc in node.muscles.values():
-                    node.setMode('amps', f'm{musc.idnum+1}')
-                    node.setSetpoint(tf.command_t.modedef.index('amps'), f'm{musc.idnum+1}', target_amp)
-                    node.enable(musc)
+        # Configure muscles to current mode and enable
+        for node in nodes:
+            for muscle in node.muscles.values():
+                muscle.setMode("amps")
+                muscle.setEnable(True)
 
-        while time.time() - start < duration:
-            tf.update()
-            for net in tf.controls.NodeNet.netlist:
-                for node in net.node_list:
-                    node.status('compact')
+        for target in setpoints:
+            step_start = time.time()
+            for node in nodes:
+                for muscle in node.muscles.values():
+                    muscle.setSetpoint(conmode="amps", setpoint=target)
+
+            last_read = {}
+            while time.time() - step_start < hold_time:
+                for node in nodes:
+                    node.status("compact")
                     for key, muscle in node.muscles.items():
                         amps = muscle.SMA_status['load_amps'][0] if muscle.SMA_status['load_amps'] else None
-                        writer.writerow([time.time(), ''.join(f'{b:02X}' for b in node.node_id), key, amps])
-            if time.time() - start > pulse_time:
-                for net in nodes:
-                    for node in net.node_list:
-                        node.disableAll()
-            time.sleep(interval)
+                        nid = ".".join(str(b) for b in node.id)
+                        writer.writerow([time.time(), nid, key, target, amps])
+                        last_read[(nid, key)] = amps
+                time.sleep(interval)
 
-        for net in nodes:
-            for node in net.node_list:
-                node.disableAll()
+            for (nid, key), amps in last_read.items():
+                if amps is not None and abs(amps - target) > 0.2:
+                    print(f"Warning: Node {nid} muscle {key} target {target}A, measured {amps:.2f}A")
+
+        for node in nodes:
+            node.disableAll()
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Run a current pulse through the muscle')
-    parser.add_argument('--target', type=float, required=True, help='target current in amps')
-    parser.add_argument('--pulse', type=float, default=2.0, help='pulse time in seconds')
-    parser.add_argument('--duration', type=float, default=10.0)
-    parser.add_argument('--interval', type=float, default=0.1)
-    parser.add_argument('--outfile', default='current_pulse.csv')
+    parser = argparse.ArgumentParser(description="Run stepped current commands and verify feedback")
+    parser.add_argument("--currents", default="0.5,1.0", help="comma separated current setpoints in amps")
+    parser.add_argument("--hold", type=float, default=1.0, help="time to hold each setpoint in seconds")
+    parser.add_argument("--interval", type=float, default=0.1, help="sample interval in seconds")
+    parser.add_argument("--outfile", default="current_pulse.csv", help="CSV output file")
     args = parser.parse_args()
+
+    setpoints = [float(c) for c in args.currents.split(",") if c]
 
     nets = tf.discover([105])
     for net in nets:
         net.refreshDevices()
 
-    run_current_pulse(nets, args.target, args.pulse, args.duration, args.interval, args.outfile)
+    node_list = [node for net in nets for node in net.node_list]
+    run_current_steps(node_list, setpoints, args.hold, args.interval, args.outfile)
     tf.endAll()
 
 
