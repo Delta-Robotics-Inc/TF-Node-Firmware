@@ -16,3 +16,11 @@ git clone https://github.com/Delta-Robotics-Inc/TF-Python-Serial
 # Replace X.X.X with the library version
 pip install ./TF-Python-Serial/python-serial/build/dist/thermoflex-X.X.X.tar.gz
 ```
+
+You can also install for testing directly from pip:
+
+```bash
+pip install thermoflex
+```
+
+This method is easier if you do not have to make changes to the python API as well.
