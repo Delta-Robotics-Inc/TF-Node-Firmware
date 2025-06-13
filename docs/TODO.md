@@ -41,6 +41,7 @@
       - [x] "/heartbeat off" to turn heartbeat off
       - [x] "/heartbeat on" to turn heartbeat on
 - [~] Implement SMAController Status response
+   - [ ] Report both instantaneous and average muscle current
 - [ ] Come up with auto update method or push via hex file
    - [x] Can we open repo to the public? - Yes
    - [ ] Create Simple Update Process and Automatic Updating Script

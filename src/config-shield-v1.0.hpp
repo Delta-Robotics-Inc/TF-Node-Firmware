@@ -40,18 +40,18 @@ const float AMP_GAIN = 100.0f;  // [V/V] Vin/Vout gain of amplifier
 #define STATUS_RGB_BLUE 11
 
 //SMAController0
-#define M1_MOS_TRIG 9
-#define M1_CURR_RD A0
-#define M1_VLD_RD A2
-#define M1_ALERT 2
+#define M1_MOS_TRIG 9   // PWM pin for MOSFET driver
+#define M1_CURR_RD A0   // Current sense amplifier
+#define M1_VLD_RD A2    // Voltage divider
+#define M1_ALERT 2      // Alert pin
 
 //SMAController1
-#define M2_MOS_TRIG 6
-#define M2_CURR_RD A1
-#define M2_VLD_RD A3
-#define M2_ALERT 3
+#define M2_MOS_TRIG 6   // PWM pin for MOSFET driver
+#define M2_CURR_RD A1   // Current sense amplifier
+#define M2_VLD_RD A3    // Voltage divider
+#define M2_ALERT 3      // Alert pin
 
-#define AUX_BUTTON 7
+#define AUX_BUTTON 7    // Button input pin, active low with pullup resistor
 #define MANUAL_MODE_POT A5
 const float MANUAL_MODE_THRESHOLD = 0.02f;
 
