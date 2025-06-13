@@ -265,8 +265,7 @@ tfnode::ResponseCode CommandProcessor::executeCommand(tfnode::NodeCommand comman
     Serial.println("Executing command...");
     tfnode::ResponseCode responseCode = tfnode::ResponseCode::RESPONSE_UNSUPPORTED_COMMAND;
 
-    // Debug to show that command is being executed
-    node.toggleRGBStatusLED();  // Toggle the status LED on the node
+    node.signalPacketReceived();
 
     // Determine which command is set using the oneof field
     switch (command.get_which_command()) {
@@ -739,6 +738,17 @@ void CommandProcessor::testSendCommandPacket() {
         // Handle serialization error
         Serial.println("Error: Failed to serialize command");
     }
+}
+
+bool CommandProcessor::isHeartbeatEnabled() const {
+    return heartbeatEnabled;
+}
+
+bool CommandProcessor::isConnected() const {
+    if(!heartbeatEnabled) {
+        return true;
+    }
+    return (millis() - lastReceiveMillis) <= HEARTBEAT_TIMEOUT;
 }
 
 /// @brief Test function to send a command to the PC.  Not used in production.

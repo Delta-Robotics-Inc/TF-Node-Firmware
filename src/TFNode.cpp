@@ -2,6 +2,7 @@
 #include "SMAController.hpp"
 #include "TFNode.hpp"
 #include "config.hpp"
+#include <cmath>
 
 TFNode::TFNode(const NodeAddress& addr)
     : address(addr),
@@ -30,6 +31,9 @@ void TFNode::begin() {
     pinMode(STATUS_RGB_GREEN, OUTPUT);
     pinMode(STATUS_RGB_BLUE, OUTPUT);
 
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, LOW);
+
     pinMode(STATUS_SOLID_LED, OUTPUT);
     digitalWrite(STATUS_SOLID_LED, LOW);  // This pin currently goes high on errors
 
@@ -48,9 +52,7 @@ void TFNode::begin() {
 }
 
 void TFNode::init_finished() {
-    digitalWrite(STATUS_RGB_RED, LOW);
-    digitalWrite(STATUS_RGB_GREEN, HIGH);
-    digitalWrite(STATUS_RGB_BLUE, HIGH);
+    setRGBStatusLED(COLOR_RED);
 }
 
 
@@ -66,6 +68,9 @@ void TFNode::update() {
     //Serial.println("TFNode::update() - Finished SMAController::update()");
 
     checkErrs();
+    updateStatusLED();
+    updatePacketLED();
+    updateActiveLED();
 
     // Check auxillary gpio
     // TODO change to interrupt
@@ -87,28 +92,160 @@ void TFNode::update() {
     }
 }
 
-void TFNode::toggleRGBStatusLED() {
+void TFNode::toggleRGBStatusLED(StatusLEDColorState colorA,
+                                StatusLEDColorState colorB) {
+    if(ledState != colorA && ledState != colorB) {
+        ledState = colorA;
+    } else {
+        ledState = (ledState == colorA) ? colorB : colorA;
+    }
+    setRGBStatusLED(ledState);
+}
 
-    ledState =  (ledState == RED) ? GREEN :
-                (ledState == GREEN) ? BLUE :
-                RED;
-
-    switch(ledState) {
-        case RED:
+void TFNode::setRGBStatusLED(StatusLEDColorState color) {
+    switch(color) {
+        case COLOR_OFF:
+            digitalWrite(STATUS_RGB_RED, HIGH);
+            digitalWrite(STATUS_RGB_GREEN, HIGH);
+            digitalWrite(STATUS_RGB_BLUE, HIGH);
+            break;
+        case COLOR_RED:
             digitalWrite(STATUS_RGB_RED, LOW);
             digitalWrite(STATUS_RGB_GREEN, HIGH);
             digitalWrite(STATUS_RGB_BLUE, HIGH);
             break;
-        case GREEN:
+        case COLOR_GREEN:
             digitalWrite(STATUS_RGB_RED, HIGH);
             digitalWrite(STATUS_RGB_GREEN, LOW);
             digitalWrite(STATUS_RGB_BLUE, HIGH);
             break;
-        case BLUE:
+        case COLOR_BLUE:
             digitalWrite(STATUS_RGB_RED, HIGH);
             digitalWrite(STATUS_RGB_GREEN, HIGH);
             digitalWrite(STATUS_RGB_BLUE, LOW);
             break;
+        case COLOR_ORANGE:
+            digitalWrite(STATUS_RGB_RED, LOW);
+            digitalWrite(STATUS_RGB_GREEN, LOW);
+            digitalWrite(STATUS_RGB_BLUE, HIGH);
+            break;
+        case COLOR_WHITE:
+            digitalWrite(STATUS_RGB_RED, LOW);
+            digitalWrite(STATUS_RGB_GREEN, LOW);
+            digitalWrite(STATUS_RGB_BLUE, LOW);
+            break;
+        case COLOR_MAGENTA:
+            digitalWrite(STATUS_RGB_RED, LOW);
+            digitalWrite(STATUS_RGB_GREEN, HIGH);
+            digitalWrite(STATUS_RGB_BLUE, LOW);
+            break;
+    }
+    ledState = color;
+}
+
+void TFNode::updateStatusLED() {
+    if(!commandProcessor) return;
+
+    StatusLEDColorState netColor;
+    if(!commandProcessor->isHeartbeatEnabled()) {
+        netColor = COLOR_BLUE;
+    } else if(commandProcessor->isConnected()) {
+        netColor = COLOR_ORANGE;
+    } else {
+        netColor = COLOR_RED;
+    }
+
+    bool m0_target = false;
+    bool m1_target = false;
+    if(smaController0.getEnabled() &&
+       smaController0.getMode() == tfnode::SMAControlMode::MODE_OHMS) {
+        float diff = fabsf(smaController0.getResistance() -
+                         smaController0.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]);
+        m0_target = diff < 10.0f;
+    }
+    if(smaController1.getEnabled() &&
+       smaController1.getMode() == tfnode::SMAControlMode::MODE_OHMS) {
+        float diff = fabsf(smaController1.getResistance() -
+                         smaController1.setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]);
+        m1_target = diff < 10.0f;
+    }
+
+    StatusLEDColorState targetColor;
+    if(m0_target && m1_target) {
+        targetColor = COLOR_GREEN;
+    } else if(m0_target) {
+        targetColor = COLOR_MAGENTA;
+    } else if(m1_target) {
+        targetColor = COLOR_WHITE;
+    } else {
+        targetColor = COLOR_OFF;
+    }
+
+    unsigned long now = millis();
+    if(now - ledBlinkTimer > 500) {
+        ledBlinkTimer = now;
+        ledBlinkState = !ledBlinkState;
+    }
+
+    setRGBStatusLED(ledBlinkState ? netColor : targetColor);
+}
+
+void TFNode::signalPacketReceived() {
+    digitalWrite(LED_BUILTIN, HIGH);
+    packetLedTimer = millis() + 50; // keep LED on for 50 ms
+}
+
+void TFNode::updatePacketLED() {
+    if(packetLedTimer && millis() > packetLedTimer) {
+        digitalWrite(LED_BUILTIN, LOW);
+        packetLedTimer = 0;
+    }
+}
+
+void TFNode::updateActiveLED() {
+    if(n_error != 0xFF) {
+        // Error indicator overrides activity patterns
+        return;
+    }
+
+    bool en0 = smaController0.getEnabled();
+    bool en1 = smaController1.getEnabled();
+
+    if(!en0 && !en1) {
+        activityLedStep = 0;
+        digitalWrite(STATUS_SOLID_LED, LOW);
+        return;
+    }
+
+    uint8_t pulseCount = en0 && en1 ? 3 : en0 ? 1 : 2;
+    unsigned long now = millis();
+
+    if(activityLedStep == 0) {
+        activityLedPulses = pulseCount * 2; // on/off steps
+        activityLedStep = 1;
+        activityLedPause = false;
+        activityLedTimer = now;
+        digitalWrite(STATUS_SOLID_LED, HIGH);
+        return;
+    }
+
+    if(activityLedStep <= activityLedPulses) {
+        if(now - activityLedTimer >= 100) {
+            activityLedTimer = now;
+            bool state = digitalRead(STATUS_SOLID_LED);
+            digitalWrite(STATUS_SOLID_LED, state ? LOW : HIGH);
+            activityLedStep++;
+            if(activityLedStep > activityLedPulses) {
+                digitalWrite(STATUS_SOLID_LED, LOW);
+            }
+        }
+    } else {
+        if(!activityLedPause) {
+            activityLedPause = true;
+            activityLedTimer = now;
+        } else if(now - activityLedTimer >= 500) {
+            activityLedStep = 0;
+        }
     }
 }
 
