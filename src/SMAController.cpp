@@ -30,13 +30,18 @@ void SMAController::update()
         switch (currentMode)
         {
         case tfnode::SMAControlMode::MODE_PERCENT:
+        {
             pwm_duty_percent = setpoint[(int)tfnode::SMAControlMode::MODE_PERCENT];
             break;
+        }
         case tfnode::SMAControlMode::MODE_VOLTS:
+        {
             pwm_duty_percent = setpoint[(int)tfnode::SMAControlMode::MODE_VOLTS] / master_tfNode->n_vSupply; // When controlling for volts, the ratio of setpoint/supply will be percentage of power to deliver
             break;
+        }
         // TODO: Implement other control modes
-        case tfnode::SMAControlMode::MODE_AMPS:                                        // PID-based current control
+        case tfnode::SMAControlMode::MODE_AMPS:
+        {                                    // PID-based current control
             // Scale measured current by PWM duty cycle to get average current delivered to load
             // This compensates for measuring peak current during PWM "on" time only
             float avg_current = curr_val * pwm_duty_percent;
@@ -46,6 +51,7 @@ void SMAController::update()
             pwm_duty_percent = currController->getOutput(); // Get PID output for PWM duty cycle
             break;
         // case DEGREES:  // Need to implement equation to track/return muscle temp (temp will behave different based on 2 conditions: below/above Af)
+        }
         case tfnode::SMAControlMode::MODE_OHMS: // Need to implement PID loop (but how to implement with hysterisis curve?)
         {
             //resController->setSetpoint(setpoint[(int)tfnode::SMAControlMode::MODE_OHMS]); // Update setpoint of pid to setpoint of this device for OHMS mode
@@ -81,16 +87,20 @@ void SMAController::update()
         break;
         // Eventually add position control (requires force to be known)
         case tfnode::SMAControlMode::MODE_TRAIN:
+        {
             // pwm_duty_percent = updateTraining(rld_val); // Convert to mohms
             commandProcessor->sendSerialString("Training Mode is not implemented");
             break;
+        }
         // Deprecating mode manual for now (not included in .proto)
         // case tfnode::SMAControlMode::MODE_MANUAL:
         //     pwm_duty_percent = master_tfNode.pot_val; // Manual mode uses the potentiometer if connected
         //     break;
         default:
+        {
             pwm_duty_percent = 0;
             break;
+        }
         }
     }
     else
