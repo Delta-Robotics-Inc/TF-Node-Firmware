@@ -103,41 +103,42 @@ void TFNode::toggleRGBStatusLED(StatusLEDColorState colorA,
 }
 
 void TFNode::setRGBStatusLED(StatusLEDColorState color) {
+    // RGB values are inverted (255 = off, 0 = full on)
     switch(color) {
         case COLOR_OFF:
-            digitalWrite(STATUS_RGB_RED, HIGH);
-            digitalWrite(STATUS_RGB_GREEN, HIGH);
-            digitalWrite(STATUS_RGB_BLUE, HIGH);
+            analogWrite(STATUS_RGB_RED, 255);    // 255 = off
+            analogWrite(STATUS_RGB_GREEN, 255);  // 255 = off
+            analogWrite(STATUS_RGB_BLUE, 255);   // 255 = off
             break;
         case COLOR_RED:
-            digitalWrite(STATUS_RGB_RED, LOW);
-            digitalWrite(STATUS_RGB_GREEN, HIGH);
-            digitalWrite(STATUS_RGB_BLUE, HIGH);
+            analogWrite(STATUS_RGB_RED, 0);      // 0 = full red
+            analogWrite(STATUS_RGB_GREEN, 255);  // 255 = off
+            analogWrite(STATUS_RGB_BLUE, 255);   // 255 = off
             break;
         case COLOR_GREEN:
-            digitalWrite(STATUS_RGB_RED, HIGH);
-            digitalWrite(STATUS_RGB_GREEN, LOW);
-            digitalWrite(STATUS_RGB_BLUE, HIGH);
+            analogWrite(STATUS_RGB_RED, 255);    // 255 = off
+            analogWrite(STATUS_RGB_GREEN, 0);    // 0 = full green
+            analogWrite(STATUS_RGB_BLUE, 255);   // 255 = off
             break;
         case COLOR_BLUE:
-            digitalWrite(STATUS_RGB_RED, HIGH);
-            digitalWrite(STATUS_RGB_GREEN, HIGH);
-            digitalWrite(STATUS_RGB_BLUE, LOW);
+            analogWrite(STATUS_RGB_RED, 255);    // 255 = off
+            analogWrite(STATUS_RGB_GREEN, 255);  // 255 = off
+            analogWrite(STATUS_RGB_BLUE, 0);     // 0 = full blue
             break;
         case COLOR_ORANGE:
-            digitalWrite(STATUS_RGB_RED, LOW);
-            digitalWrite(STATUS_RGB_GREEN, LOW);
-            digitalWrite(STATUS_RGB_BLUE, HIGH);
+            analogWrite(STATUS_RGB_RED, 0);      // 0 = full red
+            analogWrite(STATUS_RGB_GREEN, 90);  // ~50% green for orange
+            analogWrite(STATUS_RGB_BLUE, 255);   // 255 = off
             break;
         case COLOR_WHITE:
-            digitalWrite(STATUS_RGB_RED, LOW);
-            digitalWrite(STATUS_RGB_GREEN, LOW);
-            digitalWrite(STATUS_RGB_BLUE, LOW);
+            analogWrite(STATUS_RGB_RED, 0);      // 0 = full red
+            analogWrite(STATUS_RGB_GREEN, 0);    // 0 = full green
+            analogWrite(STATUS_RGB_BLUE, 0);     // 0 = full blue
             break;
         case COLOR_MAGENTA:
-            digitalWrite(STATUS_RGB_RED, LOW);
-            digitalWrite(STATUS_RGB_GREEN, HIGH);
-            digitalWrite(STATUS_RGB_BLUE, LOW);
+            analogWrite(STATUS_RGB_RED, 0);      // 0 = full red
+            analogWrite(STATUS_RGB_GREEN, 255);  // 255 = off
+            analogWrite(STATUS_RGB_BLUE, 0);     // 0 = full blue
             break;
     }
     ledState = color;
@@ -146,13 +147,24 @@ void TFNode::setRGBStatusLED(StatusLEDColorState color) {
 void TFNode::updateStatusLED() {
     if(!commandProcessor) return;
 
+    // // Debug connection status
+    // bool isConnected = commandProcessor->isConnected();
+    // unsigned long lastReceive = commandProcessor->getLastReceiveMillis();
+    // String debugMsg = "Connection Status - Connected: " + String(isConnected) + 
+    //                  ", Last Receive: " + String(lastReceive) + 
+    //                  ", Time Since: " + String(millis() - lastReceive) + "ms\n";
+    // Serial.print(debugMsg);  // Use Serial directly for debug
+
     StatusLEDColorState netColor;
     if(!commandProcessor->isHeartbeatEnabled()) {
         netColor = COLOR_BLUE;
+        // commandProcessor->sendSerialString("netColor: BLUE\n");
     } else if(commandProcessor->isConnected()) {
         netColor = COLOR_ORANGE;
+        // commandProcessor->sendSerialString("netColor: ORANGE\n");
     } else {
         netColor = COLOR_RED;
+        // commandProcessor->sendSerialString("netColor: RED\n");
     }
 
     bool m0_target = false;
@@ -173,12 +185,16 @@ void TFNode::updateStatusLED() {
     StatusLEDColorState targetColor;
     if(m0_target && m1_target) {
         targetColor = COLOR_GREEN;
+        // commandProcessor->sendSerialString("targetColor: GREEN\n");
     } else if(m0_target) {
         targetColor = COLOR_MAGENTA;
+        // commandProcessor->sendSerialString("targetColor: MAGENTA\n");
     } else if(m1_target) {
         targetColor = COLOR_WHITE;
+        // commandProcessor->sendSerialString("targetColor: WHITE\n");
     } else {
         targetColor = COLOR_OFF;
+        // commandProcessor->sendSerialString("targetColor: OFF\n");
     }
 
     unsigned long now = millis();
