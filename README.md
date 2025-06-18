@@ -58,3 +58,24 @@ Here are some example commands to display the syntax:
 /heartbeat off               # disable automatic heartbeat
 
 ```
+
+### LED Status Codes
+
+The RGB status LED alternates between two colors. The first color reflects the
+network connection state and the second color shows the setpoint state of the
+SMA controllers.
+
+**Network Connectivity**
+- **Red** – Not connected
+- **Orange** – Connected with heartbeat
+- **Blue** – Heartbeat disabled
+
+**Target State**
+- **Off** – Neither controller is on target
+- **Magenta** – Only SMAController0 is on target
+- **White** – Only SMAController1 is on target
+- **Green** – Both controllers are on target
+
+The solid status LED emits short pulse sequences to show which SMA controllers
+are enabled: one pulse for SMAController1, two pulses for SMAController2 and
+three pulses when both are active.

@@ -7,6 +7,41 @@
  * to the network interfaces. The CommandProcessor class interacts with various components such as TFNode,
  * NetworkInterface, and SMAController to perform its operations.
  *
+ * HEARTBEAT INFRASTRUCTURE - CRITICAL IMPLEMENTATION NOTES
+ * =========================================================
+ * 
+ * The heartbeat system provides a safety mechanism to detect master-node communication failures.
+ * This implementation has been specifically designed to avoid race conditions and timing conflicts.
+ * 
+ * KEY DESIGN PRINCIPLES:
+ * ----------------------
+ * 1. SEPARATED TIMING VARIABLES: Uses distinct variables for tracking sent vs received heartbeats
+ *    - lastHeartbeatSentMillis: When WE last sent a heartbeat TO master
+ *    - lastHeartbeatReceivedMillis: When we last RECEIVED a heartbeat FROM master
+ * 
+ * 2. NO TIMER RESET ON TIMEOUT: The receive timer is NEVER reset during timeout handling
+ *    - This prevents race conditions where timeouts interfere with recovery detection
+ *    - Allows natural recovery when master comes back online
+ * 
+ * 3. STATE-BASED RECOVERY: Uses connection flags to track and recover from timeout states
+ *    - timeoutTriggered: Prevents repeated timeout actions
+ *    - isMasterConnected: Tracks overall connection state
+ * 
+ * 4. HEARTBEAT PACKET IDENTIFICATION: Heartbeats are empty data packets from master (0.0.0)
+ *    - Master identification: sender ID = {0x00, 0x00, 0x00}
+ *    - Heartbeat identification: packet.data.empty() == true
+ * 
+ * TIMING CONFIGURATION:
+ * ---------------------
+ * - HEARTBEAT_INTERVAL (2000ms): How often we send heartbeats to master
+ * - HEARTBEAT_TIMEOUT (2500ms): How long we wait for master heartbeats before timeout
+ * 
+ * SAFETY BEHAVIOR:
+ * ----------------
+ * - On timeout: All devices are immediately disabled for safety
+ * - On recovery: Connection is restored and ready for new commands
+ * - Debug output: Comprehensive logging for troubleshooting timing issues
+ *
  * The main functionalities provided by this class include:
  * - Adding network interfaces for communication.
  * - Processing incoming packets and determining if they are intended for this node.
@@ -58,38 +93,98 @@ std::vector<NetworkInterface*> CommandProcessor::getInterfaces() {
 void CommandProcessor::process() {
     static bool isFromMaster = false;
     unsigned long now = millis();
+    static unsigned long lastDebugOutput = 0;
 
-    // Check receive heartbeat from master timeout
-    if (heartbeatEnabled && (now - lastReceiveMillis) > HEARTBEAT_TIMEOUT) {
-        node.CMD_disableDevice(tfnode::Device::DEVICE_ALL);
-        // Reset timer so we don't repeatedly disable
-        lastReceiveMillis = now;
-        sendSerialString("Heartbeat timeout, disabling all devices. Use /heartbeat off to disable this feature.");
+    // CRITICAL FIX: Heartbeat timeout detection using separated receive timing
+    // ========================================================================
+    // This logic checks if we haven't received a heartbeat from master within the timeout period
+    // IMPORTANT: We do NOT reset lastHeartbeatReceivedMillis here to avoid race conditions
+    if (heartbeatEnabled && (now - lastHeartbeatReceivedMillis) > HEARTBEAT_TIMEOUT) {
+        // Only trigger timeout actions once per timeout event to prevent spam
+        if (!timeoutTriggered) {
+            sendSerialString("\n=== HEARTBEAT TIMEOUT TRIGGERED ===\n");
+            sendSerialString("Time since last heartbeat from master: " + String(now - lastHeartbeatReceivedMillis) + "ms\n");
+            sendSerialString("Timeout threshold: " + String(HEARTBEAT_TIMEOUT) + "ms\n");
+            
+            // Update connection state
+            isMasterConnected = false;
+            timeoutTriggered = true;  // Prevent repeated timeout actions
+            
+            // Disable all devices for safety
+            node.CMD_disableDevice(tfnode::Device::DEVICE_ALL);
+            sendSerialString("SAFETY: Heartbeat timeout detected. All devices disabled. Waiting for master reconnection...\n");
+            
+            // NOTE: We deliberately do NOT reset lastHeartbeatReceivedMillis here
+            // This allows natural recovery when master comes back online
+        }
     }
 
-    // Check send heartbeat timeout
-    if (heartbeatEnabled && (now - lastSendMillis) > HEARTBEAT_INTERVAL) { // TODO add enable/disable heartbeat to DeltaLink protobuf config
+    // Enhanced debug output for troubleshooting heartbeat issues
+    if (now - lastDebugOutput > 5000) {  // Every 5 seconds
+        String debugMsg = String("\n=== HEARTBEAT STATUS DEBUG ===\n") +
+                         "Current time: " + String(now) + "ms\n" +
+                         "Last heartbeat received: " + String(lastHeartbeatReceivedMillis) + "ms\n" +
+                         "Time since last heartbeat: " + String(now - lastHeartbeatReceivedMillis) + "ms\n" +
+                         "Last heartbeat sent: " + String(lastHeartbeatSentMillis) + "ms\n" +
+                         "Time since last sent: " + String(now - lastHeartbeatSentMillis) + "ms\n" +
+                         "Connection status: " + String(isMasterConnected ? "CONNECTED" : "DISCONNECTED") + "\n" +
+                         "Heartbeat enabled: " + String(heartbeatEnabled ? "YES" : "NO") + "\n" +
+                         "Timeout triggered: " + String(timeoutTriggered ? "YES" : "NO") + "\n" +
+                         "===============================\n";
+        sendSerialString(debugMsg);
+        lastDebugOutput = now;
+    }
+
+    // FIXED: Heartbeat sending logic using proper send timing variable
+    // ================================================================
+    if (heartbeatEnabled && (now - lastHeartbeatSentMillis) > HEARTBEAT_INTERVAL) {
         // Build and send heartbeat packet
         sendHeartbeat();
-        lastSendMillis = now;
+        lastHeartbeatSentMillis = now;  // Update SENT timing, not received timing
+        sendSerialString("Sent heartbeat packet to master\n");
     }
 
+    // Process incoming packets from all network interfaces
     for (auto iface : interfaces) {
         Packet packet;
         if (iface->receivePacket(packet)) {
             handlePacket(packet, iface, isFromMaster);
-            if(isFromMaster) lastReceiveMillis = now;  // Register heartbeat from master
-
+            lastReceiveMillis = now;  // Update general packet receive time
+            
+            // CRITICAL FIX: Proper heartbeat detection and recovery logic
+            // ===========================================================
+            // Only update heartbeat timing if packet is from master AND is a heartbeat packet
+            if(isFromMaster && packet.data.empty()) {  // Heartbeat packets have empty data
+                
+                // Update heartbeat received timing - this is the key variable for timeout detection
+                lastHeartbeatReceivedMillis = now;
+                
+                // RECOVERY LOGIC: If we were in timeout state, recover connection
+                if (!isMasterConnected || timeoutTriggered) {
+                    sendSerialString("\n=== MASTER RECONNECTION DETECTED ===\n");
+                    sendSerialString("Heartbeat received from master - Connection restored!\n");
+                    
+                    // Reset connection state
+                    isMasterConnected = true;
+                    timeoutTriggered = false;  // Clear timeout flag to allow normal operation
+                    
+                    sendSerialString("SUCCESS: Master connection restored. Ready for commands.\n");
+                    sendSerialString("=====================================\n");
+                } else {
+                    // Normal heartbeat reception during connected state
+                    sendSerialString("Heartbeat received from master - Connection maintained\n");
+                }
+            }
         }
 
         // If the interface is a SerialInterface, check for ascii commands.
         if (iface->getName() == "SerialInterface") {
             SerialInterface* serialIface = static_cast<SerialInterface*>(iface);
             while (serialIface->hasAsciiCommand()) {
-                // Serial.println("Ascii command received");
                 String asciiCmd = serialIface->getNextAsciiCommand();
                 handleAsciiCommand(asciiCmd);
-                lastReceiveMillis = now;  // Also register heartbeat in ASCII
+                lastReceiveMillis = now;  // Update general packet receive time
+                // ASCII commands don't count as heartbeats from master
             }
         }
     }
@@ -146,7 +241,8 @@ void CommandProcessor::sendResponse(const tfnode::NodeResponse& response, Networ
     } else {
         // Handle serialization error
     }
-    lastSendMillis = millis();  // Reset the send timer after sending a response
+    // FIXED: Update heartbeat sent timing when sending any response (as this resets the send timer)
+    lastHeartbeatSentMillis = millis();  // Reset the send timer after sending a response
 }
 
 void CommandProcessor::sendHeartbeat() {
@@ -179,26 +275,52 @@ void CommandProcessor::sendHeartbeat() {
 /// @param sourceInterface The network interface that the packet was received from
 void CommandProcessor::handlePacket(Packet& packet, NetworkInterface* sourceInterface, bool &isFromMaster) {
     if (!packet.isValid()) {
-        // Invalid packet, discard or log error
-        Serial.println("Invalid packet, will not execute.");
+        sendSerialString("Invalid packet, will not execute.\n");
         return;
     }
 
-    // Master address is 0.0.0
+    // MASTER DETECTION LOGIC
+    // ======================
+    // Master is identified by sender address 0.0.0 (hardcoded for this implementation)
+    // This is a simple but effective approach for single-master networks
     if(packet.senderId.id[0] == 0x00 && 
        packet.senderId.id[1] == 0x00 && 
        packet.senderId.id[2] == 0x00){
         isFromMaster = true;
+        // Serial.println("Packet from master detected");
+        // if(packet.data.empty()) {
+        //     Serial.println("Empty packet from master - this is a heartbeat");
+        // } else {
+        //     Serial.println("Non-empty packet from master - not a heartbeat");
+        // }
     }
     else{
         isFromMaster = false;
+        sendSerialString("Packet from non-master node\n");
     }
 
+    // HEARTBEAT PACKET IDENTIFICATION
+    // ===============================
+    // Heartbeat packets are identified by two criteria:
+    // 1. They come from master (sender ID = 0.0.0)
+    // 2. They have empty data field (packet.data.empty() == true)
+    // This allows heartbeats to be distinguished from command packets
+    String debugMsg = String("Packet details:\n") +
+                     "Sender: " + String(packet.senderId.id[0]) + "." + 
+                                String(packet.senderId.id[1]) + "." + 
+                                String(packet.senderId.id[2]) + "\n" +
+                     "Data size: " + String(packet.data.size()) + " bytes\n" +
+                     "Is from master: " + String(isFromMaster ? "yes" : "no") + "\n" +
+                     "Is heartbeat: " + String((isFromMaster && packet.data.empty()) ? "yes" : "no") + "\n";
+    sendSerialString(debugMsg);
+
+    // PACKET ROUTING LOGIC
+    // ====================
     // Broadcast packets are handled by all nodes, so they are processed and forwarded
     if(packet.isBroadcast()) {
         handleCommand(packet, sourceInterface);
         forwardPacket(packet, sourceInterface);
-        Serial.println("Got Broadcast!");
+        sendSerialString("Got Broadcast!\n");
     }
     // Packets intended for this node are processed
     else if (packet.isForThisNode(node.getAddress())) {
@@ -224,7 +346,7 @@ tfnode::NodeCommand CommandProcessor::parseCommandPacket(const Packet& packet) {
     if (err != ::EmbeddedProto::Error::NO_ERRORS) {
         // Failed to parse command
         // Handle error
-        Serial.println("Failed to parse command packet");
+        sendSerialString("Failed to parse command packet\n");
     }
 
     return command;
@@ -241,7 +363,7 @@ void CommandProcessor::handleCommand(Packet& packet, NetworkInterface* sourceInt
     // Command not recognized
     else {
         code = tfnode::ResponseCode::RESPONSE_UNSUPPORTED_COMMAND;
-        Serial.println("Command not recognized..");
+        sendSerialString("Command not recognized..\n");
     }
 
     // Create a response message.  GeneralResponse is the response message for all commands
@@ -252,7 +374,7 @@ void CommandProcessor::handleCommand(Packet& packet, NetworkInterface* sourceInt
     generalResponse.set_received_cmd(tfnode::FunctionCode::FUNCTION_ENABLE);  // TODO parse the received command into a function code
     response.set_general_response(generalResponse);
 
-    Serial.println("Sending Command ACK Response...");
+    sendSerialString("Sending Command ACK Response...\n");
     sendResponse(response, sourceInterface);
 }   
 
@@ -262,11 +384,10 @@ void CommandProcessor::handleCommand(Packet& packet, NetworkInterface* sourceInt
 /// @return 
 tfnode::ResponseCode CommandProcessor::executeCommand(tfnode::NodeCommand command, NetworkInterface* sourceInterface) {
 
-    Serial.println("Executing command...");
+    sendSerialString("Executing command...\n");
     tfnode::ResponseCode responseCode = tfnode::ResponseCode::RESPONSE_UNSUPPORTED_COMMAND;
 
-    // Debug to show that command is being executed
-    node.toggleRGBStatusLED();  // Toggle the status LED on the node
+    node.signalPacketReceived();
 
     // Determine which command is set using the oneof field
     switch (command.get_which_command()) {
@@ -348,7 +469,7 @@ tfnode::ResponseCode CommandProcessor::executeCommand(tfnode::NodeCommand comman
         // Handle other commands similarly
         default:
             responseCode = tfnode::ResponseCode::RESPONSE_UNSUPPORTED_COMMAND;
-            Serial.println("Unsupported command.");
+            sendSerialString("Unsupported command.\n");
             break;
     }
 
@@ -356,17 +477,16 @@ tfnode::ResponseCode CommandProcessor::executeCommand(tfnode::NodeCommand comman
 }
 
 void CommandProcessor::forwardPacket(const Packet& packet, NetworkInterface* excludeInterface) {
-    Serial.println("Forwarding packet to other interfaces...");
+    sendSerialString("Forwarding packet to other interfaces...\n");
     for (auto iface : interfaces) {
         if (iface != excludeInterface) {
             // If Network ID Type and Network ID are specified, forward only to matching interface
             iface->sendPacket(packet);
 
             // Debug to console the full readable contents of packet
-            Serial.print("\nForwarded Packet over ");
-            Serial.print(iface->getName().c_str());
-        //  Serial.println(": ");
-        //     Serial.println(packet.toString());  // Debug display outgoing packet   
+            sendSerialString("\nForwarded Packet over " + String(iface->getName().c_str()) + "\n");
+        //  sendSerialString(": ");
+        //  sendSerialString(packet.toString());  // Debug display outgoing packet   
         }
     }
 }
@@ -459,17 +579,17 @@ void CommandProcessor::handleAsciiCommand(String commandStr)
         if (tokens.size() > 1) {
             if (tokens[1] == "on") {
                 heartbeatEnabled = true;
-                sendSerialString(addrPrefix() + "Heartbeat enabled\m");
+                sendSerialString(addrPrefix() + "Heartbeat enabled\n");
             } else if (tokens[1] == "off") {
                 heartbeatEnabled = false;
                 sendSerialString(addrPrefix() + "Heartbeat disabled\n");
             } else {
-                sendSerialString(addrPrefix() + "Error: Invalid heartbeat command. Use 'on' or 'off'");
+                sendSerialString(addrPrefix() + "Error: Invalid heartbeat command. Use 'on' or 'off'\n");
             }
         } else {
             // Just send a heartbeat immediately
             sendHeartbeat();
-            sendSerialString(addrPrefix() + "Heartbeat sent");
+            sendSerialString(addrPrefix() + "Heartbeat sent\n");
         }
     }
     // -------------------- reset --------------------
@@ -676,7 +796,7 @@ void CommandProcessor::sendSerialString(String message) {
 void CommandProcessor::testSendCommandPacket() {
 
     // Specify the command being sent
-    Serial.println("Sending Serialized StatusCommand: ");
+    sendSerialString("Sending Serialized StatusCommand: \n");
 
     // Create a NodeCommand message
     tfnode::NodeCommand command;
@@ -719,26 +839,35 @@ void CommandProcessor::testSendCommandPacket() {
         packet.checksum = packet.calculateChecksum();
 
         // Debugging output
-        Serial.print("Calculated Packet Length: ");
-        Serial.println(packet.packetLength);
+        sendSerialString("Calculated Packet Length: ");
+        sendSerialString(String(packet.packetLength) + "\n");
 
         // Send the packet over Serial Interface
         getInterfaceByName("SerialInterface")->sendPacket(packet);
 
         // Debug to console the full readable contents of packet
-        Serial.println("\nSent Packet: ");
-        Serial.println(packet.toString());  // Debug display outgoing packet
+        sendSerialString("\nSent Packet: \n");
+        sendSerialString(packet.toString() + "\n");  // Debug display outgoing packet
 
         delay(5000);
 
         // Now, handle the same packet that was constructed to test packet handling
-        Serial.println("Handling packet...\n");
+        sendSerialString("Handling packet...\n");
         bool temp = false;
         handlePacket(packet, getInterfaceByName("SerialInterface"), temp);
     } else {
         // Handle serialization error
-        Serial.println("Error: Failed to serialize command");
+        sendSerialString("Error: Failed to serialize command\n");
     }
+}
+
+bool CommandProcessor::isHeartbeatEnabled() const {
+    return heartbeatEnabled;
+}
+
+bool CommandProcessor::isConnected() const {
+    // Simply return the connection flag
+    return isMasterConnected;
 }
 
 /// @brief Test function to send a command to the PC.  Not used in production.
@@ -746,7 +875,7 @@ void CommandProcessor::testSendCommandPacket() {
 void CommandProcessor::testCANEnableCommandPacket() {
 
     // Specify the command being sent
-    Serial.println("Sending CAN EnableCommand: ");
+    sendSerialString("Sending CAN EnableCommand: \n");
 
     // Create a NodeCommand message
     tfnode::NodeCommand command;
@@ -787,15 +916,15 @@ void CommandProcessor::testCANEnableCommandPacket() {
         packet.checksum = packet.calculateChecksum();
 
         // Debugging output
-        Serial.print("Calculated Packet Length: ");
-        Serial.println(packet.packetLength);
+        sendSerialString("Calculated Packet Length: ");
+        sendSerialString(String(packet.packetLength) + "\n");
 
         // Send the packet over Serial Interface
         getInterfaceByName("CANInterface")->sendPacket(packet);
 
         // Debug to console the full readable contents of packet
-        Serial.println("\nSent Packet: ");
-        Serial.println(packet.toString());  // Debug display outgoing packet
+        sendSerialString("\nSent Packet: \n");
+        sendSerialString(packet.toString() + "\n");  // Debug display outgoing packet
 
         delay(5000);
 
@@ -804,7 +933,7 @@ void CommandProcessor::testCANEnableCommandPacket() {
         //handlePacket(packet, getInterfaceByName("SerialInterface"));
     } else {
         // Handle serialization error
-        Serial.println("Error: Failed to serialize command");
+        sendSerialString("Error: Failed to serialize command\n");
     }
 }
 
@@ -814,7 +943,7 @@ void CommandProcessor::testCANCommandPacket() {
     
 
     // Specify the command being sent
-    Serial.println("Sending CAN StatusCommand: ");
+    sendSerialString("Sending CAN StatusCommand: \n");
 
     // Create a NodeCommand message
     tfnode::NodeCommand command;
@@ -857,15 +986,15 @@ void CommandProcessor::testCANCommandPacket() {
         packet.checksum = packet.calculateChecksum();
 
         // Debugging output
-        Serial.print("Calculated Packet Length: ");
-        Serial.println(packet.packetLength);
+        sendSerialString("Calculated Packet Length: ");
+        sendSerialString(String(packet.packetLength) + "\n");
 
         // Send the packet over Serial Interface
         getInterfaceByName("CANInterface")->sendPacket(packet);
 
         // Debug to console the full readable contents of packet
-        Serial.println("\nSent Packet: ");
-        Serial.println(packet.toString());  // Debug display outgoing packet
+        sendSerialString("\nSent Packet: \n");
+        sendSerialString(packet.toString() + "\n");  // Debug display outgoing packet
 
         delay(5000);
 
@@ -874,6 +1003,6 @@ void CommandProcessor::testCANCommandPacket() {
         //handlePacket(packet, getInterfaceByName("SerialInterface"));
     } else {
         // Handle serialization error
-        Serial.println("Error: Failed to serialize command");
+        sendSerialString("Error: Failed to serialize command\n");
     }
 }
