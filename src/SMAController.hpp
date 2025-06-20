@@ -91,9 +91,9 @@ private:
 
     // STORED SENSOR AND RESISTANCE VALUES (updated with update())
     // #TODO Change to Buffer Method with BufferIndex & TransmitIndex (see journal)
-    float curr_val;
-    float vld_val;
-    float rld_val;
+    float curr_val = 0.0f;  // Initialize current value
+    float vld_val = 0.0f;   // Initialize voltage value  
+    float rld_val = 0.0f;   // Initialize resistance value
 
     // For OHMS control mode, a PID controller will be used to control output PWM to minimize error to a setpoint resistance
     const float KP_rc = 0.05, KI_rc = 0.0, KD_rc = 0.0;
@@ -103,7 +103,7 @@ private:
 
     // Control Settings
     bool outputEnabled = false;
-    tfnode::SMAControlMode currentMode;
+    tfnode::SMAControlMode currentMode = tfnode::SMAControlMode::MODE_PERCENT;  // FIXED: Initialize to default mode
     float pwm_duty_percent = 0;  // From 0.0->0.1
 
     // Resistance Training Settings

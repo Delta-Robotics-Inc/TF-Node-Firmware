@@ -11,6 +11,23 @@ void SMAController::begin()
     resController = new ResistiveController(0.0, KP_rc, KI_rc, KD_rc);                                                                    // Initialize resistive PID controller
     currController = new CurrentController(0.0, KP_cc, KI_cc, KD_cc);                                                                   // Initialize current PID controller
     driver = new PWMSamplerDriver(PWM_FREQUENCY, 0.0f, mosfet_pin, PWM_MEASURE_DELAY_US, PWM_MEASURE_CYCLE_THRESH, static_measure, this); // Initialize pwm driver which will handle pwm on the mosfet pin and sampling the sensors
+    
+    // Initialize ALL setpoints to safe default values
+    setpoint[(int)tfnode::SMAControlMode::MODE_PERCENT] = 0.0;
+    setpoint[(int)tfnode::SMAControlMode::MODE_AMPS] = 0.0;
+    setpoint[(int)tfnode::SMAControlMode::MODE_VOLTS] = 0.0;
+    setpoint[(int)tfnode::SMAControlMode::MODE_OHMS] = 300.0;  // Safe default resistance
+    setpoint[(int)tfnode::SMAControlMode::MODE_TRAIN] = 0.0;
+    
+    // Initialize settings with default values
+    settings.set_default_mode(tfnode::SMAControlMode::MODE_PERCENT);
+    settings.set_default_setpoint(0.0);
+    settings.set_rctrl_kp(KP_rc);
+    settings.set_rctrl_ki(KI_rc);
+    settings.set_rctrl_kd(KD_rc);
+    // settings.set_cctrl_kp(KP_cc);  // TODO Current control PID gains
+    // settings.set_cctrl_ki(KI_cc);
+    // settings.set_cctrl_kd(KD_cc);
 }
 
 // Test states for muscle algo
@@ -169,22 +186,41 @@ void SMAController::CMD_reset()
 {
     CMD_setEnable(false);
     CMD_setMode(tfnode::SMAControlMode::MODE_PERCENT);
-    CMD_setSetpoint(tfnode::SMAControlMode::MODE_PERCENT, 0);
+    
+    // Initialize ALL setpoints to safe default values
+    CMD_setSetpoint(tfnode::SMAControlMode::MODE_PERCENT, 0.0);
+    CMD_setSetpoint(tfnode::SMAControlMode::MODE_AMPS, 0.0);
+    CMD_setSetpoint(tfnode::SMAControlMode::MODE_VOLTS, 0.0);
+    CMD_setSetpoint(tfnode::SMAControlMode::MODE_OHMS, 300.0);  // Safe default resistance
+    CMD_setSetpoint(tfnode::SMAControlMode::MODE_TRAIN, 0.0);
+    
+    // Initialize settings with default values
+    settings.set_default_mode(tfnode::SMAControlMode::MODE_PERCENT);
+    settings.set_default_setpoint(0.0);
+    settings.set_rctrl_kp(KP_rc);
+    settings.set_rctrl_ki(KI_rc);
+    settings.set_rctrl_kd(KD_rc);
+    // settings.set_cctrl_kp(KP_cc);  // TODO Current control PID gains
+    // settings.set_cctrl_ki(KI_cc);
+    // settings.set_cctrl_kd(KD_cc);
+    
     // Reset timer and pulse vals*****************************************
 }
 
 // TODO Change "mode" to represent status message type and implement a "repeating" var
 void SMAController::CMD_setStatusMode(tfnode::DeviceStatusMode _mode, bool repeating, NetworkInterface *iface)
 {
+    Serial.println("SMA Controller " + getPortString() + " received status request - Mode: " + String((int)_mode) + ", Repeating: " + String(repeating));
 
     if(repeating) {
         // Set status mode for the node for repeating status
         statusMode = _mode;
+        Serial.println("Set repeating status mode for " + getPortString());
     }
     else {
         // Nonrepeating status means set the statusMode to none
         statusMode = tfnode::DeviceStatusMode::STATUS_NONE;
-        // Serial.println("Sending Single Status response...");
+        Serial.println("Sending single status response for " + getPortString());
         sendStatusResponse(_mode);  // Send a single status response
     }
 }
@@ -203,8 +239,8 @@ void SMAController::sendStatusResponse(tfnode::DeviceStatusMode mode) {
     tfnode::NodeResponse response;
 
     tfnode::StatusResponse& statusResponse = response.mutable_status_response();
-    statusResponse.set_device(tfnode::Device::DEVICE_NODE); // Set the device sending the response
-    //Serial.println("Sending CMD response...");
+    statusResponse.set_device(devicePort); // FIXED: Set the correct device port instead of DEVICE_NODE
+    Serial.println("Sending SMA Status response for " + getPortString());
 
 
     switch (mode) {
@@ -220,8 +256,11 @@ void SMAController::sendStatusResponse(tfnode::DeviceStatusMode mode) {
         }
         case tfnode::DeviceStatusMode::STATUS_DUMP_READABLE: {
             // Special case to send status straight to serial
+            // Serial.println("DEBUG: About to call getSMAStatusReadable for " + getPortString());
             String readableStatus = getSMAStatusReadable();
+            // Serial.println("DEBUG: getSMAStatusReadable completed for " + getPortString());
             commandProcessor->sendSerialString(readableStatus);
+            // Serial.println("DEBUG: sendSerialString completed for " + getPortString());
             return;
         }
         default: {
@@ -229,6 +268,9 @@ void SMAController::sendStatusResponse(tfnode::DeviceStatusMode mode) {
             return;
         }
     }
+    
+    // Send the response!
+    commandProcessor->sendResponse(response, master_tfNode->statusInterface);
 }
 
 
@@ -259,16 +301,25 @@ tfnode::SMAStatusDump SMAController::getSMAStatusDump()
   tfnode::SMAStatusCompact compactStatus = getSMAStatusCompact();
   status.mutable_compact_status() = compactStatus;
 
-  // Get loaded settings (if any)
-  status.mutable_loaded_settings() = settings;
-    // TODO Queue outbound response message
+  // Properly populate SMAControllerSettings to prevent parsing errors
+  tfnode::SMAControllerSettings controllerSettings;
+  controllerSettings.set_default_mode(tfnode::SMAControlMode::MODE_PERCENT);  // Default reset mode
+  controllerSettings.set_default_setpoint(0.0);  // Default reset setpoint
+  controllerSettings.set_rctrl_kp(KP_rc);  // Resistance control PID gains
+  controllerSettings.set_rctrl_ki(KI_rc);
+  controllerSettings.set_rctrl_kd(KD_rc);
+//   controllerSettings.set_cctrl_kp(KP_cc);  // TODO Current control PID gains
+//   controllerSettings.set_cctrl_ki(KI_cc);
+//   controllerSettings.set_cctrl_kd(KD_cc);
+  
+  status.mutable_loaded_settings() = controllerSettings;
 
   status.set_vld_scalar(vld_scaleFactor);
   status.set_vld_offset(vld_offset);
   status.set_r_sns_ohms(R_SNS);
   status.set_amp_gain(AMP_GAIN);
   status.set_af_mohms(Af_mohms);
-  status.delta_mohms();//I am unsure of what going on here
+  status.set_delta_mohms(delta_mohms);
   status.set_trainState(trainState);
 
   return status;
@@ -276,18 +327,18 @@ tfnode::SMAStatusDump SMAController::getSMAStatusDump()
 
 String SMAController::getSMAStatusReadable()
 {
-    String stat_str = 
-                    "========================================\n";
-    stat_str += "SMA Controller: " + getPortString() + "\n"; 
-    stat_str += "Enable: " + String(outputEnabled) + " \n";
-    stat_str += "Mode: " + getModeString() + "\n";
-    stat_str += "Set Point: " + String(setpoint[(int)currentMode]) + "\n";
-    stat_str += "Output_PWM: " + String(pwm_duty_percent) + "\n";
-    stat_str += "Load_Amps: " + String(curr_val) + " A\n";
-    stat_str += "Load_vdrop: " + String(rld_val) + " V\n";  
-    stat_str += "Load_mohms: " + String(vld_val) + "Ohms\n"; 
+    // Use direct serial output to avoid memory issues with large string concatenation
+    Serial.println("========================================");
+    Serial.println("SMA Controller: " + getPortString()); 
+    Serial.println("Enable: " + String(outputEnabled));
+    Serial.println("Mode: " + getModeString());
+    Serial.println("Set Point: " + String(setpoint[(int)currentMode]));
+    Serial.println("Output_PWM: " + String(pwm_duty_percent));
+    Serial.println("Load_Amps: " + String(curr_val) + " A");
+    Serial.println("Load_vdrop: " + String(vld_val) + " V");
+    Serial.println("Load_mohms: " + String(rld_val) + " mOhms");
 
-    return stat_str;
+    return ""; // Return empty string since we printed directly
 }
 
 
