@@ -61,13 +61,15 @@ void SerialInterface::parsePacket(int byte_from_packet){
         // Serial.println("Start of ascii command");
     }
     if (asciiMode) {
-        if (byte_from_packet == '\n') {
+        // Handle line endings - treat any \r or \n as command terminator
+        if (byte_from_packet == '\n' || byte_from_packet == '\r') {
             // Serial.println("End of ascii command");
             asciiMode = false;
             // Command is complete, enqueue it.
             asciiCommandQueue.push(asciiBuffer);
             asciiBuffer = "";
         } else {
+            // Add regular characters to buffer (excluding \r and \n)
             asciiBuffer += (char)byte_from_packet;
         }
     }
